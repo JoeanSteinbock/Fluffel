@@ -1,0 +1,49 @@
+# Project: Fluffel - Mac Pet Desktop Companion
+# Rules for Cursor.sh to ensure consistent, clean, and efficient code generation
+
+# General Guidelines
+- Language: Use Swift exclusively for all code.
+- Framework Preference: Prioritize SpriteKit for animations and physics, AppKit for window management, Core Animation as a fallback for simple animations, and AVFoundation for audio.
+- macOS Target: Minimum macOS 13.0 (Ventura). Ensure compatibility.
+- Code Style: Follow SwiftLint conventions (camelCase variables, descriptive names, 2-space indentation). Add comments explaining key logic.
+- Error Handling: Include basic error handling (e.g., optional binding, guard statements) but keep it minimal unless I request more.
+- Performance: Optimize for low CPU usage (e.g., avoid tight loops, use background threads for non-UI tasks).
+
+# Project Structure
+- File Naming: Use descriptive names (e.g., `FluffelView.swift`, `FluffelSprite.swift`) and group related files in folders (e.g., `Views/`, `Models/`).
+- Modularity: Keep Fluffel’s logic (movement, animations) separate from UI setup (window, scene).
+- Extensibility: Write code to allow easy sprite/animation swaps (e.g., use sprite sheets or configurable properties).
+
+# Visual Design and Animations
+- Sprite Placeholder: Use a red circle with two white dot eyes (50x50 px) as Fluffel’s initial sprite, implemented in SpriteKit. Assume a sprite sheet (`fluffel.png`) will replace it later.
+- Animation Frames: Limit animations to 2-3 frames for simplicity (e.g., walking: 2 frames, falling: 3 frames). Use `SKAction` for sequences.
+- Physics: Apply lightweight SpriteKit physics (e.g., `SKPhysicsBody`) for falling/bouncing, but avoid complex simulations unless requested.
+
+# Development Process
+- Phases: Follow the phased approach (1: Basic Fluffel, 2: Edge Following, etc.) as outlined in my prompt. Only proceed to the next phase after I confirm the current one works.
+- Output Format: For each phase, provide:
+  - List of files to create/modify
+  - Full code with comments
+  - Xcode setup/run instructions (e.g., "Add to Main.storyboard" or "Run with Command+R")
+- Debugging: If I report errors, suggest fixes with exact line changes and explanations (e.g., "Change X to Y because Z").
+
+# Constraints
+- No Objective-C: Stick to Swift only.
+- No External Dependencies: Use native macOS frameworks (no third-party libraries like Alamofire).
+- Keep It Simple: Avoid overcomplicating (e.g., no AI behavior unless I ask). Focus on core features first.
+
+# Suggestions
+- Optional Enhancements: Suggest small improvements (e.g., "Add a settings panel for speed?") but don’t implement unless I approve.
+- Asset Integration: When I provide a sprite sheet, guide me on replacing the placeholder with minimal code changes.
+
+# Example Preferences
+- Example Animation: For a walking animation, generate something like:
+  ```swift
+  let atlas = SKTextureAtlas(named: "Fluffel")
+  let walkFrames = [atlas.textureNamed("walk1"), atlas.textureNamed("walk2")]
+  let walkAction = SKAction.animate(with: walkFrames, timePerFrame: 0.2)
+  fluffelNode.run(SKAction.repeatForever(walkAction))
+```
+
+- Example Naming: Use `fluffelNode` for the SpriteKit node, `fluffelWindow` for the NSWindow, etc.
+
