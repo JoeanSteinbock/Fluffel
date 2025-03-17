@@ -1,7 +1,3 @@
-Below is the latest, detailed set of requirements for your “Fluffel” Mac Pet project, consolidating everything we’ve discussed—core functionality, visual design, animations, tech solutions, and development guidelines. This reflects the evolution of your idea from the initial concept to the detailed plan we’ve built, including the Cursor.sh prompt and `.cursorrules`. It’s structured for clarity and completeness, serving as a comprehensive blueprint for implementation.
-
------
-
 ### Fluffel: Mac Pet Desktop Companion - Full Requirements
 
 #### Project Overview
@@ -163,6 +159,3 @@ Below is the latest, detailed set of requirements for your “Fluffel” Mac Pet
 - **Scalability**: Design supports adding new behaviors (e.g., multiplayer Fluffels) if desired.
 - **Testing**: Multi-monitor support and window focus handling to be verified in Phase 6.
 
------
-
-This is the complete, up-to-date requirements document for Fluffel, ready to guide development via Cursor.sh or manual coding. It captures every detail we’ve refined—functionality, visuals, animations, and tech—while keeping the scope clear and actionable. Let me know if you want to adjust anything (e.g., add a feature, tweak the design) before proceeding! Ready to start with Phase 1?
