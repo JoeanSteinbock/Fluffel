@@ -23,7 +23,7 @@ class TransparentWindow: NSWindow {
         self.ignoresMouseEvents = false
     }
     
-    // 改进点击穿透逻辑，确保拖动功能正常工作
+    // 改进点击穿透逻辑，处理更大窗口下的事件
     override func sendEvent(_ event: NSEvent) {
         if event.type == .leftMouseDown || 
            event.type == .rightMouseDown || 
@@ -43,7 +43,7 @@ class TransparentWindow: NSWindow {
                 // 检查点击是否在 Fluffel 节点内
                 let fluffelNode = fluffel.calculateAccumulatedFrame()
                 
-                // 扩大可点击区域 - 使整个窗口区域可拖动
+                // 扩大可点击区域 - 只有 Fluffel 周围一小部分区域可点击，其余区域点击穿透
                 let paddedFrame = fluffelNode.insetBy(dx: -15, dy: -15)
                 
                 if paddedFrame.contains(scenePoint) {
@@ -57,6 +57,7 @@ class TransparentWindow: NSWindow {
                     return
                 }
             }
+            // 否则点击穿透，不处理事件
         } else {
             // 其他类型的事件正常处理
             super.sendEvent(event)

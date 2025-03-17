@@ -6,7 +6,7 @@ class Fluffel: SKNode {
     private let leftEye: SKShapeNode
     private let rightEye: SKShapeNode
     
-    let size: CGSize = CGSize(width: 50, height: 50)
+    public let size: CGSize = CGSize(width: 50, height: 50)
     
     override init() {
         // 创建 Fluffel 的圆形身体 (红色)

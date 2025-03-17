@@ -4,6 +4,11 @@ enum Direction {
     case left, right, up, down
 }
 
+// 添加一个通知名称，用于通知窗口 Fluffel 已移动
+extension Notification.Name {
+    static let fluffelDidMove = Notification.Name("fluffelDidMove")
+}
+
 class FluffelScene: SKScene {
     
     var fluffel: Fluffel?
@@ -23,8 +28,8 @@ class FluffelScene: SKScene {
             fluffel.position = CGPoint(x: size.width / 2, y: size.height / 2)
             addChild(fluffel)
             
-            // 关闭缩放动画会使窗口区域更准确
-            fluffel.setScale(0.9)  // 稍微缩小一点，确保完全在小窗口内
+            // 使用正常比例
+            fluffel.setScale(1.0)
         }
     }
     
@@ -44,7 +49,8 @@ class FluffelScene: SKScene {
         }
         lastMoveTime = currentTime
         
-        let moveDistance: CGFloat = 5.0 // 较小的移动距离，使移动更平滑
+        // 增加移动距离，使移动更明显
+        let moveDistance: CGFloat = 8.0
         
         // 根据方向移动 Fluffel
         switch direction {
@@ -60,14 +66,19 @@ class FluffelScene: SKScene {
             fluffel.position.y -= moveDistance
         }
         
-        // 确保 Fluffel 不会移出窗口
-        let minX = fluffel.size.width / 2
-        let maxX = size.width - fluffel.size.width / 2
-        let minY = fluffel.size.height / 2
-        let maxY = size.height - fluffel.size.height / 2
-        
-        fluffel.position.x = max(minX, min(maxX, fluffel.position.x))
-        fluffel.position.y = max(minY, min(maxY, fluffel.position.y))
+        // 移除边界检查，允许 Fluffel 自由移动
+        // 移动后发送通知，以便窗口控制器可以跟随 Fluffel 移动
+        NotificationCenter.default.post(name: .fluffelDidMove, object: self)
+    }
+    
+    // 获取 Fluffel 当前位置
+    func getFluffelPosition() -> CGPoint? {
+        return fluffel?.position
+    }
+    
+    // 获取 Fluffel 的实际大小
+    func getFluffelSize() -> CGSize? {
+        return fluffel?.size
     }
     
     // 让 Fluffel 朝向移动方向
