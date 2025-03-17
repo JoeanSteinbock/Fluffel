@@ -1,5 +1,14 @@
 import SpriteKit
 
+// Fluffel 的活动状态
+enum FluffelState {
+    case idle           // 闲置状态
+    case moving         // 正常移动
+    case onEdge         // 在窗口边缘上
+    case falling        // 下落中
+    case climbing       // 攀爬中
+}
+
 class Fluffel: SKNode {
     
     private let body: SKShapeNode
@@ -11,6 +20,12 @@ class Fluffel: SKNode {
     private let leftEar: SKShapeNode
     private let rightEar: SKShapeNode
     private let glowEffect: SKShapeNode // 添加发光效果节点
+    
+    // 当前状态相关变量
+    private(set) var state: FluffelState = .idle
+    private(set) var isOnEdge: Bool = false
+    private(set) var currentEdge: ScreenWindow.EdgeType?
+    private(set) var currentWindow: ScreenWindow?
     
     public let size: CGSize = CGSize(width: 50, height: 50)
     
@@ -118,11 +133,13 @@ class Fluffel: SKNode {
         
         super.init()
         
+        print("Fluffel 初始化开始")
+        
         // 添加所有部件到节点，确保发光效果在最底层
         addChild(glowEffect)
+        addChild(body)
         addChild(leftEar)
         addChild(rightEar)
-        addChild(body)
         addChild(leftEye)
         addChild(rightEye)
         addChild(mouth)
@@ -134,10 +151,78 @@ class Fluffel: SKNode {
         
         // 启动发光效果动画
         startGlowAnimation()
+        
+        print("Fluffel 初始化完成")
     }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    // 设置 Fluffel 的状态
+    func setState(_ newState: FluffelState) {
+        // 如果状态没有变化，不做任何处理
+        if state == newState { return }
+        
+        // 退出当前状态
+        switch state {
+        case .idle:
+            // 从闲置状态退出时的操作
+            break
+        case .moving:
+            // 从移动状态退出时的操作
+            break
+        case .onEdge:
+            // 从边缘状态退出时的操作
+            isOnEdge = false
+            currentEdge = nil
+            currentWindow = nil
+            break
+        case .falling:
+            // 从下落状态退出时的操作
+            break
+        case .climbing:
+            // 从攀爬状态退出时的操作
+            break
+        }
+        
+        // 进入新状态
+        state = newState
+        
+        switch newState {
+        case .idle:
+            // 进入闲置状态时的操作
+            smile()
+            break
+        case .moving:
+            // 进入移动状态时的操作
+            break
+        case .onEdge:
+            // 进入边缘状态时的操作
+            isOnEdge = true
+            break
+        case .falling:
+            // 进入下落状态时的操作
+            startFallingAnimation()
+            break
+        case .climbing:
+            // 进入攀爬状态时的操作
+            break
+        }
+    }
+    
+    // 设置在边缘上的状态
+    func setOnEdge(window: ScreenWindow, edge: ScreenWindow.EdgeType) {
+        currentWindow = window
+        currentEdge = edge
+        setState(.onEdge)
+    }
+    
+    // 当 Fluffel 离开边缘时
+    func leaveEdge() {
+        if state == .onEdge {
+            setState(.moving)
+        }
     }
     
     // 呼吸动画 - 让 Fluffel 看起来更有生命力
@@ -206,6 +291,57 @@ class Fluffel: SKNode {
         glowEffect.run(scalePulseContinuously)
     }
     
+    // 开始下落动画
+    func startFallingAnimation() {
+        if state == .falling { return }
+        
+        // 设置下落状态
+        setState(.falling)
+        
+        // 表情变化
+        surprisedFace()
+        
+        // 下落动画序列
+        let rotate = SKAction.rotate(byAngle: CGFloat.pi * 2, duration: 0.7)  // 旋转一圈
+        let fall = SKAction.moveBy(x: 0, y: -300, duration: 0.7)  // 下落
+        let group = SKAction.group([rotate, fall])  // 同时旋转和下落
+        
+        // 落地后的弹跳效果
+        let bounce1 = SKAction.sequence([
+            SKAction.moveBy(x: 0, y: 30, duration: 0.2),
+            SKAction.moveBy(x: 0, y: -30, duration: 0.15)
+        ])
+        let bounce2 = SKAction.sequence([
+            SKAction.moveBy(x: 0, y: 15, duration: 0.15),
+            SKAction.moveBy(x: 0, y: -15, duration: 0.1)
+        ])
+        
+        // 完成后恢复闲置状态
+        let resetAction = SKAction.run { [weak self] in
+            self?.setState(.idle)
+            self?.smile()  // 恢复微笑
+        }
+        
+        // 完整的下落序列
+        let fallSequence = SKAction.sequence([group, bounce1, bounce2, resetAction])
+        
+        // 执行动画
+        run(fallSequence, withKey: "fallingAction")
+    }
+    
+    // 惊讶表情 - 用于下落时
+    func surprisedFace() {
+        // 眼睛变大
+        leftEye.setScale(1.3)
+        rightEye.setScale(1.3)
+        
+        // 嘴巴变成O形
+        let oMouthPath = CGMutablePath()
+        oMouthPath.addEllipse(in: CGRect(x: -5, y: -10, width: 10, height: 8))
+        mouth.path = oMouthPath
+        mouth.fillColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.4, alpha: 1.0)
+    }
+    
     // 修正微笑方法，使用向上的曲线而不是向下的曲线
     func smile() {
         // 创建一个真正的微笑曲线 (向上弯曲)
@@ -217,6 +353,16 @@ class Fluffel: SKNode {
         mouth.path = smilePath
     }
     
+    // 担忧表情
+    func worried() {
+        let worriedPath = CGMutablePath()
+        worriedPath.move(to: CGPoint(x: -7, y: -8))
+        // 担忧的表情，嘴巴向下弯曲
+        worriedPath.addQuadCurve(to: CGPoint(x: 7, y: -8), control: CGPoint(x: 0, y: -4))
+        
+        mouth.path = worriedPath
+    }
+    
     // 添加一个眨眼的开心表情
     func happyBlink() {
         // 眨眼动画序列
@@ -226,5 +372,48 @@ class Fluffel: SKNode {
         
         leftEye.run(blinkAction)
         rightEye.run(blinkAction)
+    }
+
+    // 滚动动画 - 用于 Fluffel 在边缘滚动时
+    func roll() {
+        // 停止其他可能正在进行的动画
+        removeAction(forKey: "walkingAction")
+        removeAction(forKey: "fallingAction")
+        
+        // 设置表情为开心
+        smile()
+        
+        // 创建完整旋转动画
+        let rotateAction = SKAction.rotate(byAngle: CGFloat.pi * 2, duration: 0.8)
+        let rollSequence = SKAction.sequence([
+            // 稍微压缩身体，模拟准备滚动
+            SKAction.scaleX(to: 1.1, y: 0.9, duration: 0.1),
+            // 执行滚动动画
+            SKAction.group([
+                SKAction.repeatForever(rotateAction),
+                // 身体在滚动时轻微变形
+                SKAction.sequence([
+                    SKAction.scaleX(to: 1.05, y: 0.95, duration: 0.2),
+                    SKAction.scaleX(to: 0.95, y: 1.05, duration: 0.2),
+                    SKAction.scaleX(to: 1.0, y: 1.0, duration: 0.2)
+                ])
+            ])
+        ])
+        
+        // 执行动画
+        run(rollSequence, withKey: "rollingAction")
+    }
+    
+    // 停止滚动动画
+    func stopRolling() {
+        // 移除滚动动画
+        removeAction(forKey: "rollingAction")
+        
+        // 重置旋转和缩放
+        run(SKAction.rotate(toAngle: 0, duration: 0.2))
+        run(SKAction.scale(to: 1.0, duration: 0.2))
+        
+        // 恢复正常表情
+        smile()
     }
 } 
