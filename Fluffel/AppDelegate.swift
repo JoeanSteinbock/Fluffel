@@ -16,6 +16,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 隐藏 Dock 图标和菜单栏
         NSApp.setActivationPolicy(.accessory)
+        
+        // 添加退出快捷键 (Cmd+Q)
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.contains(.command) && event.keyCode == 12 { // Q 键
+                NSApp.terminate(nil)
+            }
+            return event
+        }
     }
     
     func applicationWillTerminate(_ notification: Notification) {

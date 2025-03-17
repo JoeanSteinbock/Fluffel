@@ -4,10 +4,13 @@ import SpriteKit
 class FluffelWindowController: NSWindowController {
     
     var fluffelScene: FluffelScene?
+    private var keyIsDown = false
+    private var currentDirection: Direction?
+    private var moveTimer: Timer?
     
     convenience init() {
-        // 创建一个完全透明的窗口，使用自定义 TransparentWindow 类
-        let contentRect = NSRect(x: 0, y: 0, width: 200, height: 200)
+        // 减小窗口尺寸，使之更贴近 Fluffel 实际大小（50px 加一点边距）
+        let contentRect = NSRect(x: 0, y: 0, width: 60, height: 60)
         
         // 使用自定义窗口类
         let window = TransparentWindow(
@@ -36,26 +39,67 @@ class FluffelWindowController: NSWindowController {
         window.center()
         window.makeKeyAndOrderFront(nil)
         
-        // 注册按键事件
+        // 注册键盘事件监听
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            self?.keyDown(with: event)
+            self?.handleKeyDown(with: event)
+            return event
+        }
+        
+        NSEvent.addLocalMonitorForEvents(matching: .keyUp) { [weak self] event in
+            self?.handleKeyUp(with: event)
             return event
         }
     }
     
-    override func keyDown(with event: NSEvent) {
-        // 处理方向键
-        switch event.keyCode {
+    func handleKeyDown(with event: NSEvent) {
+        let direction = directionForKeyCode(event.keyCode)
+        
+        if let direction = direction {
+            // 如果是新的按键或者不同方向的按键
+            if !keyIsDown || currentDirection != direction {
+                // 停止旧的移动计时器
+                moveTimer?.invalidate()
+                
+                // 设置当前状态
+                keyIsDown = true
+                currentDirection = direction
+                
+                // 立即移动一次
+                fluffelScene?.moveFluffel(direction: direction)
+                
+                // 开始持续移动
+                moveTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+                    if let direction = self?.currentDirection {
+                        self?.fluffelScene?.moveFluffel(direction: direction)
+                    }
+                }
+            }
+        }
+    }
+    
+    func handleKeyUp(with event: NSEvent) {
+        let direction = directionForKeyCode(event.keyCode)
+        
+        if let direction = direction, direction == currentDirection {
+            keyIsDown = false
+            currentDirection = nil
+            moveTimer?.invalidate()
+            moveTimer = nil
+        }
+    }
+    
+    private func directionForKeyCode(_ keyCode: UInt16) -> Direction? {
+        switch keyCode {
         case 123: // 左箭头
-            fluffelScene?.moveFluffel(direction: .left)
+            return .left
         case 124: // 右箭头
-            fluffelScene?.moveFluffel(direction: .right)
+            return .right
         case 125: // 下箭头
-            fluffelScene?.moveFluffel(direction: .down)
+            return .down
         case 126: // 上箭头
-            fluffelScene?.moveFluffel(direction: .up)
+            return .up
         default:
-            break
+            return nil
         }
     }
 } 
