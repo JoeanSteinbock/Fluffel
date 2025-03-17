@@ -10,10 +10,19 @@ class Fluffel: SKNode {
     private let rightCheek: SKShapeNode
     private let leftEar: SKShapeNode
     private let rightEar: SKShapeNode
+    private let glowEffect: SKShapeNode // 添加发光效果节点
     
     public let size: CGSize = CGSize(width: 50, height: 50)
     
     override init() {
+        // 首先创建发光效果，这样它会位于所有部件的下方
+        glowEffect = SKShapeNode(circleOfRadius: 28) // 略大于身体
+        glowEffect.fillColor = NSColor(calibratedRed: 1.0, green: 1.0, blue: 1.0, alpha: 0.2) // 非常淡的白色
+        glowEffect.strokeColor = NSColor(calibratedRed: 1.0, green: 1.0, blue: 1.0, alpha: 0.1)
+        glowEffect.lineWidth = 3.0
+        glowEffect.blendMode = .add // 使用叠加混合模式使发光效果更明显
+        glowEffect.zPosition = -1 // 确保在 Fluffel 下方
+        
         // 创建 Fluffel 的圆形身体 (使用更明亮、更可爱的粉色)
         body = SKShapeNode(circleOfRadius: 25)
         body.fillColor = NSColor(calibratedRed: 1.0, green: 0.8, blue: 0.85, alpha: 1.0) // 更明亮的粉色
@@ -109,7 +118,8 @@ class Fluffel: SKNode {
         
         super.init()
         
-        // 添加所有部件到节点
+        // 添加所有部件到节点，确保发光效果在最底层
+        addChild(glowEffect)
         addChild(leftEar)
         addChild(rightEar)
         addChild(body)
@@ -121,6 +131,9 @@ class Fluffel: SKNode {
         
         // 启动基本动画
         startBreathingAnimation()
+        
+        // 启动发光效果动画
+        startGlowAnimation()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -129,14 +142,20 @@ class Fluffel: SKNode {
     
     // 呼吸动画 - 让 Fluffel 看起来更有生命力
     func startBreathingAnimation() {
-        // 身体轻微缩放动画
+        // 将呼吸动画应用到整个 Fluffel，而不仅仅是身体
+        // 这样身体和耳朵会一起缩放，看起来更加协调
         let scaleUp = SKAction.scale(to: 1.05, duration: 0.5)
         let scaleDown = SKAction.scale(to: 0.95, duration: 0.5)
         let breathe = SKAction.sequence([scaleUp, scaleDown])
         let breatheContinuously = SKAction.repeatForever(breathe)
-        body.run(breatheContinuously)
         
-        // 耳朵稍微摇动的动画
+        // 应用到整个 Fluffel（自己），而不仅仅是身体
+        self.run(breatheContinuously)
+        
+        // 因为整体已经有缩放动画，身体不需要单独的缩放
+        // 确保眨眼动画仍然独立工作
+        
+        // 耳朵稍微摇动的动画 - 保留这个效果
         let leftEarWiggle = SKAction.sequence([
             SKAction.rotate(byAngle: 0.05, duration: 0.3),
             SKAction.rotate(byAngle: -0.05, duration: 0.3)
@@ -166,6 +185,25 @@ class Fluffel: SKNode {
         let blinkSequence = SKAction.sequence([wait, blink])
         let blinkRepeat = SKAction.repeatForever(blinkSequence)
         self.run(blinkRepeat)
+    }
+    
+    // 发光效果动画
+    func startGlowAnimation() {
+        // 创建一个缓慢的脉动动画，让发光效果更加自然
+        let fadeOut = SKAction.fadeAlpha(to: 0.1, duration: 1.5)
+        let fadeIn = SKAction.fadeAlpha(to: 0.3, duration: 1.5)
+        let pulse = SKAction.sequence([fadeOut, fadeIn])
+        let pulseContinuously = SKAction.repeatForever(pulse)
+        
+        // 同时添加一个微小的缩放动画，使发光效果看起来更加活跃
+        let scaleUp = SKAction.scale(to: 1.1, duration: 1.5)
+        let scaleDown = SKAction.scale(to: 0.95, duration: 1.5)
+        let scalePulse = SKAction.sequence([scaleUp, scaleDown])
+        let scalePulseContinuously = SKAction.repeatForever(scalePulse)
+        
+        // 运行动画
+        glowEffect.run(pulseContinuously)
+        glowEffect.run(scalePulseContinuously)
     }
     
     // 修正微笑方法，使用向上的曲线而不是向下的曲线
