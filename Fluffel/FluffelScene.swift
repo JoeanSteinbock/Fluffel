@@ -30,6 +30,14 @@ class FluffelScene: SKScene {
             
             // 使用正常比例
             fluffel.setScale(1.0)
+            
+            // 让 Fluffel 微笑，看起来更友好
+            fluffel.smile()
+            
+            // 添加一个短暂的延迟，然后让 Fluffel 眨眼，显得更加活泼
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                fluffel.happyBlink()
+            }
         }
     }
     
