@@ -4,7 +4,9 @@ import SpriteKit
 enum FluffelState {
     case idle           // 闲置状态
     case moving         // 正常移动
+    case walking        // 行走状态
     case onEdge         // 在窗口边缘上
+    case edgeWalking    // 在边缘行走
     case falling        // 下落中
     case climbing       // 攀爬中
     case sleeping       // 睡眠状态
@@ -171,77 +173,35 @@ class Fluffel: SKNode {
     
     // 设置 Fluffel 的状态
     func setState(_ newState: FluffelState) {
-        // 如果状态没有变化，不做任何处理
-        if state == newState { return }
-        
-        // 退出当前状态
-        switch state {
-        case .idle:
-            // 从闲置状态退出时的操作
-            break
-        case .moving:
-            // 从移动状态退出时的操作
-            break
-        case .onEdge:
-            // 从边缘状态退出时的操作
-            isOnEdge = false
-            currentEdge = nil
-            currentWindow = nil
-            stopEdgeWalkingAnimation()
-            break
-        case .falling:
-            // 从下落状态退出时的操作
-            break
-        case .climbing:
-            // 从攀爬状态退出时的操作
-            break
-        case .sleeping:
-            // 从睡眠状态退出时的操作
-            stopSleepingAnimation()
-            break
-        case .dancing:
-            // 从跳舞状态退出时的操作
-            stopDancingAnimation()
-            break
-        case .excited:
-            // 从兴奋状态退出时的操作
-            stopExcitedAnimation()
-            break
+        // 在改变状态前清理当前状态
+        if state != newState {
+            // 移除任何显示的对话气泡
+            removeSpeechBubble()
+            
+            // 根据当前状态执行清理
+            switch state {
+            case .walking:
+                removeAction(forKey: "walkingAction")
+            case .edgeWalking:
+                // 直接清理边缘行走相关动作
+                removeAction(forKey: "edgeWalkingAction")
+                body.removeAction(forKey: "bodyWobble")
+                leftEar.removeAction(forKey: "leftEarWobble")
+                rightEar.removeAction(forKey: "rightEarWobble")
+            case .falling:
+                removeAction(forKey: "fallingAction")
+            default:
+                break
+            }
         }
         
-        // 进入新状态
         state = newState
         
-        switch newState {
+        // 根据新状态执行初始化
+        switch state {
         case .idle:
-            // 进入闲置状态时的操作
             smile()
-            break
-        case .moving:
-            // 进入移动状态时的操作
-            break
-        case .onEdge:
-            // 进入边缘状态时的操作
-            isOnEdge = true
-            break
-        case .falling:
-            // 进入下落状态时的操作
-            startFallingAnimation()
-            break
-        case .climbing:
-            // 进入攀爬状态时的操作
-            break
-        case .sleeping:
-            // 进入睡眠状态时的操作
-            startSleepingAnimation()
-            break
-        case .dancing:
-            // 进入跳舞状态时的操作
-            startDancingAnimation()
-            break
-        case .excited:
-            // 进入兴奋状态时的操作
-            startExcitedAnimation()
+        default:
             break
         }
     }

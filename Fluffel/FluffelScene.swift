@@ -32,6 +32,20 @@ class FluffelScene: SKScene {
     private let boredThreshold: TimeInterval = 10.0 // 10秒无活动后触发无聊状态
     private var isCheckingBoredom = false
     
+    // 说话相关
+    private var greetings = [
+        "你好！",
+        "嗨！我是 Fluffel！",
+        "今天天气真好！",
+        "你在做什么呢？",
+        "需要帮忙吗？",
+        "点击我可以让我说话哦！",
+        "我喜欢在桌面上跑来跑去！",
+        "我们一起玩吧！",
+        "今天过得怎么样？",
+        "我感觉很开心！"
+    ]
+    
     override func sceneDidLoad() {
         super.sceneDidLoad()
         
@@ -50,6 +64,11 @@ class FluffelScene: SKScene {
             
             // 让 Fluffel 微笑，看起来更友好
             fluffel.smile()
+            
+            // 初次出现时说一句话
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.makeFluffelSpeak("你好！我是 Fluffel！")
+            }
             
             print("Fluffel 已添加到场景，位置: \(fluffel.position)")
             
@@ -362,5 +381,52 @@ class FluffelScene: SKScene {
     // 设置边缘检测的容差
     func setEdgeDetectionTolerance(_ tolerance: CGFloat) {
         edgeDetectionTolerance = tolerance
+    }
+    
+    // 在这里添加鼠标点击处理
+    override func mouseDown(with event: NSEvent) {
+        super.mouseDown(with: event)
+        
+        // 将鼠标位置转换到场景坐标系
+        let location = event.location(in: self)
+        
+        // 检测是否点击了 Fluffel
+        if let fluffel = fluffel, fluffel.contains(location) {
+            // 使用我们创建的说话演示
+            if let appDelegate = NSApp.delegate as? AppDelegate {
+                // 随机选择一个动作：问候、笑话或事实
+                let action = Int.random(in: 0...2)
+                switch action {
+                case 0:
+                    appDelegate.speakingDemo?.speakRandomGreeting()
+                case 1:
+                    appDelegate.speakingDemo?.tellRandomJoke()
+                case 2:
+                    appDelegate.speakingDemo?.shareRandomFact()
+                default:
+                    makeFluffelSpeak() // 使用原有的方法作为后备
+                }
+            } else {
+                // 如果找不到 AppDelegate，仍然使用原有的方法
+                makeFluffelSpeak()
+            }
+        }
+        
+        // 更新最后活动时间
+        lastActivityTime = CACurrentMediaTime()
+    }
+    
+    // 让 Fluffel 说话
+    func makeFluffelSpeak(_ text: String? = nil) {
+        guard let fluffel = fluffel else { return }
+        
+        // 如果没有指定文本，随机选择一句问候语
+        let speechText = text ?? greetings.randomElement() ?? "你好！"
+        
+        // 根据文本长度调整显示时间
+        let duration = min(max(TimeInterval(speechText.count) * 0.15, 2.0), 5.0)
+        
+        // 让 Fluffel 说话
+        fluffel.speak(text: speechText, duration: duration)
     }
 } 

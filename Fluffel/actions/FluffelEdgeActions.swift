@@ -35,7 +35,11 @@ extension Fluffel {
     func leaveEdge() {
         if state == .onEdge {
             // 停止边缘行走动画
-            stopEdgeWalkingAnimation()
+            removeAction(forKey: "edgeWalkingAction")
+            body.removeAction(forKey: "bodyWobble")
+            leftEar.removeAction(forKey: "leftEarWobble")
+            rightEar.removeAction(forKey: "rightEarWobble")
+            
             setState(.moving)
             print("Fluffel 离开了边缘")
         }
@@ -93,13 +97,5 @@ extension Fluffel {
             SKAction.rotate(byAngle: 0.1, duration: 0.15)
         ])
         rightEar.run(SKAction.repeatForever(rightEarWobble), withKey: "rightEarWobble")
-    }
-    
-    // 停止边缘行走动画
-    func stopEdgeWalkingAnimation() {
-        removeAction(forKey: "edgeWalkingAction")
-        body.removeAction(forKey: "bodyWobble")
-        leftEar.removeAction(forKey: "leftEarWobble")
-        rightEar.removeAction(forKey: "rightEarWobble")
     }
 } 

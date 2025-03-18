@@ -8,8 +8,16 @@ extension Fluffel {
         if state == .falling { return }
         
         // 停止其他动画
-        stopEdgeWalkingAnimation()
+        // 直接清理边缘行走相关动作
+        removeAction(forKey: "edgeWalkingAction")
+        body.removeAction(forKey: "bodyWobble")
+        leftEar.removeAction(forKey: "leftEarWobble")
+        rightEar.removeAction(forKey: "rightEarWobble")
+        
         removeAction(forKey: "walkingAction")
+        
+        // 移除任何显示的对话气泡
+        removeSpeechBubble()
         
         state = .falling
         surprisedFace()
@@ -67,6 +75,9 @@ extension Fluffel {
         // 停止其他可能正在进行的动画
         removeAction(forKey: "walkingAction")
         removeAction(forKey: "fallingAction")
+        
+        // 移除任何显示的对话气泡
+        removeSpeechBubble()
         
         // 设置表情为开心
         smile()
