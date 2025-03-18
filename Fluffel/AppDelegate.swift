@@ -17,10 +17,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 隐藏 Dock 图标和菜单栏
         NSApp.setActivationPolicy(.accessory)
         
-        // 添加退出快捷键 (Cmd+Q)
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        // 添加快捷键监听
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            // Cmd+Q 退出
             if event.modifierFlags.contains(.command) && event.keyCode == 12 { // Q 键
                 NSApp.terminate(nil)
+            }
+            // Cmd+S 保存图标
+            if event.modifierFlags.contains(.command) && event.keyCode == 1 { // S 键
+                if let fluffel = self?.fluffelWindowController?.fluffelScene?.fluffel {
+                    fluffel.saveAppearanceAsIcon()
+                }
             }
             return event
         }

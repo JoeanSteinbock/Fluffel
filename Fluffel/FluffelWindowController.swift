@@ -12,6 +12,10 @@ class FluffelWindowController: NSWindowController {
     private var activeKeys: Set<UInt16> = []
     private var moveTimer: Timer?
     
+    public var fluffel: Fluffel {
+        return (window?.contentView as? SKView)?.scene?.childNode(withName: "fluffel") as! Fluffel
+    }
+    
     convenience init() {
         // 初始创建一个小窗口，刚好容纳 Fluffel
         let initialSize = CGSize(width: 70, height: 70) // 默认 Fluffel 尺寸 + 一些填充

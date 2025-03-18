@@ -41,17 +41,24 @@ jobs:
     - name: Create DMG
       run: |
         mkdir -p artifacts
+        mkdir -p temp_dmg
+        
+        # 复制文件到临时目录
+        cp -r "build/Release/Fluffel.app" temp_dmg/
+        cp "./Fluffel/preview.png" temp_dmg/.background.png
+                
         create-dmg \
           --volname "Fluffel Installer" \
-          --background "preview.png" \
+          --background ".background.png" \
           --window-pos 200 120 \
           --window-size 800 400 \
           --icon-size 100 \
           --icon "Fluffel.app" 200 190 \
           --hide-extension "Fluffel.app" \
           --app-drop-link 600 190 \
+          --no-internet-enable \
           "artifacts/Fluffel.dmg" \
-          "build/Release/Fluffel.app"
+          "temp_dmg"
 
     - name: Create Release
       id: create_release
