@@ -1,56 +1,28 @@
 # Xcode
-#
-# 忽略 Xcode 构建生成的文件和目录
 .DS_Store
 */build/*
 DerivedData/
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
+
+# 只忽略 xcuserdata 目录下的个人设置
 xcuserdata/
-*.xccheckout
-*.moved-aside
-*.xcuserstate
-*.xcscmblueprint
-*.xcworkspace
-!default.xcworkspace
-Carthage/
-.swiftpm/
 
-# 忽略调试日志
-*.log
-
-# 忽略编译生成物
+# 忽略构建产物
+build/
 *.hmap
 *.ipa
 *.dSYM.zip
 *.dSYM
 
 # Swift Package Manager
-#
-# 忽略 Swift 包管理器生成的文件
 .build/
 Packages/
 Package.pins
 Package.resolved
 
-# 只忽略 Xcode 项目中的特定文件
-*.xcodeproj/*
-!*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata/
-!*.xcodeproj/contents.xcworkspacedata
-
 # CocoaPods
-#
-# Pods 目录通常也应该被忽略
 Pods/
 
-# macOS 系统文件
+# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -68,4 +40,4 @@ Icon
 fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots
-fastlane/test_output 
+fastlane/test_output
