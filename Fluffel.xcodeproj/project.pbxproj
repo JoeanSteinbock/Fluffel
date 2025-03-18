@@ -1,0 +1,546 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		3A753C742D86E77A00C584EA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A753C5A2D86E77700C584EA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3A753C612D86E77700C584EA;
+			remoteInfo = Fluffel;
+		};
+		3A753C7E2D86E77A00C584EA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A753C5A2D86E77700C584EA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3A753C612D86E77700C584EA;
+			remoteInfo = Fluffel;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		3A753C622D86E77700C584EA /* Fluffel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fluffel.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A753C732D86E77A00C584EA /* FluffelTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FluffelTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A753C7D2D86E77A00C584EA /* FluffelUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FluffelUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		3A753C642D86E77700C584EA /* Fluffel */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Fluffel;
+			sourceTree = "<group>";
+		};
+		3A753C762D86E77A00C584EA /* FluffelTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FluffelTests;
+			sourceTree = "<group>";
+		};
+		3A753C802D86E77A00C584EA /* FluffelUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FluffelUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3A753C5F2D86E77700C584EA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A753C702D86E77A00C584EA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A753C7A2D86E77A00C584EA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3A753C592D86E77700C584EA = {
+			isa = PBXGroup;
+			children = (
+				3A753C642D86E77700C584EA /* Fluffel */,
+				3A753C762D86E77A00C584EA /* FluffelTests */,
+				3A753C802D86E77A00C584EA /* FluffelUITests */,
+				3A753C632D86E77700C584EA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3A753C632D86E77700C584EA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3A753C622D86E77700C584EA /* Fluffel.app */,
+				3A753C732D86E77A00C584EA /* FluffelTests.xctest */,
+				3A753C7D2D86E77A00C584EA /* FluffelUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3A753C612D86E77700C584EA /* Fluffel */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3A753C872D86E77A00C584EA /* Build configuration list for PBXNativeTarget "Fluffel" */;
+			buildPhases = (
+				3A753C5E2D86E77700C584EA /* Sources */,
+				3A753C5F2D86E77700C584EA /* Frameworks */,
+				3A753C602D86E77700C584EA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3A753C642D86E77700C584EA /* Fluffel */,
+			);
+			name = Fluffel;
+			packageProductDependencies = (
+			);
+			productName = Fluffel;
+			productReference = 3A753C622D86E77700C584EA /* Fluffel.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3A753C722D86E77A00C584EA /* FluffelTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3A753C8A2D86E77A00C584EA /* Build configuration list for PBXNativeTarget "FluffelTests" */;
+			buildPhases = (
+				3A753C6F2D86E77A00C584EA /* Sources */,
+				3A753C702D86E77A00C584EA /* Frameworks */,
+				3A753C712D86E77A00C584EA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3A753C752D86E77A00C584EA /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3A753C762D86E77A00C584EA /* FluffelTests */,
+			);
+			name = FluffelTests;
+			packageProductDependencies = (
+			);
+			productName = FluffelTests;
+			productReference = 3A753C732D86E77A00C584EA /* FluffelTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		3A753C7C2D86E77A00C584EA /* FluffelUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3A753C8D2D86E77A00C584EA /* Build configuration list for PBXNativeTarget "FluffelUITests" */;
+			buildPhases = (
+				3A753C792D86E77A00C584EA /* Sources */,
+				3A753C7A2D86E77A00C584EA /* Frameworks */,
+				3A753C7B2D86E77A00C584EA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3A753C7F2D86E77A00C584EA /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3A753C802D86E77A00C584EA /* FluffelUITests */,
+			);
+			name = FluffelUITests;
+			packageProductDependencies = (
+			);
+			productName = FluffelUITests;
+			productReference = 3A753C7D2D86E77A00C584EA /* FluffelUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3A753C5A2D86E77700C584EA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					3A753C612D86E77700C584EA = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					3A753C722D86E77A00C584EA = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 3A753C612D86E77700C584EA;
+					};
+					3A753C7C2D86E77A00C584EA = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 3A753C612D86E77700C584EA;
+					};
+				};
+			};
+			buildConfigurationList = 3A753C5D2D86E77700C584EA /* Build configuration list for PBXProject "Fluffel" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 3A753C592D86E77700C584EA;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3A753C632D86E77700C584EA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3A753C612D86E77700C584EA /* Fluffel */,
+				3A753C722D86E77A00C584EA /* FluffelTests */,
+				3A753C7C2D86E77A00C584EA /* FluffelUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3A753C602D86E77700C584EA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A753C712D86E77A00C584EA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A753C7B2D86E77A00C584EA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3A753C5E2D86E77700C584EA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A753C6F2D86E77A00C584EA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3A753C792D86E77A00C584EA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3A753C752D86E77A00C584EA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3A753C612D86E77700C584EA /* Fluffel */;
+			targetProxy = 3A753C742D86E77A00C584EA /* PBXContainerItemProxy */;
+		};
+		3A753C7F2D86E77A00C584EA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3A753C612D86E77700C584EA /* Fluffel */;
+			targetProxy = 3A753C7E2D86E77A00C584EA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3A753C852D86E77A00C584EA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		3A753C862D86E77A00C584EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		3A753C882D86E77A00C584EA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Fluffel/Fluffel.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.fluffel.app.Fluffel;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3A753C892D86E77A00C584EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Fluffel/Fluffel.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.fluffel.app.Fluffel;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		3A753C8B2D86E77A00C584EA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.fluffel.app.FluffelTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fluffel.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Fluffel";
+			};
+			name = Debug;
+		};
+		3A753C8C2D86E77A00C584EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.fluffel.app.FluffelTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fluffel.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Fluffel";
+			};
+			name = Release;
+		};
+		3A753C8E2D86E77A00C584EA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.fluffel.app.FluffelUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Fluffel;
+			};
+			name = Debug;
+		};
+		3A753C8F2D86E77A00C584EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = xyz.fluffel.app.FluffelUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Fluffel;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3A753C5D2D86E77700C584EA /* Build configuration list for PBXProject "Fluffel" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A753C852D86E77A00C584EA /* Debug */,
+				3A753C862D86E77A00C584EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3A753C872D86E77A00C584EA /* Build configuration list for PBXNativeTarget "Fluffel" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A753C882D86E77A00C584EA /* Debug */,
+				3A753C892D86E77A00C584EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3A753C8A2D86E77A00C584EA /* Build configuration list for PBXNativeTarget "FluffelTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A753C8B2D86E77A00C584EA /* Debug */,
+				3A753C8C2D86E77A00C584EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3A753C8D2D86E77A00C584EA /* Build configuration list for PBXNativeTarget "FluffelUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A753C8E2D86E77A00C584EA /* Debug */,
+				3A753C8F2D86E77A00C584EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3A753C5A2D86E77700C584EA /* Project object */;
+}
