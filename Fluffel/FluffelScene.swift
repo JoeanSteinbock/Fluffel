@@ -13,7 +13,7 @@ class FluffelScene: SKScene {
     
     var fluffel: Fluffel?
     private var lastMoveTime: TimeInterval = 0
-    private let moveDelay: TimeInterval = 0.01 // 控制移动流畅度
+    private var moveDelay: TimeInterval = 0.01 // 控制移动流畅度
     
     // 边缘检测相关
     private var isEdgeDetectionEnabled = true
@@ -23,6 +23,9 @@ class FluffelScene: SKScene {
     
     // 坐标转换相关
     private var lastKnownGlobalPosition: CGPoint?
+    
+    private var isFollowingEdge = false
+    private let edgeMoveSpeed: CGFloat = 2.0 // Speed of waddling along edge
     
     override func sceneDidLoad() {
         super.sceneDidLoad()
@@ -58,11 +61,51 @@ class FluffelScene: SKScene {
     override func update(_ currentTime: TimeInterval) {
         super.update(currentTime)
         
-        // 执行边缘检测，但不要每帧都检测，以避免性能问题
+        // Edge detection
         if isEdgeDetectionEnabled && currentTime - lastEdgeCheckTime > edgeCheckInterval {
             checkForWindowEdges(currentTime: currentTime)
             lastEdgeCheckTime = currentTime
         }
+
+        // Edge following
+        if fluffel?.state == .onEdge {
+            followEdge(currentTime: currentTime)
+        }
+    }
+    
+    // Move Fluffel along the current edge
+    private func followEdge(currentTime: TimeInterval) {
+        guard let fluffel = fluffel, fluffel.state == .onEdge, let edge = fluffel.currentEdge else {
+            isFollowingEdge = false
+            return
+        }
+
+        isFollowingEdge = true
+        let moveDistance = edgeMoveSpeed
+
+        switch edge {
+        case .top, .bottom:
+            // Move horizontally along top or bottom edge
+            let direction = fluffel.xScale > 0 ? Direction.right : Direction.left
+            moveFluffel(direction: direction)
+
+            // Reverse direction if hitting scene bounds (simple bounce-back)
+            if fluffel.position.x <= 10 || fluffel.position.x >= size.width - 10 {
+                turnFluffelToFace(direction: direction == .right ? .left : .right)
+            }
+
+        case .left, .right:
+            // Move vertically along left or right edge
+            let direction = fluffel.position.y > size.height / 2 ? Direction.down : Direction.up
+            moveFluffel(direction: direction)
+
+            // Reverse direction at vertical bounds
+            if fluffel.position.y <= 10 || fluffel.position.y >= size.height - 10 {
+                fluffel.position.y = max(10, min(size.height - 10, fluffel.position.y))
+            }
+        }
+
+        NotificationCenter.default.post(name: .fluffelDidMove, object: self)
     }
     
     // 检查 Fluffel 是否靠近窗口边缘
@@ -73,40 +116,36 @@ class FluffelScene: SKScene {
               let screen = window.screen else {
             return
         }
-        
-        // 获取 Fluffel 在全局坐标系中的位置
+
+        // Get Fluffel's global position (existing code)
         let fluffelScenePosition = fluffel.position
-        
-        // 修正：从场景到视图的坐标转换 - 直接使用 SKView 的转换方法
         let fluffelViewPosition = view.convert(fluffelScenePosition, from: self)
-        
-        // 转换为屏幕坐标 - 使用 NSView 的转换方法，不需要 to 参数
         var fluffelWindowPosition = fluffelViewPosition
-        
-        // 调整 y 坐标（在 macOS 中，屏幕原点在左下角）
         fluffelWindowPosition.y = window.frame.height - fluffelWindowPosition.y
-        
-        // 转换为全局坐标
         let fluffelGlobalPosition = CGPoint(
             x: window.frame.origin.x + fluffelWindowPosition.x,
             y: window.frame.origin.y + fluffelWindowPosition.y
         )
-        
         lastKnownGlobalPosition = fluffelGlobalPosition
-        
-        // 检查是否在窗口边缘上
+
+        // Check edge status
         let edgeResult = WindowUtility.isPointOnWindowEdge(fluffelGlobalPosition, tolerance: edgeDetectionTolerance)
-        
+
         if edgeResult.isOnEdge, let edge = edgeResult.edge, let detectedWindow = edgeResult.window {
             if !fluffel.isOnEdge {
-                // 刚刚移动到边缘上
+                // Moved to a new edge
                 fluffel.setOnEdge(window: detectedWindow, edge: edge)
-                print("Fluffel 移动到窗口边缘: \(edge)")
+                print("Fluffel moved to edge: \(edge)")
+            } else if fluffel.currentWindow?.id != detectedWindow.id {
+                // Window changed, update it
+                fluffel.setOnEdge(window: detectedWindow, edge: edge)
+                print("Fluffel switched to new window edge: \(edge)")
             }
         } else if fluffel.isOnEdge {
-            // 刚刚离开边缘
+            // No longer on an edge, initiate fall
             fluffel.leaveEdge()
-            print("Fluffel 离开窗口边缘")
+            startFalling()
+            print("Fluffel fell off edge")
         }
     }
     
