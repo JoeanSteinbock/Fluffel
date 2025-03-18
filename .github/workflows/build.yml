@@ -46,7 +46,8 @@ jobs:
         # 复制文件到临时目录
         cp -r "build/Release/Fluffel.app" temp_dmg/
         cp "./Fluffel/preview.png" temp_dmg/.background.png
-                
+        cp "./Fluffel/Assets.xcassets/Fluffel.icns" temp_dmg/.VolumeIcon.icns
+
         create-dmg \
           --volname "Fluffel Installer" \
           --background ".background.png" \
@@ -56,6 +57,7 @@ jobs:
           --icon "Fluffel.app" 200 190 \
           --hide-extension "Fluffel.app" \
           --app-drop-link 600 190 \
+          --volicon ".VolumeIcon.icns" \
           --no-internet-enable \
           "artifacts/Fluffel.dmg" \
           "temp_dmg"
