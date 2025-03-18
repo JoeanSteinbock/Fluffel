@@ -30,12 +30,17 @@ jobs:
           -project Fluffel.xcodeproj \
           -scheme Fluffel \
           -configuration Release \
+          -derivedDataPath build \
           -destination 'generic/platform=macOS' \
           clean build
+        
+        # 确保构建目录存在
+        mkdir -p build/Release
+        cp -r build/Build/Products/Release/Fluffel.app build/Release/
 
     - name: Create DMG
       run: |
-        mkdir artifacts
+        mkdir -p artifacts
         create-dmg \
           --volname "Fluffel Installer" \
           --background "preview.png" \
