@@ -48,6 +48,8 @@ jobs:
         cp "./Fluffel/preview.png" temp_dmg/.background.png
         cp "./Fluffel/Assets.xcassets/Fluffel.icns" temp_dmg/.VolumeIcon.icns
 
+        cd temp_dmg  # 切换到临时目录        
+
         create-dmg \
           --volname "Fluffel Installer" \
           --background ".background.png" \
@@ -59,8 +61,8 @@ jobs:
           --app-drop-link 600 190 \
           --volicon ".VolumeIcon.icns" \
           --no-internet-enable \
-          "artifacts/Fluffel.dmg" \
-          "temp_dmg"
+          "../artifacts/Fluffel.dmg" \
+          "."  # 使用当前目录
 
     - name: Create Release
       id: create_release
