@@ -446,7 +446,7 @@ class Fluffel: SKNode {
         leftEye.run(blinkAction)
         rightEye.run(blinkAction)
     }
-
+    
     // 滚动动画 - 用于 Fluffel 在边缘滚动时
     func roll() {
         // 停止其他可能正在进行的动画
@@ -901,10 +901,10 @@ class Fluffel: SKNode {
         
         // 移除所有星星
         self.children.forEach { node in
-            if let shapeNode = node as? SKShapeNode, 
-               node != body && node != leftEye && node != rightEye && 
-               node != mouth && node != leftCheek && node != rightCheek && 
-               node != leftEar && node != rightEar && node != glowEffect {
+            if let shapeNode = node as? SKShapeNode,
+                node != body && node != leftEye && node != rightEye &&
+                node != mouth && node != leftCheek && node != rightCheek &&
+                node != leftEar && node != rightEar && node != glowEffect {
                 node.removeFromParent()
             }
         }
@@ -917,3 +917,4 @@ class Fluffel: SKNode {
         self.yScale = 1.0
         smile()
     }
+}

@@ -27,6 +27,11 @@ class FluffelScene: SKScene {
     private var isFollowingEdge = false
     private let edgeMoveSpeed: CGFloat = 2.0 // Speed of waddling along edge
     
+    // 无聊状态相关
+    private var lastActivityTime: TimeInterval = 0
+    private let boredThreshold: TimeInterval = 10.0 // 10秒无活动后触发无聊状态
+    private var isCheckingBoredom = false
+    
     override func sceneDidLoad() {
         super.sceneDidLoad()
         
@@ -56,6 +61,10 @@ class FluffelScene: SKScene {
         } else {
             print("错误: 无法创建 Fluffel")
         }
+        
+        // 初始化无聊检测
+        lastActivityTime = CACurrentMediaTime()
+        startBoredCheck()
     }
     
     override func update(_ currentTime: TimeInterval) {
@@ -71,19 +80,121 @@ class FluffelScene: SKScene {
         if fluffel?.state == .onEdge {
             followEdge(currentTime: currentTime)
         }
+        
+        // 检查无聊状态
+        checkBoredom(currentTime: currentTime)
+    }
+    
+    // 检查是否进入无聊状态
+    private func checkBoredom(currentTime: TimeInterval) {
+        guard let fluffel = fluffel else { return }
+        
+        // 调试输出，帮助诊断问题
+        if currentTime - lastActivityTime > boredThreshold - 1.0 {
+            print("无聊检测: 当前状态=\(fluffel.state), 是否在边缘=\(isFollowingEdge), 剩余时间=\(boredThreshold - (currentTime - lastActivityTime))")
+        }
+        
+        // 只有在正常状态下才检查无聊
+        guard fluffel.state != .falling && 
+              fluffel.state != .onEdge && 
+              !isFollowingEdge else {
+            return  // 不重置计时器，只是跳过检查
+        }
+        
+        // 如果超过无聊阈值时间没有活动，触发随机动画
+        if currentTime - lastActivityTime > boredThreshold {
+            print("触发无聊动画: 已经 \(currentTime - lastActivityTime) 秒无活动")
+            startRandomBoredAnimation()
+            lastActivityTime = currentTime // 重置计时器
+        }
+    }
+    
+    // 开始随机无聊动画
+    private func startRandomBoredAnimation() {
+        guard let fluffel = fluffel else { return }
+        
+        // 随机选择一个动画
+        let randomAction = Int.random(in: 0...4)
+        
+        switch randomAction {
+        case 0:
+            // 睡觉动画
+            fluffel.startSleepingAnimation()
+            print("Fluffel 感到无聊，开始睡觉")
+            
+            // 5秒后停止睡觉
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
+                fluffel.stopSleepingAnimation()
+                self?.lastActivityTime = CACurrentMediaTime()
+            }
+            
+        case 1:
+            // 跳舞动画
+            fluffel.startDancingAnimation()
+            print("Fluffel 感到无聊，开始跳舞")
+            
+            // 4秒后停止跳舞
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) { [weak self] in
+                fluffel.stopDancingAnimation()
+                self?.lastActivityTime = CACurrentMediaTime()
+            }
+            
+        case 2:
+            // 兴奋动画
+            fluffel.startExcitedAnimation()
+            print("Fluffel 感到无聊，变得兴奋")
+            
+            // 3秒后停止兴奋
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+                fluffel.stopExcitedAnimation()
+                self?.lastActivityTime = CACurrentMediaTime()
+            }
+            
+        case 3:
+            // 滚动动画
+            fluffel.roll()
+            print("Fluffel 感到无聊，开始滚动")
+            
+            // 2秒后停止滚动
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                fluffel.stopRolling()
+                self?.lastActivityTime = CACurrentMediaTime()
+            }
+            
+        case 4:
+            // 眨眼动画
+            fluffel.happyBlink()
+            print("Fluffel 感到无聊，眨了眨眼")
+            
+            // 眨眼是瞬时的，不需要停止
+            lastActivityTime = CACurrentMediaTime()
+            
+        default:
+            break
+        }
+    }
+    
+    // 启动无聊检测
+    private func startBoredCheck() {
+        guard !isCheckingBoredom else { return }
+        isCheckingBoredom = true
     }
     
     // Move Fluffel along the current edge
     private func followEdge(currentTime: TimeInterval) {
-        guard let fluffel = fluffel, fluffel.state == .onEdge, let edge = fluffel.currentEdge else {
+        guard let fluffel = fluffel, fluffel.state == .onEdge else {
+            // 如果 Fluffel 不在边缘状态，重置标志
             isFollowingEdge = false
             return
         }
-
+        
+        // 设置标志表示正在沿边缘移动
         isFollowingEdge = true
-        let moveDistance = edgeMoveSpeed
+        
+        // 其余代码保持不变
+        _ = edgeMoveSpeed
 
-        switch edge {
+        switch fluffel.currentEdge {
         case .top, .bottom:
             // Move horizontally along top or bottom edge
             let direction = fluffel.xScale > 0 ? Direction.right : Direction.left
@@ -103,6 +214,9 @@ class FluffelScene: SKScene {
             if fluffel.position.y <= 10 || fluffel.position.y >= size.height - 10 {
                 fluffel.position.y = max(10, min(size.height - 10, fluffel.position.y))
             }
+        case .none:
+            // 如果没有边缘状态，不执行任何操作
+            break
         }
 
         NotificationCenter.default.post(name: .fluffelDidMove, object: self)
@@ -110,16 +224,15 @@ class FluffelScene: SKScene {
     
     // 检查 Fluffel 是否靠近窗口边缘
     private func checkForWindowEdges(currentTime: TimeInterval) {
-        guard let fluffel = fluffel,
-              let view = self.view,
-              let window = view.window,
-              let screen = window.screen else {
+        guard let fluffel = fluffel, 
+              fluffel.state != .falling, // 如果正在下落，不检查边缘
+              let window = self.view?.window else {
             return
         }
 
         // Get Fluffel's global position (existing code)
         let fluffelScenePosition = fluffel.position
-        let fluffelViewPosition = view.convert(fluffelScenePosition, from: self)
+        let fluffelViewPosition = self.view!.convert(fluffelScenePosition, from: self)
         var fluffelWindowPosition = fluffelViewPosition
         fluffelWindowPosition.y = window.frame.height - fluffelWindowPosition.y
         let fluffelGlobalPosition = CGPoint(
@@ -135,15 +248,18 @@ class FluffelScene: SKScene {
             if !fluffel.isOnEdge {
                 // Moved to a new edge
                 fluffel.setOnEdge(window: detectedWindow, edge: edge)
+                isFollowingEdge = true // 确保设置标志
                 print("Fluffel moved to edge: \(edge)")
             } else if fluffel.currentWindow?.id != detectedWindow.id {
                 // Window changed, update it
                 fluffel.setOnEdge(window: detectedWindow, edge: edge)
+                isFollowingEdge = true // 确保设置标志
                 print("Fluffel switched to new window edge: \(edge)")
             }
         } else if fluffel.isOnEdge {
             // No longer on an edge, initiate fall
             fluffel.leaveEdge()
+            isFollowingEdge = false // 确保重置标志
             startFalling()
             print("Fluffel fell off edge")
         }
@@ -151,6 +267,12 @@ class FluffelScene: SKScene {
     
     func moveFluffel(direction: Direction) {
         guard let fluffel = fluffel else { return }
+        
+        // 如果 Fluffel 在边缘上，先离开边缘
+        if fluffel.isOnEdge {
+            fluffel.leaveEdge()
+            isFollowingEdge = false
+        }
         
         let currentTime = CACurrentMediaTime()
         // 添加小延迟避免移动过快
@@ -181,6 +303,9 @@ class FluffelScene: SKScene {
             fluffel.position.y -= moveDistance
         }
         
+        // 重置无聊计时器，因为有移动发生
+        lastActivityTime = CACurrentMediaTime()
+        
         // 移除边界检查，允许 Fluffel 自由移动
         // 移动后发送通知，以便窗口控制器可以跟随 Fluffel 移动
         NotificationCenter.default.post(name: .fluffelDidMove, object: self)
@@ -190,7 +315,13 @@ class FluffelScene: SKScene {
     func startFalling() {
         guard let fluffel = fluffel, fluffel.state != .falling else { return }
         
+        // 确保重置边缘跟随状态
+        isFollowingEdge = false
+        
         fluffel.setState(.falling)
+        
+        // 重置无聊计时器，因为有下落发生
+        lastActivityTime = CACurrentMediaTime()
     }
     
     // 获取 Fluffel 当前位置
