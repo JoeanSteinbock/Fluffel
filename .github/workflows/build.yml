@@ -42,17 +42,18 @@ jobs:
       run: |
         mkdir -p artifacts
         mkdir -p temp_dmg
+        mkdir -p temp_dmg/.background
         
         # 复制文件到临时目录
         cp -r "build/Release/Fluffel.app" temp_dmg/
-        cp "./Fluffel/preview.png" temp_dmg/.background.png
+        cp "./Fluffel/preview.png" temp_dmg/.background/background.png
         cp "./Fluffel/Assets.xcassets/Fluffel.icns" temp_dmg/.VolumeIcon.icns
-
+        
         cd temp_dmg  # 切换到临时目录        
-
+        
         create-dmg \
           --volname "Fluffel Installer" \
-          --background ".background.png" \
+          --background ".background/background.png" \
           --window-pos 200 120 \
           --window-size 800 400 \
           --icon-size 100 \
