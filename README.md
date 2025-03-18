@@ -1,6 +1,6 @@
 # Fluffel - macOS Desktop Companion
 
-![Preview](https://raw.githubusercontent.com/JoeanSteinbock/fluffel/main/Fluffel/preview.png)
+![Preview](https://raw.githubusercontent.com/JoeanSteinbock/fluffel/refs/heads/main/Fluffel/preview.png)
 
 A playful desktop pet that reacts to your interactions using SpriteKit animations and macOS native frameworks.
 
