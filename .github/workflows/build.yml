@@ -1,0 +1,56 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Xcode
+      uses: actions/setup-xcode@v3
+      with:
+        xcode-version: '15.2'
+
+    - name: Install create-dmg
+      run: brew install create-dmg
+
+    - name: Build Xcode project
+      run: |
+        xcodebuild \
+          -project Fluffel.xcodeproj \
+          -scheme Fluffel \
+          -configuration Release \
+          -destination 'generic/platform=macOS' \
+          clean build
+
+    - name: Create DMG
+      run: |
+        mkdir artifacts
+        create-dmg \
+          --volname "Fluffel Installer" \
+          --background "preview.png" \
+          --window-pos 200 120 \
+          --window-size 800 400 \
+          --icon-size 100 \
+          --icon "Fluffel.app" 200 190 \
+          --hide-extension "Fluffel.app" \
+          --app-drop-link 600 190 \
+          "artifacts/Fluffel.dmg" \
+          "build/Release/Fluffel.app"
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./artifacts/Fluffel.dmg
+        asset_name: Fluffel.dmg
+        asset_content_type: application/octet-stream
