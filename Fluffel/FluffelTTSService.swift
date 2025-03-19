@@ -108,11 +108,13 @@ class FluffelTTSService: NSObject {
     /// 发送 Text-to-Speech API 请求
     private func sendTTSRequest(requestBody: [String: Any], apiKey: String, completion: @escaping (Data?) -> Void) {
         guard let url = URL(string: "https://texttospeech.googleapis.com/v1/text:synthesize?key=\(apiKey)") else {
+            print("TTS API 错误: 无效的URL")
             completion(nil)
             return
         }
         
         guard let jsonData = try? JSONSerialization.data(withJSONObject: requestBody) else {
+            print("TTS API 错误: 无法序列化请求数据")
             completion(nil)
             return
         }
@@ -124,7 +126,18 @@ class FluffelTTSService: NSObject {
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
-                print("TTS API 错误: \(error)")
+                let nsError = error as NSError
+                if nsError.domain == NSPOSIXErrorDomain && nsError.code == 1 {
+                    // 网络权限错误
+                    print("TTS API 错误: 网络访问权限被拒绝。请检查应用权限设置。")
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("FluffelTTSNetworkError"),
+                        object: nil,
+                        userInfo: ["message": "网络访问被拒绝，请确保应用有网络权限"]
+                    )
+                } else {
+                    print("TTS API 错误: \(error)")
+                }
                 completion(nil)
                 return
             }

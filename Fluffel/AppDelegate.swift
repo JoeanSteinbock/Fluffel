@@ -15,6 +15,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var apiKeyWindow: NSWindow?
     private var apiKeyTextField: NSTextField?
     private var apiKeyStatusLabel: NSTextField?
+    
+    // 标记是否已显示网络错误对话框，避免重复显示
+    private var isShowingNetworkErrorAlert = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 关闭任何可能由 storyboard 创建的窗口
@@ -39,6 +42,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self,
             selector: #selector(handleFluffelWillSpeak(_:)),
             name: NSNotification.Name.fluffelWillSpeak,
+            object: nil
+        )
+        
+        // 添加TTS网络错误监听器
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleTTSNetworkError(_:)),
+            name: NSNotification.Name("FluffelTTSNetworkError"),
             object: nil
         )
         
@@ -72,13 +83,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 检查是否已设置 API 密钥
         if !FluffelTTSService.shared.hasApiKey() {
             // 如果没有设置 API 密钥，显示提示信息而不是自动打开设置窗口
-            makeFluffelSpeak("请先通过右键菜单设置API密钥")
+            makeFluffelSpeak("Please set the API key first through the right-click menu")
             return
         }
         
         let testText = "Hello, I'm Fluffel, your fluffy desktop pet!"
         FluffelTTSService.shared.speak(testText) {
-            print("TTS 测试完成!")
+            print("TTS test completed!")
         }
     }
     
@@ -104,6 +115,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             // 在主线程中安全处理说话请求
             windowController.handleFluffelSpeech(notification)
+        }
+    }
+    
+    // 处理TTS网络错误通知
+    @objc func handleTTSNetworkError(_ notification: Notification) {
+        let message = notification.userInfo?["message"] as? String ?? "Network access denied, please check application permissions settings"
+        
+        DispatchQueue.main.async { [weak self] in
+            // 避免显示多个错误对话框
+            guard let self = self, !self.isShowingNetworkErrorAlert else { return }
+            
+            self.isShowingNetworkErrorAlert = true
+            
+            // 显示一个弹出对话框，提醒用户网络访问问题
+            let alert = NSAlert()
+            alert.messageText = "Network access error"
+            alert.informativeText = message + "\n\nPlease ensure that in the system preferences > security & privacy > network, Fluffel is allowed to access the network."
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            
+            // 可选: 添加一个打开系统设置的按钮
+            let settingsButton = alert.addButton(withTitle: "Open network settings")
+            settingsButton.keyEquivalent = "s"
+            
+            let response = alert.runModal()
+            
+            // 重置标志
+            self.isShowingNetworkErrorAlert = false
+            
+            if response == NSApplication.ModalResponse.alertSecondButtonReturn {
+                // 用户点击了"打开网络设置"
+                self.openNetworkPreferences()
+            }
+            
+            // 同时也让Fluffel显示一条消息
+            self.makeFluffelSpeak("Unable to connect to the network, please check the application permission settings")
         }
     }
     
@@ -406,5 +453,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 终止应用
         NSApp.terminate(self)
+    }
+    
+    // 新增方法：打开网络设置
+    @objc func openNetworkSettings(_ sender: Any) {
+        executeAction { [weak self] in
+            self?.openNetworkPreferences()
+        }
+    }
+    
+    // 打开网络偏好设置
+    private func openNetworkPreferences() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+            NSWorkspace.shared.open(url)
+        } else {
+            // 备用方法，打开一般的系统偏好设置
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:")!)
+        }
     }
 } 

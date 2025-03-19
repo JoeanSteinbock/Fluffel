@@ -70,7 +70,7 @@ class FluffelScene: SKScene {
                 
                 // 再等待一小段时间，确保窗口调整完成
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.makeFluffelSpeak("你好！我是 Fluffel！")
+                    self.makeFluffelSpeak("Hello! I'm Fluffel!")
                 }
             }
         } else {
@@ -478,6 +478,7 @@ class FluffelScene: SKScene {
         
         // 添加API密钥设置选项
         menu.addItem(withTitle: "设置API密钥", action: #selector(AppDelegate.showApiKeySettings(_:)), keyEquivalent: "k")
+        menu.addItem(withTitle: "修复网络权限", action: #selector(AppDelegate.openNetworkSettings(_:)), keyEquivalent: "n")
         
         menu.addItem(NSMenuItem.separator())
         

@@ -33,15 +33,15 @@ Fluffel 现在可以通过对话气泡显示文本了！这个新功能让 Fluff
 
 ```swift
 // 基本用法
-fluffel.speak(text: "你好！我是 Fluffel！", duration: 3.0)
+fluffel.speak(text: "Hello! I'm Fluffel!", duration: 3.0)
 
 // 带完成回调的用法
-fluffel.speak(text: "这是一段消息", duration: 2.0) {
-    print("说话结束了！")
+fluffel.speak(text: "This is a message", duration: 2.0) {
+    print("Speaking finished!")
 }
 
 // 自定义字体大小
-fluffel.speak(text: "这是大号文字", duration: 2.0, fontSize: 16.0)
+fluffel.speak(text: "This is a big font message", duration: 2.0, fontSize: 16.0)
 ```
 
 ## 技术细节
