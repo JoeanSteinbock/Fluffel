@@ -20,7 +20,7 @@ class FluffelTTSService: NSObject {
     private var apiKey: String?
     
     // 卡通角色声音类型
-    enum CartoonVoiceType: CustomStringConvertible {
+    enum CartoonVoiceType: CustomStringConvertible, Equatable {
         case squeaky      // 尖细的声音
         case deep         // 低沉的声音
         case chipmunk     // 花栗鼠声音
@@ -42,6 +42,22 @@ class FluffelTTSService: NSObject {
                 return "Cute"
             case let .custom(pitch, rate, gain):
                 return "Custom(pitch: \(pitch), rate: \(rate), gain: \(gain))"
+            }
+        }
+        
+        // 实现Equatable协议
+        static func == (lhs: CartoonVoiceType, rhs: CartoonVoiceType) -> Bool {
+            switch (lhs, rhs) {
+            case (.squeaky, .squeaky),
+                 (.deep, .deep),
+                 (.chipmunk, .chipmunk),
+                 (.robot, .robot),
+                 (.cute, .cute):
+                return true
+            case let (.custom(lhsPitch, lhsRate, lhsGain), .custom(rhsPitch, rhsRate, rhsGain)):
+                return lhsPitch == rhsPitch && lhsRate == rhsRate && lhsGain == rhsGain
+            default:
+                return false
             }
         }
     }
@@ -150,11 +166,43 @@ class FluffelTTSService: NSObject {
     /// 设置卡通角色声音类型
     /// - Parameter voiceType: 卡通角色声音类型
     func setCartoonVoice(_ voiceType: CartoonVoiceType) {
+        // 如果类型没有变化，则不做任何事情
+        if currentVoiceType == voiceType {
+            return
+        }
+        
+        // 先停止当前播放的音频，清除音频缓存
+        stopCurrentAudio()
+        
+        // 清除 URLSession 共享实例的缓存
+        clearURLCache()
+        
+        // 设置新的语音类型
         currentVoiceType = voiceType
         print("Voice set to: \(voiceType)")
         
         // 保存设置
         saveVoiceSettings()
+    }
+    
+    /// 清除URL缓存
+    private func clearURLCache() {
+        // 清除内存缓存
+        URLCache.shared.removeAllCachedResponses()
+        print("URL cache cleared")
+        
+        // 清除磁盘缓存
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+        let directoryContents = try? FileManager.default.contentsOfDirectory(at: temporaryDirectory, includingPropertiesForKeys: nil)
+        
+        if let contents = directoryContents {
+            for url in contents {
+                if url.lastPathComponent.contains("CFNetworkDownload") || url.lastPathComponent.contains("AudioData") {
+                    try? FileManager.default.removeItem(at: url)
+                    print("Removed temporary file: \(url.lastPathComponent)")
+                }
+            }
+        }
     }
     
     /// 获取当前声音类型的配置
@@ -246,7 +294,19 @@ class FluffelTTSService: NSObject {
         request.httpBody = jsonData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        // 添加缓存控制头，避免缓存语音响应
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        
+        // 创建配置，禁用缓存
+        let config = URLSessionConfiguration.default
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.urlCache = nil
+        
+        // 使用自定义配置创建会话
+        let session = URLSession(configuration: config)
+        
+        let task = session.dataTask(with: request) { data, response, error in
             if let error = error {
                 let nsError = error as NSError
                 if nsError.domain == NSPOSIXErrorDomain && nsError.code == 1 {
@@ -301,21 +361,36 @@ class FluffelTTSService: NSObject {
                 return
             }
             
-            // 停止可能正在播放的音频
+            // 停止可能正在播放的音频并确保清理资源
             self.stopCurrentAudio()
             
             do {
-                // 创建并配置音频播放器
-                self.audioPlayer = try AVAudioPlayer(data: audioData)
-                self.audioPlayer?.delegate = self
-                self.audioPlayer?.prepareToPlay()
+                // 释放可能存在的之前的播放器和相关资源
+                self.audioPlayer?.delegate = nil
+                self.audioPlayer = nil
+                
+                // 强制垃圾回收以确保资源被释放
+                autoreleasepool {
+                    // 创建并配置音频播放器
+                    self.audioPlayer = try? AVAudioPlayer(data: audioData)
+                }
+                
+                guard let player = self.audioPlayer else {
+                    print("TTS 错误: 无法创建音频播放器")
+                    completion()
+                    return
+                }
+                
+                player.delegate = self
+                player.prepareToPlay()
                 
                 // 保存完成回调
                 self.currentCompletion = completion
                 
                 // 开始播放
-                if self.audioPlayer?.play() == true {
+                if player.play() {
                     self.isPlaying = true
+                    print("开始播放音频，持续时间: \(player.duration) 秒")
                 } else {
                     print("TTS 错误: 播放失败")
                     self.isPlaying = false
@@ -333,8 +408,13 @@ class FluffelTTSService: NSObject {
         if isPlaying, let player = audioPlayer {
             player.stop()
             isPlaying = false
+            print("停止音频播放")
         }
+        
+        // 强制释放播放器资源
+        audioPlayer?.delegate = nil
         audioPlayer = nil
+        currentCompletion = nil
     }
     
     // 保存当前的完成回调
