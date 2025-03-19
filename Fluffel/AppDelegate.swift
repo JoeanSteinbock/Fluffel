@@ -509,7 +509,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
             
             // 获取示例URL（将来会使用Pixabay API）
-            let sampleURL = URL(string: "https://example.com/sample.mp3")!
+            let sampleURL = URL(string: "https://cdn.pixabay.com/audio/2025/03/18/audio_a5668a7aff.mp3")!
             
             // 启动音乐动画
             fluffel.playMusicFromURL(sampleURL) { success in
