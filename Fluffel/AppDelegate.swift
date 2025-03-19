@@ -10,6 +10,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var isActionInProgress = false
     // 添加计时器，用于防止快速连续触发
     private var actionDebounceTimer: Timer?
+    
+    // 存储 API 设置窗口的强引用
+    private var apiKeyWindow: NSWindow?
+    private var apiKeyTextField: NSTextField?
+    private var apiKeyStatusLabel: NSTextField?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 关闭任何可能由 storyboard 创建的窗口
@@ -212,6 +217,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.center()
         window.title = "Google Cloud API Key Settings"
         
+        // 保存窗口的强引用
+        apiKeyWindow = window
+        
         // 创建内容视图
         let contentView = NSView(frame: NSRect(x: 0, y: 0, width: 500, height: 200))
         
@@ -221,46 +229,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         contentView.addSubview(label)
         
         // 创建说明标签
-        let infoLabel = NSTextField(wrappingLabelWithString: "请输入您的 Google Cloud API Key。您可以在 Google Cloud Console 的 API 和服务 > 凭据页面获取或创建密钥。")
+        let infoLabel = NSTextField(wrappingLabelWithString: "Enter your Google Cloud API Key. You can get or create a key in the API & Services > Credentials page of the Google Cloud Console.")
         infoLabel.frame = NSRect(x: 20, y: 150, width: 460, height: 40)
         contentView.addSubview(infoLabel)
         
         // 创建输入框
         let textField = NSTextField(frame: NSRect(x: 20, y: 90, width: 460, height: 24))
-        textField.placeholderString = "输入您的 Google Cloud API Key"
+        textField.placeholderString = "Enter your Google Cloud API Key"
         // 从 UserDefaults 加载现有密钥
         textField.stringValue = UserDefaults.standard.string(forKey: "GoogleCloudAPIKey") ?? ""
         contentView.addSubview(textField)
-        
-        // 创建保存按钮
-        let saveButton = NSButton(title: "保存", target: nil, action: #selector(saveApiKey(_:)))
-        saveButton.frame = NSRect(x: 380, y: 20, width: 100, height: 32)
-        saveButton.bezelStyle = .rounded
-        
-        // 存储文本字段引用，以便在操作方法中使用
-        objc_setAssociatedObject(saveButton, "textField", textField, .OBJC_ASSOCIATION_RETAIN)
-        saveButton.target = self
-        contentView.addSubview(saveButton)
-        
-        // 创建测试按钮
-        let testButton = NSButton(title: "测试", target: nil, action: #selector(testApiKey(_:)))
-        testButton.frame = NSRect(x: 270, y: 20, width: 100, height: 32)
-        testButton.bezelStyle = .rounded
-        
-        // 存储文本字段引用，以便在操作方法中使用
-        objc_setAssociatedObject(testButton, "textField", textField, .OBJC_ASSOCIATION_RETAIN)
-        testButton.target = self
-        contentView.addSubview(testButton)
+        apiKeyTextField = textField
         
         // 创建状态标签
         let statusLabel = NSTextField(labelWithString: "")
         statusLabel.frame = NSRect(x: 20, y: 60, width: 460, height: 20)
         statusLabel.textColor = .systemGray
         contentView.addSubview(statusLabel)
+        apiKeyStatusLabel = statusLabel
         
-        // 存储状态标签引用，以便在操作方法中使用
-        objc_setAssociatedObject(saveButton, "statusLabel", statusLabel, .OBJC_ASSOCIATION_RETAIN)
-        objc_setAssociatedObject(testButton, "statusLabel", statusLabel, .OBJC_ASSOCIATION_RETAIN)
+        // 创建保存按钮
+        let saveButton = NSButton(title: "Save", target: self, action: #selector(saveApiKey(_:)))
+        saveButton.frame = NSRect(x: 380, y: 20, width: 100, height: 32)
+        saveButton.bezelStyle = .rounded
+        contentView.addSubview(saveButton)
+        
+        // 创建测试按钮
+        let testButton = NSButton(title: "Test", target: self, action: #selector(testApiKey(_:)))
+        testButton.frame = NSRect(x: 270, y: 20, width: 100, height: 32)
+        testButton.bezelStyle = .rounded
+        contentView.addSubview(testButton)
         
         // 设置内容视图
         window.contentView = contentView
@@ -271,12 +269,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // 保存 API 密钥
     @objc func saveApiKey(_ sender: NSButton) {
-        guard let textField = objc_getAssociatedObject(sender, "textField") as? NSTextField,
-              let statusLabel = objc_getAssociatedObject(sender, "statusLabel") as? NSTextField else {
+        print("保存 API 密钥按钮被点击")
+        
+        // 使用属性而不是关联对象
+        guard let textField = apiKeyTextField,
+              let statusLabel = apiKeyStatusLabel else {
+            print("错误: 无法获取文本字段或状态标签")
             return
         }
         
         let apiKey = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        print("获取到的 API 密钥: \(apiKey)")
         
         if apiKey.isEmpty {
             statusLabel.stringValue = "错误: API 密钥不能为空"
@@ -287,18 +290,61 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 保存到 TTS 服务
         FluffelTTSService.shared.setApiKey(apiKey)
         
+        // 更新状态标签
         statusLabel.stringValue = "API 密钥已保存！"
         statusLabel.textColor = .systemGreen
+        
+        // 强制更新 UI
+        statusLabel.needsDisplay = true
+        
+        print("API 密钥已成功保存到 UserDefaults")
+        
+        // 获取窗口
+        if let window = apiKeyWindow {
+            // 视觉反馈 - 按钮变绿
+            let originalColor = NSColor.controlColor
+            if #available(macOS 10.14, *) {
+                sender.contentTintColor = .systemGreen
+            }
+            
+            // 短暂延迟后关闭窗口
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                // 还原按钮颜色
+                if #available(macOS 10.14, *) {
+                    sender.contentTintColor = originalColor
+                }
+                
+                // 关闭窗口
+                window.close()
+                
+                // 清除引用
+                self?.apiKeyWindow = nil
+                self?.apiKeyTextField = nil
+                self?.apiKeyStatusLabel = nil
+                
+                // 显示成功消息
+                if let fluffel = self?.fluffelWindowController?.fluffel {
+                    fluffel.speak(text: "API key saved successfully", duration: 3.0)
+                }
+            }
+        } else {
+            print("警告: 窗口引用丢失")
+        }
     }
     
     // 测试 API 密钥
     @objc func testApiKey(_ sender: NSButton) {
-        guard let textField = objc_getAssociatedObject(sender, "textField") as? NSTextField,
-              let statusLabel = objc_getAssociatedObject(sender, "statusLabel") as? NSTextField else {
+        print("测试 API 密钥按钮被点击")
+        
+        // 使用属性而不是关联对象
+        guard let textField = apiKeyTextField,
+              let statusLabel = apiKeyStatusLabel else {
+            print("错误: 无法获取文本字段或状态标签")
             return
         }
         
         let apiKey = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        print("获取到的 API 密钥: \(apiKey)")
         
         if apiKey.isEmpty {
             statusLabel.stringValue = "错误: 请先输入 API 密钥"
@@ -306,19 +352,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         
-        // 临时设置 API 密钥进行测试
-        FluffelTTSService.shared.setApiKey(apiKey)
-        
         // 更新状态
         statusLabel.stringValue = "正在测试 API 密钥..."
         statusLabel.textColor = .systemBlue
+        statusLabel.needsDisplay = true
+        
+        // 禁用按钮，防止重复点击
+        sender.isEnabled = false
+        
+        // 临时设置 API 密钥进行测试
+        FluffelTTSService.shared.setApiKey(apiKey)
         
         // 测试 TTS
         let testText = "Hello, I'm Fluffel!"
-        FluffelTTSService.shared.speak(testText) {
+        FluffelTTSService.shared.speak(testText) { [weak self, weak sender] in
             DispatchQueue.main.async {
-                statusLabel.stringValue = "测试成功！API 密钥有效。"
-                statusLabel.textColor = .systemGreen
+                // 重新启用按钮
+                sender?.isEnabled = true
+                
+                // 检查状态标签是否仍然有效
+                if let statusLabel = self?.apiKeyStatusLabel {
+                    statusLabel.stringValue = "Test successful! API key is valid."
+                    statusLabel.textColor = .systemGreen
+                }
+                
+                // 视觉反馈
+                if #available(macOS 10.14, *) {
+                    sender?.contentTintColor = .systemGreen
+                    
+                    // 1秒后恢复颜色
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        sender?.contentTintColor = nil
+                    }
+                }
             }
         }
     }

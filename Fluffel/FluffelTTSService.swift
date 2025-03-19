@@ -36,9 +36,21 @@ class FluffelTTSService: NSObject {
     /// 设置 Google Cloud API 密钥
     /// - Parameter key: API 密钥
     func setApiKey(_ key: String) {
+        print("设置 API 密钥: \(key)")
         apiKey = key
+        
         // 保存到 UserDefaults
         UserDefaults.standard.set(key, forKey: "GoogleCloudAPIKey")
+        
+        // 立即同步 UserDefaults
+        UserDefaults.standard.synchronize()
+        
+        // 验证保存是否成功
+        let savedKey = UserDefaults.standard.string(forKey: "GoogleCloudAPIKey") ?? ""
+        print("从 UserDefaults 读取到的 API 密钥: \(savedKey)")
+        
+        // 确认实例变量设置成功
+        print("当前实例的 API 密钥: \(apiKey ?? "nil")")
     }
     
     /// 检查是否已设置 API 密钥
