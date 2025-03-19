@@ -29,13 +29,40 @@ extension Fluffel: AVAudioPlayerDelegate {
         // 设置状态
         setState(.listeningToMusic)
         
-        // 显示耳机
+        // 显示耳机 - 确保耳机可见
         self.headphones.isHidden = false
         
-        // 添加耳机淡入动画
-        let fadeIn = SKAction.fadeIn(withDuration: 0.5)
+        // 确保耳机可见性并打印状态
+        print("Setting headphones visible: isHidden=\(self.headphones.isHidden), alpha=\(self.headphones.alpha)")
+        
+        // 添加耳机淡入动画 - 更平滑的出现效果
+        self.headphones.setScale(0.1) // 从小尺寸开始
         self.headphones.alpha = 0
-        self.headphones.run(fadeIn)
+        
+        // 组合缩放和淡入效果
+        let scaleUp = SKAction.scale(to: 1.0, duration: 0.6)
+        let fadeIn = SKAction.fadeIn(withDuration: 0.5)
+        
+        // 添加弹性效果
+        let scaleAction = SKAction.sequence([
+            scaleUp,
+            SKAction.scale(to: 1.1, duration: 0.1), // 稍微过度缩放
+            SKAction.scale(to: 1.0, duration: 0.1)  // 回到正常大小
+        ])
+        
+        // 同时执行缩放和淡入
+        let groupAction = SKAction.group([scaleAction, fadeIn])
+        
+        self.headphones.run(groupAction) { [weak self] in
+            // 确认动画完成后的状态
+            if let self = self {
+                // 强制确保耳机在动画完成后仍然可见
+                DispatchQueue.main.async {
+                    self.headphones.isHidden = false
+                    print("Headphones fade-in complete: isHidden=\(self.headphones.isHidden), alpha=\(self.headphones.alpha)")
+                }
+            }
+        }
         
         // 表现为享受音乐的样子
         blink()
@@ -70,13 +97,20 @@ extension Fluffel: AVAudioPlayerDelegate {
         // 恢复正常表情
         smile()
         
-        // 淡出耳机动画
+        // 淡出耳机动画 - 添加缩放效果使其更自然
+        let scaleDown = SKAction.scale(to: 0.1, duration: 0.4)
         let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+        
+        // 组合缩放和淡出效果
+        let groupAction = SKAction.group([scaleDown, fadeOut])
+        
         let hideHeadphones = SKAction.run { [weak self] in
             self?.headphones.isHidden = true
             self?.headphones.alpha = 1 // 重置alpha值，以便下次显示
+            self?.headphones.setScale(1.0) // 重置缩放，以便下次显示
         }
-        let sequence = SKAction.sequence([fadeOut, hideHeadphones])
+        
+        let sequence = SKAction.sequence([groupAction, hideHeadphones])
         self.headphones.run(sequence)
         
         // 直接修改状态变量，避免递归调用
@@ -94,6 +128,9 @@ extension Fluffel: AVAudioPlayerDelegate {
     func playMusicFromURL(_ url: URL, completion: @escaping (Bool) -> Void) {
         // 保存完成回调
         Fluffel.completionHandler = completion
+        
+        print("Starting music playback from URL: \(url)")
+        print("Current headphones state before animation: isHidden=\(self.headphones.isHidden), alpha=\(self.headphones.alpha)")
         
         // 开始听音乐动画（这个方法已经确保会在主线程执行）
         startListeningToMusicAnimation()

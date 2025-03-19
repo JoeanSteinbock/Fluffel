@@ -119,45 +119,95 @@ class Fluffel: SKNode {
         // 耳机父节点
         headphones = SKNode()
         
-        // 左耳机
-        leftHeadphone = SKShapeNode(circleOfRadius: 10)
-        leftHeadphone.fillColor = NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.3, alpha: 1.0) // 深灰色
-        leftHeadphone.strokeColor = NSColor.black
-        leftHeadphone.lineWidth = 1.0
+        // 创建更现代化的耳机设计
+        // 左耳机 - 使用椭圆形状更符合真实耳机
+        let leftHeadphonePath = CGMutablePath()
+        leftHeadphonePath.addEllipse(in: CGRect(x: -10, y: -10, width: 20, height: 25))
+        leftHeadphone = SKShapeNode(path: leftHeadphonePath)
+        leftHeadphone.fillColor = NSColor(calibratedRed: 0.2, green: 0.2, blue: 0.2, alpha: 1.0) // 更深的黑色
+        leftHeadphone.strokeColor = NSColor(calibratedRed: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)
+        leftHeadphone.lineWidth = 1.5
         leftHeadphone.position = CGPoint(x: -23, y: 15) // 位于左耳附近
         
-        // 右耳机
-        rightHeadphone = SKShapeNode(circleOfRadius: 10)
-        rightHeadphone.fillColor = NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
-        rightHeadphone.strokeColor = NSColor.black
-        rightHeadphone.lineWidth = 1.0
+        // 右耳机 - 使用椭圆形状更符合真实耳机
+        let rightHeadphonePath = CGMutablePath()
+        rightHeadphonePath.addEllipse(in: CGRect(x: -10, y: -10, width: 20, height: 25))
+        rightHeadphone = SKShapeNode(path: rightHeadphonePath)
+        rightHeadphone.fillColor = NSColor(calibratedRed: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
+        rightHeadphone.strokeColor = NSColor(calibratedRed: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)
+        rightHeadphone.lineWidth = 1.5
         rightHeadphone.position = CGPoint(x: 23, y: 15) // 位于右耳附近
         
-        // 头带连接左右耳机
+        // 添加耳垫 - 增加舒适感
+        let leftEarpad = SKShapeNode(ellipseOf: CGSize(width: 16, height: 20))
+        leftEarpad.fillColor = NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.3, alpha: 1.0) // 稍微浅一点的颜色
+        leftEarpad.strokeColor = .clear
+        leftEarpad.position = CGPoint(x: 0, y: 0)
+        leftHeadphone.addChild(leftEarpad)
+        
+        let rightEarpad = SKShapeNode(ellipseOf: CGSize(width: 16, height: 20))
+        rightEarpad.fillColor = NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        rightEarpad.strokeColor = .clear
+        rightEarpad.position = CGPoint(x: 0, y: 0)
+        rightHeadphone.addChild(rightEarpad)
+        
+        // 头带连接左右耳机 - 更平滑的曲线
         let headbandPath = CGMutablePath()
         headbandPath.move(to: CGPoint(x: -20, y: 21))
         headbandPath.addCurve(
             to: CGPoint(x: 20, y: 21), 
-            control1: CGPoint(x: -10, y: 30), 
-            control2: CGPoint(x: 10, y: 30)
+            control1: CGPoint(x: -10, y: 35), // 更高的控制点
+            control2: CGPoint(x: 10, y: 35)   // 更高的控制点
         )
         
         headband = SKShapeNode(path: headbandPath)
-        headband.strokeColor = NSColor.black
-        headband.lineWidth = 2.0
+        headband.strokeColor = NSColor(calibratedRed: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)
+        headband.lineWidth = 3.0 // 更粗的线条
         
-        // 添加蓝色高光到耳机，使其更有立体感
-        let leftHeadphoneHighlight = SKShapeNode(circleOfRadius: 4)
-        leftHeadphoneHighlight.fillColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.9, alpha: 0.5)
+        // 添加头带填充 - 使头带看起来更立体
+        let headbandFillPath = CGMutablePath()
+        headbandFillPath.move(to: CGPoint(x: -20, y: 21))
+        headbandFillPath.addCurve(
+            to: CGPoint(x: 20, y: 21),
+            control1: CGPoint(x: -10, y: 35),
+            control2: CGPoint(x: 10, y: 35)
+        )
+        headbandFillPath.addCurve(
+            to: CGPoint(x: -20, y: 21),
+            control1: CGPoint(x: 10, y: 33),
+            control2: CGPoint(x: -10, y: 33)
+        )
+        
+        let headbandFill = SKShapeNode(path: headbandFillPath)
+        headbandFill.fillColor = NSColor(calibratedRed: 0.2, green: 0.2, blue: 0.2, alpha: 0.7)
+        headbandFill.strokeColor = .clear
+        headband.addChild(headbandFill)
+        
+        // 添加金属高光到耳机，使其更有立体感
+        let leftHeadphoneHighlight = SKShapeNode(ellipseOf: CGSize(width: 10, height: 12))
+        leftHeadphoneHighlight.fillColor = NSColor(calibratedRed: 0.5, green: 0.5, blue: 0.5, alpha: 0.4) // 金属质感
         leftHeadphoneHighlight.strokeColor = .clear
         leftHeadphoneHighlight.position = CGPoint(x: -2, y: 2)
         leftHeadphone.addChild(leftHeadphoneHighlight)
         
-        let rightHeadphoneHighlight = SKShapeNode(circleOfRadius: 4)
-        rightHeadphoneHighlight.fillColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.9, alpha: 0.5)
+        let rightHeadphoneHighlight = SKShapeNode(ellipseOf: CGSize(width: 10, height: 12))
+        rightHeadphoneHighlight.fillColor = NSColor(calibratedRed: 0.5, green: 0.5, blue: 0.5, alpha: 0.4) // 金属质感
         rightHeadphoneHighlight.strokeColor = .clear
         rightHeadphoneHighlight.position = CGPoint(x: 2, y: 2)
         rightHeadphone.addChild(rightHeadphoneHighlight)
+        
+        // 添加品牌标志 - 小圆点
+        let leftLogo = SKShapeNode(circleOfRadius: 2)
+        leftLogo.fillColor = NSColor(calibratedRed: 0.8, green: 0.1, blue: 0.1, alpha: 1.0) // 红色标志
+        leftLogo.strokeColor = .clear
+        leftLogo.position = CGPoint(x: 7, y: 0)
+        leftHeadphone.addChild(leftLogo)
+        
+        let rightLogo = SKShapeNode(circleOfRadius: 2)
+        rightLogo.fillColor = NSColor(calibratedRed: 0.8, green: 0.1, blue: 0.1, alpha: 1.0) // 红色标志
+        rightLogo.strokeColor = .clear
+        rightLogo.position = CGPoint(x: -7, y: 0)
+        rightHeadphone.addChild(rightLogo)
         
         super.init()
         

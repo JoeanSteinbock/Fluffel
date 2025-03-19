@@ -508,6 +508,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // 音乐相关方法
     @objc func startListeningToMusic(_ sender: Any) {
+        // 临时修改：直接播放默认音乐，而不是显示播放列表子菜单
+        playDefaultMusic()
+        
+        // 原始代码已被临时注释掉
+        /*
         // 直接判断是否为菜单项
         if let menuItem = sender as? NSMenuItem {
             // 检查菜单项是否已经有子菜单
@@ -534,6 +539,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // 如果不是菜单项，直接播放默认音乐
             playDefaultMusic()
         }
+        */
     }
     
     /// 显示播放列表子菜单
