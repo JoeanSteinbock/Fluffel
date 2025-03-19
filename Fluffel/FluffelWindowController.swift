@@ -98,14 +98,14 @@ class FluffelWindowController: NSWindowController {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleFluffelSpeech(_:)),
-            name: NSNotification.Name("fluffelWillSpeak"),
+            name: NSNotification.Name.fluffelWillSpeak,
             object: nil
         )
         
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleBubbleDismissed(_:)),
-            name: NSNotification.Name("fluffelDidStopSpeaking"),
+            name: NSNotification.Name.fluffelDidStopSpeaking,
             object: nil
         )
     }
@@ -292,14 +292,14 @@ class FluffelWindowController: NSWindowController {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleFluffelSpeech(_:)),
-            name: NSNotification.Name("fluffelWillSpeak"),
+            name: NSNotification.Name.fluffelWillSpeak,
             object: nil
         )
         
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleBubbleDismissed(_:)),
-            name: NSNotification.Name("fluffelBubbleDismissed"),
+            name: NSNotification.Name.fluffelDidStopSpeaking,
             object: nil
         )
     }
@@ -308,41 +308,60 @@ class FluffelWindowController: NSWindowController {
     
     // 处理 Fluffel 说话请求
     @objc func handleFluffelSpeech(_ notification: Notification) {
-        // 如果有活跃的气泡窗口，先关闭它
-        activeBubbleWindow?.dismiss()
-        activeBubbleWindow = Optional.none
-        
-        // 获取说话文本和其他参数
-        guard let userInfo = notification.userInfo,
-              let text = userInfo["text"] as? String else {
-            return
+        // 在主线程中处理UI变更
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // 保存强引用，以便安全地调用dismiss()
+            if let currentBubbleWindow = self.activeBubbleWindow, currentBubbleWindow.isVisible {
+                // 先取消引用，防止dismiss()过程中潜在的循环引用
+                self.activeBubbleWindow = Optional.none
+                
+                // 安全地关闭气泡窗口
+                currentBubbleWindow.dismiss()
+            } else {
+                // 确保引用被清除
+                self.activeBubbleWindow = Optional.none
+            }
+            
+            // 获取说话文本和其他参数
+            guard let userInfo = notification.userInfo,
+                  let text = userInfo["text"] as? String else {
+                return
+            }
+            
+            let fontSize = userInfo["fontSize"] as? CGFloat ?? 12
+            let duration = userInfo["duration"] as? TimeInterval ?? 3.0
+            
+            // 创建新的气泡窗口
+            let bubbleWindow = BubbleWindow(text: text, fontSize: fontSize, duration: duration)
+            
+            // 设置关联的 Fluffel 窗口
+            bubbleWindow.fluffelWindow = self.window
+            
+            // 确保窗口存在并且有效
+            guard bubbleWindow.fluffelWindow != nil, bubbleWindow.fluffelWindow!.isVisible else {
+                print("警告: Fluffel窗口无效或不可见，无法显示气泡")
+                return
+            }
+            
+            // 将气泡窗口定位到 Fluffel 窗口上方
+            bubbleWindow.positionAboveFluffelWindow()
+            
+            // 显示气泡窗口
+            bubbleWindow.makeKeyAndOrderFront(Optional.none)
+            
+            // 保存引用
+            self.activeBubbleWindow = bubbleWindow
+            
+            // 添加观察者，当 Fluffel 窗口移动时，气泡窗口也跟着移动
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(self.updateBubblePosition(_:)),
+                name: NSWindow.didMoveNotification,
+                object: self.window
+            )
         }
-        
-        let fontSize = userInfo["fontSize"] as? CGFloat ?? 12
-        let duration = userInfo["duration"] as? TimeInterval ?? 3.0
-        
-        // 创建新的气泡窗口
-        let bubbleWindow = BubbleWindow(text: text, fontSize: fontSize, duration: duration)
-        
-        // 设置关联的 Fluffel 窗口
-        bubbleWindow.fluffelWindow = self.window
-        
-        // 将气泡窗口定位到 Fluffel 窗口上方
-        bubbleWindow.positionAboveFluffelWindow()
-        
-        // 显示气泡窗口
-        bubbleWindow.makeKeyAndOrderFront(Optional.none)
-        
-        // 保存引用
-        activeBubbleWindow = bubbleWindow
-        
-        // 添加观察者，当 Fluffel 窗口移动时，气泡窗口也跟着移动
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(updateBubblePosition(_:)),
-            name: NSWindow.didMoveNotification,
-            object: self.window
-        )
     }
     
     // 更新气泡位置以跟随 Fluffel 窗口
@@ -365,15 +384,22 @@ class FluffelWindowController: NSWindowController {
     
     // 处理气泡消失通知
     @objc func handleBubbleDismissed(_ notification: Notification) {
-        // 清除活跃的气泡窗口引用
-        activeBubbleWindow = Optional.none
-        
-        // 移除窗口移动观察者
-        NotificationCenter.default.removeObserver(
-            self,
-            name: NSWindow.didMoveNotification,
-            object: self.window
-        )
+        // 在主线程中处理UI更新
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // 清除活跃的气泡窗口引用
+            self.activeBubbleWindow = Optional.none
+            
+            // 移除窗口移动观察者
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSWindow.didMoveNotification,
+                object: self.window
+            )
+            
+            print("气泡窗口已关闭")
+        }
     }
     
     // 处理 Fluffel 移动通知

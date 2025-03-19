@@ -24,7 +24,7 @@ extension Fluffel {
         ]
         
         NotificationCenter.default.post(
-            name: NSNotification.Name("fluffelWillSpeak"),
+            name: NSNotification.Name.fluffelWillSpeak,
             object: self,
             userInfo: userInfo
         )
@@ -47,6 +47,14 @@ extension Fluffel {
         
         // 恢复正常表情
         resetFacialExpression()
+        
+        // 发送通知，通知控制器关闭气泡窗口
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: NSNotification.Name.fluffelDidStopSpeaking,
+                object: self
+            )
+        }
     }
     
     /// 当 Fluffel 说话时的表情动画
