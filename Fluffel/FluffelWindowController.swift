@@ -388,17 +388,21 @@ class FluffelWindowController: NSWindowController {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            // 清除活跃的气泡窗口引用
-            self.activeBubbleWindow = Optional.none
-            
-            // 移除窗口移动观察者
-            NotificationCenter.default.removeObserver(
-                self,
-                name: NSWindow.didMoveNotification,
-                object: self.window
-            )
-            
-            print("气泡窗口已关闭")
+            // 将引用设置为nil之前，确保线程安全
+            let oldBubbleWindow = self.activeBubbleWindow
+            if oldBubbleWindow != nil {
+                // 先将属性置为nil，再进行其他操作，避免多线程问题
+                self.activeBubbleWindow = nil
+                
+                // 移除窗口移动观察者
+                NotificationCenter.default.removeObserver(
+                    self,
+                    name: NSWindow.didMoveNotification,
+                    object: self.window
+                )
+                
+                print("气泡窗口已关闭")
+            }
         }
     }
     

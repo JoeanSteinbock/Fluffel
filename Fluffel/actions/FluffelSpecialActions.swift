@@ -13,43 +13,49 @@ extension Fluffel {
     ///   - fontSize: 文本大小 (默认 12)
     ///   - completion: 说话完成后的回调 (可选)
     func speak(text: String, duration: TimeInterval = 3.0, fontSize: CGFloat = 12, completion: (() -> Void)? = nil) {
-        // 移除可能存在的旧气泡通知
-        removeSpeechBubble()
-        
-        // 发送说话通知，由 FluffelWindowController 处理创建气泡窗口
-        let userInfo: [String: Any] = [
-            "text": text,
-            "duration": duration,
-            "fontSize": fontSize
-        ]
-        
-        NotificationCenter.default.post(
-            name: NSNotification.Name.fluffelWillSpeak,
-            object: self,
-            userInfo: userInfo
-        )
-        
-        // 添加表情变化，使 Fluffel 看起来像在说话
-        animateTalkingExpression(duration: duration)
-        
-        // 设置定时器，在说话结束后执行完成回调
-        if let completion = completion {
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.6) {
-                completion()
+        // 确保所有UI操作都在主线程上执行
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // 移除可能存在的旧气泡通知
+            self.removeSpeechBubble()
+            
+            // 发送说话通知，由 FluffelWindowController 处理创建气泡窗口
+            let userInfo: [String: Any] = [
+                "text": text,
+                "duration": duration,
+                "fontSize": fontSize
+            ]
+            
+            NotificationCenter.default.post(
+                name: NSNotification.Name.fluffelWillSpeak,
+                object: self,
+                userInfo: userInfo
+            )
+            
+            // 添加表情变化，使 Fluffel 看起来像在说话
+            self.animateTalkingExpression(duration: duration)
+            
+            // 设置定时器，在说话结束后执行完成回调
+            if let completion = completion {
+                DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.6) {
+                    completion()
+                }
             }
         }
     }
     
     /// 移除当前的对话气泡
     func removeSpeechBubble() {
-        // 停止说话动画
+        // 停止说话动画 - 这个可以在任何线程上执行
         removeAction(forKey: "talkingAction")
         
-        // 恢复正常表情
+        // 恢复正常表情 - 这个可以在任何线程上执行
         resetFacialExpression()
         
-        // 发送通知，通知控制器关闭气泡窗口
-        DispatchQueue.main.async {
+        // 发送通知，通知控制器关闭气泡窗口 - 确保在主线程上执行
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             NotificationCenter.default.post(
                 name: NSNotification.Name.fluffelDidStopSpeaking,
                 object: self

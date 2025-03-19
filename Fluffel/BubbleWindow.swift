@@ -191,8 +191,19 @@ class BubbleWindow: NSWindow {
     
     // 关闭气泡窗口
     func dismiss() {
+        // 确保在主线程中执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.dismiss()
+            }
+            return
+        }
+        
+        // 避免重复调用，使用一个局部变量记录当前状态，保护后续逻辑
+        let isCurrentlyVisible = self.isVisible
+        
         // 如果窗口已经在关闭过程中或已经关闭，直接返回
-        if !isVisible {
+        if !isCurrentlyVisible {
             return
         }
         
@@ -200,30 +211,36 @@ class BubbleWindow: NSWindow {
         displayTimer?.invalidate()
         displayTimer = nil
         
-        // 移除对Fluffel窗口的引用
-        fluffelWindow = nil
+        // 保留对 bubbleNode 和 textNode 的局部强引用
+        // 这样即使self的其他引用发生变化，我们也能安全地访问这些对象
+        let localBubbleNode = self.bubbleNode
+        let localTextNode = self.textNode
         
         // 执行淡出动画，然后关闭窗口
-        if let bubbleNode = bubbleNode, let textNode = textNode {
+        if let bubbleNode = localBubbleNode, let textNode = localTextNode {
             let fadeOut = SKAction.fadeOut(withDuration: 0.3)
             
-            // 创建强引用到self，用于在动画完成后安全关闭
-            let selfRef = self
-            let closeWindow = SKAction.run { 
+            // 使用SKAction.run而不是闭包，避免多余的引用
+            let closeWindow = SKAction.run { [weak self] in
                 // 在主线程中关闭窗口，确保UI操作安全
                 DispatchQueue.main.async {
-                    selfRef.close()
+                    guard let self = self, self.isVisible else { return }
+                    
+                    // 先清除引用，再发送通知，最后关闭窗口
+                    self.bubbleNode = nil
+                    self.textNode = nil
+                    
+                    // 移除对Fluffel窗口的引用
+                    self.fluffelWindow = nil
+                    
+                    // 关闭窗口
+                    self.orderOut(nil) // 使用orderOut替代close，更安全
                     
                     // 发送通知，表示气泡已消失
-                    // 使用常量而不是字符串，避免拼写错误
                     NotificationCenter.default.post(
                         name: NSNotification.Name.fluffelDidStopSpeaking,
                         object: nil
                     )
-                    
-                    // 清除节点引用
-                    selfRef.bubbleNode = nil
-                    selfRef.textNode = nil
                 }
             }
             
@@ -232,13 +249,23 @@ class BubbleWindow: NSWindow {
             textNode.run(fadeOut)
         } else {
             // 如果没有节点，直接关闭窗口
-            self.close()
-            
-            // 发送通知，表示气泡已消失
-            NotificationCenter.default.post(
-                name: NSNotification.Name.fluffelDidStopSpeaking,
-                object: nil
-            )
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, self.isVisible else { return }
+                
+                // 先清除所有引用
+                self.bubbleNode = nil
+                self.textNode = nil
+                self.fluffelWindow = nil
+                
+                // 关闭窗口
+                self.orderOut(nil)
+                
+                // 发送通知，表示气泡已消失
+                NotificationCenter.default.post(
+                    name: NSNotification.Name.fluffelDidStopSpeaking,
+                    object: nil
+                )
+            }
         }
     }
     
