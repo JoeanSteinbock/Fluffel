@@ -503,6 +503,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    // 音乐相关方法
+    @objc func startListeningToMusic(_ sender: Any) {
+        executeAction { [weak self] in
+            guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
+            
+            // 获取示例URL（将来会使用Pixabay API）
+            let sampleURL = URL(string: "https://example.com/sample.mp3")!
+            
+            // 启动音乐动画
+            fluffel.playMusicFromURL(sampleURL) { success in
+                if success {
+                    print("音乐播放完成")
+                } else {
+                    print("音乐播放失败")
+                }
+            }
+        }
+    }
+    
+    @objc func stopMusic(_ sender: Any) {
+        executeAction { [weak self] in
+            guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
+            fluffel.stopMusic()
+        }
+    }
+    
     // 设置Fluffel声音类型并播放示例
     private func setFluffelVoice(_ voiceType: FluffelTTSService.CartoonVoiceType) {
         // 设置声音类型

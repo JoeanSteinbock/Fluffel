@@ -10,6 +10,7 @@ enum FluffelState {
     case sleeping       // 睡眠状态
     case dancing        // 跳舞状态
     case excited        // 兴奋状态
+    case listeningToMusic // 听音乐状态
 }
 
 class Fluffel: SKNode {
@@ -179,6 +180,17 @@ class Fluffel: SKNode {
                 removeAction(forKey: "walkingAction")
             case .falling:
                 removeAction(forKey: "fallingAction")
+            case .dancing:
+                removeAction(forKey: "dancingAction")
+                removeAction(forKey: "musicNotes")
+            case .listeningToMusic:
+                removeAction(forKey: "listeningToMusicAction")
+                removeAction(forKey: "musicListeningNotes")
+                leftEar.removeAllActions()
+                rightEar.removeAllActions()
+                
+                // 停止所有正在播放的音乐
+                (self.parent?.scene as? FluffelScene)?.stopMusic()
             default:
                 break
             }
@@ -190,6 +202,13 @@ class Fluffel: SKNode {
         switch state {
         case .idle:
             smile()
+        case .listeningToMusic:
+            // 当切换到听音乐状态时，确保所有其他动画被停止
+            removeAction(forKey: "walkingAction")
+            removeAction(forKey: "fallingAction")
+            removeAction(forKey: "dancingAction")
+            removeAction(forKey: "musicNotes")
+            removeAction(forKey: "excitedAction")
         default:
             break
         }

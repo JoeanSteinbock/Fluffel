@@ -468,6 +468,9 @@ class FluffelScene: SKScene {
         menu.addItem(withTitle: "Share facts", action: #selector(AppDelegate.shareFact(_:)), keyEquivalent: "f")
         menu.addItem(withTitle: "Conversation", action: #selector(AppDelegate.startConversation(_:)), keyEquivalent: "c")
         
+        // 添加音乐选项
+        menu.addItem(withTitle: "Listen to music", action: #selector(AppDelegate.startListeningToMusic(_:)), keyEquivalent: "m")
+        
         menu.addItem(NSMenuItem.separator())
         
         // 添加声音选项子菜单
@@ -514,5 +517,26 @@ class FluffelScene: SKScene {
         
         // 显示菜单
         NSMenu.popUpContextMenu(menu, with: NSApp.currentEvent!, for: view)
+    }
+    
+    /// 让 Fluffel 开始播放音乐
+    func startPlayingMusic() {
+        guard let fluffel = fluffel else { return }
+        
+        // 启动音乐动画
+        let sampleURL = URL(string: "https://example.com/sample.mp3")!
+        fluffel.playMusicFromURL(sampleURL) { success in
+            if success {
+                print("音乐播放完成")
+            } else {
+                print("音乐播放失败")
+            }
+        }
+    }
+    
+    /// 停止 Fluffel 播放音乐
+    func stopMusic() {
+        guard let fluffel = fluffel else { return }
+        fluffel.stopMusic()
     }
 } 

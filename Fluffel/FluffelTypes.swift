@@ -24,4 +24,6 @@ extension NSNotification.Name {
     static let fluffelDidMove = NSNotification.Name("fluffelDidMove")
     static let fluffelWillSpeak = NSNotification.Name("fluffelWillSpeak")
     static let fluffelDidStopSpeaking = NSNotification.Name("fluffelDidStopSpeaking")
+    static let fluffelWillPlayMusic = NSNotification.Name("fluffelWillPlayMusic")
+    static let fluffelDidStopMusic = NSNotification.Name("fluffelDidStopMusic")
 }
