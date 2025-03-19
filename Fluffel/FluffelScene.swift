@@ -41,6 +41,9 @@ class FluffelScene: SKScene {
         // 创建 Fluffel
         fluffel = Fluffel()
         if let fluffel = fluffel {
+            // 为Fluffel节点设置名称，以便可以通过名称查找
+            fluffel.name = "fluffel"
+            
             // 确保 Fluffel 在场景中央
             fluffel.position = CGPoint(x: size.width / 2, y: size.height / 2)
             addChild(fluffel)
@@ -342,7 +345,10 @@ class FluffelScene: SKScene {
     func makeFluffelSpeak(_ text: String? = nil) {
         // 在主线程中安全地执行说话逻辑
         DispatchQueue.main.async { [weak self] in
-            guard let self = self, let fluffel = self.fluffel else { return }
+            guard let self = self, let fluffel = self.fluffel else { 
+                print("无法让Fluffel说话，Fluffel对象为nil") 
+                return 
+            }
             
             // 如果正在说话中，不要再触发新的说话
             if self.isSpeakingInProgress {
@@ -378,7 +384,10 @@ class FluffelScene: SKScene {
     
     // 将 Fluffel 重置到第一屏中心
     func resetFluffelToCenter() {
-        guard let fluffel = fluffel else { return }
+        guard let fluffel = fluffel else { 
+            print("无法重置Fluffel位置，Fluffel对象为nil")
+            return 
+        }
         
         // 停止任何当前动画或状态
         if fluffel.state != .idle {
@@ -403,8 +412,8 @@ class FluffelScene: SKScene {
         fluffel.run(SKAction.sequence([groupAction, bounceAction]))
         
         // 让 Fluffel 说话，表明它已经回到中心
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            self.makeFluffelSpeak("I'm back!")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            self?.makeFluffelSpeak("I'm back!")
         }
         
         // 重置朝向为右侧

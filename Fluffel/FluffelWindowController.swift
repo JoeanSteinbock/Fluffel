@@ -20,8 +20,8 @@ class FluffelWindowController: NSWindowController {
     // 当前活跃的气泡窗口
     public var activeBubbleWindow: BubbleWindow?
     
-    public var fluffel: Fluffel {
-        return (window?.contentView as? SKView)?.scene?.childNode(withName: "fluffel") as! Fluffel
+    public var fluffel: Fluffel? {
+        return fluffelScene?.fluffel
     }
     
     convenience init() {

@@ -86,6 +86,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func makeFluffelSpeak(_ text: String) {
         if let fluffel = fluffelWindowController?.fluffel {
             fluffel.speak(text: text, duration: 3.0)
+        } else {
+            // 如果fluffel为nil，只记录日志
+            print("无法显示消息：\(text)，fluffel对象为nil")
         }
     }
     
@@ -282,7 +285,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("获取到的 API 密钥: \(apiKey)")
         
         if apiKey.isEmpty {
-            statusLabel.stringValue = "错误: API 密钥不能为空"
+            statusLabel.stringValue = "Error: API key cannot be empty"
             statusLabel.textColor = .systemRed
             return
         }
@@ -291,7 +294,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         FluffelTTSService.shared.setApiKey(apiKey)
         
         // 更新状态标签
-        statusLabel.stringValue = "API 密钥已保存！"
+        statusLabel.stringValue = "API key saved successfully"
         statusLabel.textColor = .systemGreen
         
         // 强制更新 UI
@@ -325,6 +328,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 // 显示成功消息
                 if let fluffel = self?.fluffelWindowController?.fluffel {
                     fluffel.speak(text: "API key saved successfully", duration: 3.0)
+                } else {
+                    // 如果fluffel为nil，只记录日志
+                    print("无法显示API密钥保存成功消息，fluffel对象为nil")
                 }
             }
         } else {
@@ -347,13 +353,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("获取到的 API 密钥: \(apiKey)")
         
         if apiKey.isEmpty {
-            statusLabel.stringValue = "错误: 请先输入 API 密钥"
+            statusLabel.stringValue = "Error: Please enter an API key"
             statusLabel.textColor = .systemRed
             return
         }
         
         // 更新状态
-        statusLabel.stringValue = "正在测试 API 密钥..."
+        statusLabel.stringValue = "Testing API key..."
         statusLabel.textColor = .systemBlue
         statusLabel.needsDisplay = true
         
