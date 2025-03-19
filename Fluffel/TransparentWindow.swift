@@ -61,10 +61,11 @@ class TransparentWindow: NSWindow {
         UserDefaults.standard.set(showDebugBorder, forKey: "FluffelShowDebugBorder")
     }
     
-    // 覆盖此方法以允许通过点击背景来移动窗口
+    // 覆盖此方法以允许通过点击背景来移动窗口，并增加安全性
     override func mouseDown(with event: NSEvent) {
+        // 直接处理鼠标点击，而不是在异步闭包中
         if event.clickCount == 1 {
-            self.performDrag(with: event)
+            performDrag(with: event)
         } else {
             super.mouseDown(with: event)
         }
@@ -80,6 +81,11 @@ class TransparentWindow: NSWindow {
         return true
     }
     
+    // 辅助方法，用于安全地调用super.sendEvent
+    private func superSendEvent(_ event: NSEvent) {
+        super.sendEvent(event)
+    }
+    
     // 改进点击穿透逻辑，处理更大窗口下的事件
     override func sendEvent(_ event: NSEvent) {
         if event.type == .leftMouseDown || 
@@ -88,36 +94,71 @@ class TransparentWindow: NSWindow {
             // 获取点击位置
             let location = event.locationInWindow
             
-            // 检查是否点击在 Fluffel 上
-            if let contentView = self.contentView,
-               let skView = contentView as? SKView,
-               let scene = skView.scene as? FluffelScene,
-               let fluffel = scene.fluffel {
-                
-                // 将窗口坐标转换为场景坐标
-                let scenePoint = skView.convert(location, to: scene)
-                
-                // 检查点击是否在 Fluffel 节点内
-                let fluffelNode = fluffel.calculateAccumulatedFrame()
-                
-                // 扩大可点击区域 - 只有 Fluffel 周围一小部分区域可点击，其余区域点击穿透
-                let paddedFrame = fluffelNode.insetBy(dx: -15, dy: -15)
-                
-                if paddedFrame.contains(scenePoint) {
-                    // 点击在 Fluffel 上，处理事件
-                    super.sendEvent(event)
+            // 添加强健的空值检查和类型检查
+            guard let contentView = self.contentView else {
+                // 如果没有内容视图，就不处理事件（穿透）
+                return
+            }
+            
+            // 确保视图是 SKView
+            guard let skView = contentView as? SKView else {
+                // 如果不是 SKView，执行默认行为
+                superSendEvent(event)
+                return
+            }
+            
+            // 确保场景存在并且是正确类型
+            guard let scene = skView.scene as? FluffelScene else {
+                // 如果场景不存在或类型不对，执行默认行为
+                superSendEvent(event)
+                return
+            }
+            
+            // 确保 Fluffel 存在
+            guard let fluffel = scene.fluffel else {
+                // 如果 Fluffel 不存在，执行默认行为
+                superSendEvent(event)
+                return
+            }
+            
+            // 安全地计算场景点位置
+            let scenePoint = skView.convert(location, to: scene)
+            
+            // 使用更安全的方式获取 Fluffel 节点的边界
+            let fluffelNode = fluffel.calculateAccumulatedFrame()
+            
+            // 扩大可点击区域 - 只有 Fluffel 周围一小部分区域可点击，其余区域点击穿透
+            let paddedFrame = fluffelNode.insetBy(dx: -15, dy: -15)
+            
+            if paddedFrame.contains(scenePoint) {
+                // 使用 DispatchQueue.main.async 来避免在事件处理期间的可能的不一致状态
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
                     
-                    // 如果是鼠标按下，启动拖动
+                    // 点击在 Fluffel 上，处理事件
+                    superSendEvent(event)
+                    
+                    // 如果是鼠标按下，启动拖动，但确保在主线程中执行
                     if event.type == .leftMouseDown {
                         self.performDrag(with: event)
                     }
-                    return
                 }
+                return
+            } else {
+                // 点击在 Fluffel 区域外，穿透点击
+                return
             }
-            // 否则点击穿透，不处理事件
+        } else if event.type == .leftMouseDragged ||
+                  event.type == .rightMouseDragged ||
+                  event.type == .otherMouseDragged {
+            // 拖动事件始终在主线程安全处理
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                superSendEvent(event)
+            }
         } else {
             // 其他类型的事件正常处理
-            super.sendEvent(event)
+            superSendEvent(event)
         }
     }
     

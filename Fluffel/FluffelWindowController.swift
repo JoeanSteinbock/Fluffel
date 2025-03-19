@@ -61,7 +61,7 @@ class FluffelWindowController: NSWindowController {
         
         // 显示窗口
         window.center()
-        window.makeKeyAndOrderFront(nil)
+        window.makeKeyAndOrderFront(Optional.none)
         
         // 设置持续移动计时器
         setupMoveTimer()
@@ -204,7 +204,7 @@ class FluffelWindowController: NSWindowController {
         activeKeys.remove(event.keyCode)
     }
     
-    private func directionForKeyCode(_ keyCode: UInt16) -> Direction? {
+    private func directionForKeyCode(_ keyCode: UInt16) -> MovementDirection? {
         switch keyCode {
         case 123: // 左箭头
             return .left
@@ -234,10 +234,27 @@ class FluffelWindowController: NSWindowController {
         let newWindowX = point.x - viewPosition.x
         let newWindowY = point.y - viewPosition.y
         
-        // 设置窗口的新位置
-        window.setFrameOrigin(NSPoint(x: newWindowX, y: newWindowY))
+        // 防止计算出的位置无效
+        guard !newWindowX.isNaN && !newWindowY.isNaN && 
+              newWindowX.isFinite && newWindowY.isFinite else {
+            print("警告：计算的窗口位置无效：\(newWindowX), \(newWindowY)")
+            return
+        }
         
-        print("窗口已重定位到: \(newWindowX), \(newWindowY)")
+        // 在主线程中安全地设置窗口的新位置
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, window.isVisible else { return }
+            
+            // 设置窗口的新位置
+            window.setFrameOrigin(NSPoint(x: newWindowX, y: newWindowY))
+            
+            // 确保气泡窗口跟随移动（如果存在）
+            if let bubbleWindow = self.activeBubbleWindow, bubbleWindow.isVisible {
+                bubbleWindow.positionAboveFluffelWindow()
+            }
+            
+            print("窗口已重定位到: \(newWindowX), \(newWindowY)")
+        }
     }
     
     // MARK: - 初始化
@@ -293,7 +310,7 @@ class FluffelWindowController: NSWindowController {
     @objc func handleFluffelSpeech(_ notification: Notification) {
         // 如果有活跃的气泡窗口，先关闭它
         activeBubbleWindow?.dismiss()
-        activeBubbleWindow = nil
+        activeBubbleWindow = Optional.none
         
         // 获取说话文本和其他参数
         guard let userInfo = notification.userInfo,
@@ -314,7 +331,7 @@ class FluffelWindowController: NSWindowController {
         bubbleWindow.positionAboveFluffelWindow()
         
         // 显示气泡窗口
-        bubbleWindow.makeKeyAndOrderFront(nil)
+        bubbleWindow.makeKeyAndOrderFront(Optional.none)
         
         // 保存引用
         activeBubbleWindow = bubbleWindow
@@ -330,13 +347,26 @@ class FluffelWindowController: NSWindowController {
     
     // 更新气泡位置以跟随 Fluffel 窗口
     @objc func updateBubblePosition(_ notification: Notification) {
-        activeBubbleWindow?.positionAboveFluffelWindow()
+        // 添加强引用检查，确保气泡窗口仍然有效
+        if let bubbleWindow = activeBubbleWindow, bubbleWindow.isVisible {
+            bubbleWindow.positionAboveFluffelWindow()
+        } else {
+            // 如果气泡窗口已经无效或不可见，清除引用
+            activeBubbleWindow = Optional.none
+            
+            // 移除窗口移动观察者
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSWindow.didMoveNotification,
+                object: self.window
+            )
+        }
     }
     
     // 处理气泡消失通知
     @objc func handleBubbleDismissed(_ notification: Notification) {
         // 清除活跃的气泡窗口引用
-        activeBubbleWindow = nil
+        activeBubbleWindow = Optional.none
         
         // 移除窗口移动观察者
         NotificationCenter.default.removeObserver(
@@ -349,7 +379,12 @@ class FluffelWindowController: NSWindowController {
     // 处理 Fluffel 移动通知
     @objc func fluffelMoved(_ notification: Notification) {
         // 当 Fluffel 移动时，如果有活跃的气泡窗口，更新其位置
-        activeBubbleWindow?.positionAboveFluffelWindow()
+        if let bubbleWindow = activeBubbleWindow, bubbleWindow.isVisible {
+            bubbleWindow.positionAboveFluffelWindow()
+        } else {
+            // 气泡窗口无效，清除引用
+            activeBubbleWindow = Optional.none
+        }
     }
     
     // 处理键盘事件

@@ -1,12 +1,12 @@
 import SpriteKit
 
-enum Direction {
-    case left, right, up, down
-}
+// 删除不再使用的Direction枚举，使用FluffelTypes.swift中的MovementDirection代替
+// enum Direction {
+//     case left, right, up, down
+// }
 
 // 添加一个通知名称，用于通知窗口 Fluffel 已移动
 extension Notification.Name {
-    static let fluffelDidMove = Notification.Name("fluffelDidMove")
     static let fluffelDebugInfo = Notification.Name("fluffelDebugInfo") // 添加调试信息通知
 }
 
@@ -180,7 +180,7 @@ class FluffelScene: SKScene {
         lastActivityTime = CACurrentMediaTime()
     }
     
-    func moveFluffel(direction: Direction) {
+    func moveFluffel(direction: MovementDirection) {
         guard let fluffel = fluffel else { return }
         
         // 如果 Fluffel 在边缘上，先离开边缘
@@ -251,7 +251,7 @@ class FluffelScene: SKScene {
     }
     
     // 让 Fluffel 朝向移动方向
-    private func turnFluffelToFace(direction: Direction) {
+    private func turnFluffelToFace(direction: MovementDirection) {
         guard let fluffel = fluffel else { return }
         
         // 简单的左右翻转效果
@@ -269,41 +269,50 @@ class FluffelScene: SKScene {
     override func mouseDown(with event: NSEvent) {
         let location = event.location(in: self)
         
-        if let fluffel = fluffel, fluffel.contains(location) {
-            // 使用场景的isSpeakingInProgress标志而不是局部标志
-            // 如果正在说话中，不要再触发新的说话
-            if isSpeakingInProgress {
-                return
-            }
-            
-            // 设置标志，防止重复触发
-            isSpeakingInProgress = true
-            
-            // 取消可能存在的定时器
-            speakingDebounceTimer?.invalidate()
-            
-            // 使用我们创建的说话演示
-            if let appDelegate = NSApp.delegate as? AppDelegate {
-                // 随机选择一个动作：问候、笑话或事实
-                let action = Int.random(in: 0...2)
-                switch action {
-                case 0:
-                    appDelegate.speakingDemo?.speakRandomGreeting()
-                case 1:
-                    appDelegate.speakingDemo?.tellRandomJoke()
-                case 2:
-                    appDelegate.speakingDemo?.shareRandomFact()
-                default:
-                    makeFluffelSpeak() // 使用原有的方法作为后备
+        // 更健壮的 Fluffel 存在性检查
+        guard let fluffel = fluffel else { return }
+        
+        // 确保点击在 Fluffel 上
+        if fluffel.contains(location) {
+            // 在主线程中安全地处理点击操作
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                
+                // 使用场景的isSpeakingInProgress标志而不是局部标志
+                // 如果正在说话中，不要再触发新的说话
+                if self.isSpeakingInProgress {
+                    return
                 }
-            } else {
-                // 如果找不到 AppDelegate，仍然使用原有的方法
-                makeFluffelSpeak()
-            }
-            
-            // 设置定时器，延迟清除标志
-            speakingDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
-                self?.isSpeakingInProgress = false
+                
+                // 设置标志，防止重复触发
+                self.isSpeakingInProgress = true
+                
+                // 取消可能存在的定时器
+                self.speakingDebounceTimer?.invalidate()
+                
+                // 使用我们创建的说话演示
+                if let appDelegate = NSApp.delegate as? AppDelegate {
+                    // 随机选择一个动作：问候、笑话或事实
+                    let action = Int.random(in: 0...2)
+                    switch action {
+                    case 0:
+                        appDelegate.speakingDemo?.speakRandomGreeting()
+                    case 1:
+                        appDelegate.speakingDemo?.tellRandomJoke()
+                    case 2:
+                        appDelegate.speakingDemo?.shareRandomFact()
+                    default:
+                        self.makeFluffelSpeak() // 使用原有的方法作为后备
+                    }
+                } else {
+                    // 如果找不到 AppDelegate，仍然使用原有的方法
+                    self.makeFluffelSpeak()
+                }
+                
+                // 设置定时器，延迟清除标志
+                self.speakingDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+                    self?.isSpeakingInProgress = false
+                }
             }
         }
         
@@ -313,32 +322,39 @@ class FluffelScene: SKScene {
     
     // 让 Fluffel 说话
     func makeFluffelSpeak(_ text: String? = nil) {
-        guard let fluffel = fluffel else { return }
-        
-        // 如果正在说话中，不要再触发新的说话
-        if isSpeakingInProgress {
-            return
-        }
-        
-        // 设置标志，防止重复触发
-        isSpeakingInProgress = true
-        
-        // 如果没有指定文本，随机选择一句问候语
-        let speechText = text ?? FluffelDialogues.shared.getRandomBoredGreeting()
-        
-        // 根据文本长度调整显示时间
-        let duration = min(max(TimeInterval(speechText.count) * 0.15, 2.0), 5.0)
-        
-        // 让 Fluffel 说话
-        fluffel.speak(text: speechText, duration: duration) { [weak self] in
-            // 说话结束后重置标志
-            self?.isSpeakingInProgress = false
-        }
-        
-        // 设置安全计时器，以防说话完成回调未被调用
-        speakingDebounceTimer?.invalidate()
-        speakingDebounceTimer = Timer.scheduledTimer(withTimeInterval: duration + 1.0, repeats: false) { [weak self] _ in
-            self?.isSpeakingInProgress = false
+        // 在主线程中安全地执行说话逻辑
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let fluffel = self.fluffel else { return }
+            
+            // 如果正在说话中，不要再触发新的说话
+            if self.isSpeakingInProgress {
+                return
+            }
+            
+            // 设置标志，防止重复触发
+            self.isSpeakingInProgress = true
+            
+            // 如果没有指定文本，随机选择一句问候语
+            let speechText = text ?? FluffelDialogues.shared.getRandomBoredGreeting()
+            
+            // 根据文本长度调整显示时间
+            let duration = min(max(TimeInterval(speechText.count) * 0.15, 2.0), 5.0)
+            
+            // 让 Fluffel 说话
+            fluffel.speak(text: speechText, duration: duration) { [weak self] in
+                // 说话结束后重置标志
+                DispatchQueue.main.async {
+                    self?.isSpeakingInProgress = false
+                }
+            }
+            
+            // 设置安全计时器，以防说话完成回调未被调用
+            self.speakingDebounceTimer?.invalidate()
+            self.speakingDebounceTimer = Timer.scheduledTimer(withTimeInterval: duration + 1.0, repeats: false) { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.isSpeakingInProgress = false
+                }
+            }
         }
     }
     

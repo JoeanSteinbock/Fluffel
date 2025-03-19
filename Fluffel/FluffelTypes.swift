@@ -18,3 +18,10 @@ extension FluffelScene {
         case right
     }
 }
+
+// 通知名称扩展
+extension NSNotification.Name {
+    static let fluffelDidMove = NSNotification.Name("fluffelDidMove")
+    static let fluffelWillSpeak = NSNotification.Name("fluffelWillSpeak")
+    static let fluffelDidStopSpeaking = NSNotification.Name("fluffelDidStopSpeaking")
+}

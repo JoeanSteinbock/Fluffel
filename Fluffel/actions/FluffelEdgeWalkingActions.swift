@@ -1,4 +1,5 @@
 import SpriteKit
+import Cocoa
 
 // Fluffel 的沿着边缘行走动作扩展
 extension Fluffel {

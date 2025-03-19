@@ -1,4 +1,5 @@
 import SpriteKit
+import Cocoa
 
 // Fluffel 的面部表情扩展
 extension Fluffel {

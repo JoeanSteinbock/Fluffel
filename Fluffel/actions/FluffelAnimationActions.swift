@@ -1,4 +1,5 @@
 import SpriteKit
+import Cocoa
 
 // Fluffel 的基本动画扩展
 extension Fluffel {

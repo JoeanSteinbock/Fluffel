@@ -157,7 +157,10 @@ class BubbleWindow: NSWindow {
     
     // 设置窗口位置到 Fluffel 窗口上方
     func positionAboveFluffelWindow() {
-        guard let fluffelWindow = self.fluffelWindow else { return }
+        guard let fluffelWindow = self.fluffelWindow, fluffelWindow.isVisible else { return }
+        
+        // 确保 Fluffel 窗口有效
+        guard fluffelWindow.screen != nil else { return }
         
         // 获取 Fluffel 窗口的位置和大小
         let fluffelFrame = fluffelWindow.frame
@@ -166,8 +169,17 @@ class BubbleWindow: NSWindow {
         let bubbleX = fluffelFrame.origin.x + (fluffelFrame.width - self.frame.width) / 2
         let bubbleY = fluffelFrame.origin.y + fluffelFrame.height + 10 // 在 Fluffel 上方 10 像素
         
-        // 设置气泡窗口位置
-        self.setFrameOrigin(NSPoint(x: bubbleX, y: bubbleY))
+        // 确保计算的位置在有效范围内
+        guard !bubbleX.isNaN && !bubbleY.isNaN && bubbleX.isFinite && bubbleY.isFinite else {
+            print("警告: 计算的气泡位置无效: x=\(bubbleX), y=\(bubbleY)")
+            return
+        }
+        
+        // 安全地设置气泡窗口位置
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.isVisible else { return }
+            self.setFrameOrigin(NSPoint(x: bubbleX, y: bubbleY))
+        }
     }
     
     // 设置自动关闭计时器

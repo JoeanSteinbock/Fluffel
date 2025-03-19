@@ -1,4 +1,5 @@
 import SpriteKit
+import Cocoa
 
 // Fluffel 的呼吸和发光动画扩展
 extension Fluffel {

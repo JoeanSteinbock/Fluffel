@@ -1,4 +1,5 @@
 import SpriteKit
+import Cocoa
 
 // Fluffel 的特殊状态动画扩展
 extension Fluffel {
