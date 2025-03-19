@@ -1,3 +1,4 @@
+import Cocoa
 import SpriteKit
 
 // Fluffel 的活动状态
@@ -29,11 +30,11 @@ class Fluffel: SKNode {
     internal let rightEar: SKShapeNode
     internal let glowEffect: SKShapeNode // 添加发光效果节点
     
-    // 当前状态相关变量 - 修改为 internal(set) 以便扩展可以修改
-    internal(set) var state: FluffelState = .idle
-    internal(set) var isOnEdge: Bool = false
-    internal(set) var currentEdge: ScreenWindow.EdgeType?
-    internal(set) var currentWindow: ScreenWindow?
+    // Fluffel 状态、属性和外观相关变量
+    var state: FluffelState = .idle
+    var isOnEdge: Bool = false
+    var currentEdge: ScreenWindow.EdgeType?
+    var currentWindow: ScreenWindow?
     
     public let size: CGSize = CGSize(width: 50, height: 50)
     
@@ -204,5 +205,122 @@ class Fluffel: SKNode {
         default:
             break
         }
+    }
+    
+    // 添加一个方法，设置 Fluffel 在窗口边缘的状态
+    func setOnEdge(window: ScreenWindow, edge: ScreenWindow.EdgeType) {
+        isOnEdge = true
+        currentEdge = edge
+        currentWindow = window
+        setState(.onEdge)
+        
+        // 根据边缘调整 Fluffel 的朝向
+        switch edge {
+        case .left:
+            xScale = abs(xScale) // 面向右侧
+        case .right:
+            xScale = -abs(xScale) // 面向左侧
+        case .top, .bottom:
+            // 保持当前朝向
+            break
+        }
+        
+        // 开始边缘行走动画
+        startEdgeWalkingAnimation(edge: edge)
+        
+        print("Fluffel 现在在 \(edge.description) 边缘行走")
+    }
+    
+    // 添加一个方法，设置 Fluffel 在屏幕边缘的状态
+    func setOnScreenEdge(edge: ScreenWindow.EdgeType) {
+        isOnEdge = true
+        currentEdge = edge
+        currentWindow = nil
+        setState(.onEdge)
+        
+        // 根据边缘调整 Fluffel 的朝向
+        switch edge {
+        case .left:
+            xScale = abs(xScale) // 面向右侧
+        case .right:
+            xScale = -abs(xScale) // 面向左侧
+        case .top, .bottom:
+            // 保持当前朝向
+            break
+        }
+        
+        // 开始边缘行走动画
+        startEdgeWalkingAnimation(edge: edge)
+        
+        print("Fluffel 现在在屏幕\(edge.description)边缘行走")
+    }
+    
+    // 添加一个方法，让 Fluffel 离开边缘
+    func leaveEdge() {
+        isOnEdge = false
+        currentEdge = nil
+        currentWindow = nil
+        
+        // 停止边缘行走动画
+        removeAction(forKey: "edgeWalkingAction")
+        body.removeAction(forKey: "bodyWobble")
+        leftEar.removeAction(forKey: "leftEarWobble")
+        rightEar.removeAction(forKey: "rightEarWobble")
+        
+        // 不改变状态，状态由调用者决定
+    }
+    
+    // 添加边缘行走动画
+    func startEdgeWalkingAnimation(edge: ScreenWindow.EdgeType) {
+        // 移除任何现有的行走动画
+        removeAction(forKey: "edgeWalkingAction")
+        
+        // 根据边缘类型创建不同的行走动画
+        switch edge {
+        case .top, .bottom:
+            // 顶部/底部边缘上行走 - 轻微上下摆动
+            let walkCycle = SKAction.sequence([
+                SKAction.moveBy(x: 0, y: 2, duration: 0.15),
+                SKAction.moveBy(x: 0, y: -2, duration: 0.15)
+            ])
+            let walkAction = SKAction.repeatForever(walkCycle)
+            run(walkAction, withKey: "edgeWalkingAction")
+            
+            // 身体摆动
+            let bodyWobble = SKAction.sequence([
+                SKAction.scaleX(to: 1.05, y: 0.95, duration: 0.15),
+                SKAction.scaleX(to: 0.95, y: 1.05, duration: 0.15)
+            ])
+            body.run(SKAction.repeatForever(bodyWobble), withKey: "bodyWobble")
+            
+        case .left, .right:
+            // 左/右边缘上行走 - 轻微左右摆动
+            let walkCycle = SKAction.sequence([
+                SKAction.moveBy(x: 2, y: 0, duration: 0.15),
+                SKAction.moveBy(x: -2, y: 0, duration: 0.15)
+            ])
+            let walkAction = SKAction.repeatForever(walkCycle)
+            run(walkAction, withKey: "edgeWalkingAction")
+            
+            // 身体摆动
+            let bodyWobble = SKAction.sequence([
+                SKAction.scaleY(to: 1.05, duration: 0.15),
+                SKAction.scaleY(to: 0.95, duration: 0.15)
+            ])
+            body.run(SKAction.repeatForever(bodyWobble), withKey: "bodyWobble")
+        }
+        
+        // 耳朵摆动增强
+        let leftEarWobble = SKAction.sequence([
+            SKAction.rotate(byAngle: 0.1, duration: 0.15),
+            SKAction.rotate(byAngle: -0.1, duration: 0.15)
+        ])
+        leftEar.run(SKAction.repeatForever(leftEarWobble), withKey: "leftEarWobble")
+        
+        let rightEarWobble = SKAction.sequence([
+            SKAction.rotate(byAngle: -0.1, duration: 0.15),
+            SKAction.rotate(byAngle: 0.1, duration: 0.15)
+        ])
+        rightEar.run(SKAction.repeatForever(rightEarWobble), withKey: "rightEarWobble")
     }
 }

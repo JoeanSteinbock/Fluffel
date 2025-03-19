@@ -7,6 +7,7 @@ enum Direction {
 // 添加一个通知名称，用于通知窗口 Fluffel 已移动
 extension Notification.Name {
     static let fluffelDidMove = Notification.Name("fluffelDidMove")
+    static let fluffelDebugInfo = Notification.Name("fluffelDebugInfo") // 添加调试信息通知
 }
 
 class FluffelScene: SKScene {
@@ -17,78 +18,92 @@ class FluffelScene: SKScene {
     
     // 边缘检测相关
     private var isEdgeDetectionEnabled = true
-    private var edgeDetectionTolerance: CGFloat = 10.0
-    private let edgeCheckInterval: TimeInterval = 0.1 // 每0.1秒检查一次边缘
+    private var edgeDetectionTolerance: CGFloat = 2.0 // 进一步减小容差值，使检测更精确
+    private let edgeCheckInterval: TimeInterval = 1.0 // 继续增加间隔时间，减少检查频率
     private var lastEdgeCheckTime: TimeInterval = 0
+    private var lastBoundaryLogTime: TimeInterval = 0 
+    private let boundaryLogInterval: TimeInterval = 2.0 // 增加边界消息记录的最小间隔
+    
+    // 添加防抖动机制
+    private var consecutiveEdgeDetections = 0
+    private let edgeDetectionThreshold = 3 // 需要连续多少次检测到才算真正在边缘上
     
     // 坐标转换相关
     private var lastKnownGlobalPosition: CGPoint?
     
     private var isFollowingEdge = false
     private let edgeMoveSpeed: CGFloat = 2.0 // Speed of waddling along edge
+    private var edgeFollowingDirection: Direction?
     
     // 无聊状态相关
     private var lastActivityTime: TimeInterval = 0
     private let boredThreshold: TimeInterval = 10.0 // 10秒无活动后触发无聊状态
     private var isCheckingBoredom = false
     
+    // 静态变量 - 移动到类级别
+    private static var lastEdgeMovementTime: TimeInterval = 0
+    private static var lastEdgeNotificationTime: TimeInterval = 0
+    
     // 说话相关
     private var boredGreetings = [
-"Bored? Let’s bounce around!",
-"Eep, I’ll wiggle for you!",
+"Bored? Let's bounce around!",
+"Eep, I'll wiggle for you!",
 "Ooh, wanna chase my tail?",
-"Hop hop, let’s play now!",
-"I’ll twirl ‘til you giggle!",
+"Hop hop, let's play now!",
+"I'll twirl 'til you giggle!",
 "Boop! Surprise fluff attack!",
-"Let’s count my sparkles!",
-"Puff puff, boredom’s gone!",
+"Let's count my sparkles!",
+"Puff puff, boredom's gone!",
 "Wiggle dance, just for you!",
-"Eep, I’ll be your clown!",
+"Eep, I'll be your clown!",
 "Bouncy Fluffel to the rescue!",
-"Ooh, let’s make silly faces!",
-"I’ll hop ‘til you laugh!",
+"Ooh, let's make silly faces!",
+"I'll hop 'til you laugh!",
 "Teehee, watch me spin!",
 "Bored? Pat my fluff!",
-"Let’s play peekaboo, okay?",
-"Wheee, I’m your fun pet!",
+"Let's play peekaboo, okay?",
+"Wheee, I'm your fun pet!",
 "Paws up, no more blah!",
-"I’ll eep ‘til you smile!",
-"Ooh, let’s chase pixels!",
-"Fluffel’s got a silly trick!",
+"I'll eep 'til you smile!",
+"Ooh, let's chase pixels!",
+"Fluffel's got a silly trick!",
 "Hop hop, boredom buster!",
-"Twirl twirl, fun’s here!",
-"Eep, I’ll tickle your screen!",
-"Let’s bounce away the yawn!",
+"Twirl twirl, fun's here!",
+"Eep, I'll tickle your screen!",
+"Let's bounce away the yawn!",
 "Puffy fluff, instant fun!",
 "Wiggle wiggle, wake up!",
-"Ooh, I’ll boop your nose!",
+"Ooh, I'll boop your nose!",
 "Bored? Watch my fluff dance!",
 "Eep eep, giggle time!",
-"I’ll spin ‘til you cheer!",
+"I'll spin 'til you cheer!",
 "Hop along with me!",
-"Teehee, I’m your fluff fix!",
-"Let’s play a tiny game!",
-"Paws wave, boredom’s out!",
-"Ooh, I’ll sparkle extra!",
-"Fluffel’s here, no more dull!",
+"Teehee, I'm your fluff fix!",
+"Let's play a tiny game!",
+"Paws wave, boredom's out!",
+"Ooh, I'll sparkle extra!",
+"Fluffel's here, no more dull!",
 "Wiggle hop, fun starts!",
-"Eep, let’s make mischief!",
+"Eep, let's make mischief!",
 "Bouncy me, happy you!",
 "Twirl twirl, yawn no more!",
-"Ooh, I’ll puff up big!",
-"Let’s chase my fluffy tail!",
+"Ooh, I'll puff up big!",
+"Let's chase my fluffy tail!",
 "Hop hop, fun explosion!",
-"Eep, I’m your silly pal!",
-"Wiggle fluff, boredom’s done!",
+"Eep, I'm your silly pal!",
+"Wiggle fluff, boredom's done!",
 "Puffy pet, instant joy!",
 "Ooh, watch me tumble!",
-"Bored? Fluffel’s gotcha!",
-"Teehee, let’s bounce forever!",
+"Bored? Fluffel's gotcha!",
+"Teehee, let's bounce forever!",
     ]
     
     // 添加一个防止重复触发说话功能的标志
     private var isSpeakingInProgress = false
     private var speakingDebounceTimer: Timer?
+    
+    // 调试状态
+    private var isDebugMode = false
     
     override func sceneDidLoad() {
         super.sceneDidLoad()
@@ -133,7 +148,7 @@ class FluffelScene: SKScene {
     override func update(_ currentTime: TimeInterval) {
         super.update(currentTime)
         
-        // Edge detection
+        // Edge detection - 降低检测频率
         if isEdgeDetectionEnabled && currentTime - lastEdgeCheckTime > edgeCheckInterval {
             checkForWindowEdges(currentTime: currentTime)
             lastEdgeCheckTime = currentTime
@@ -151,11 +166,6 @@ class FluffelScene: SKScene {
     // 检查是否进入无聊状态
     private func checkBoredom(currentTime: TimeInterval) {
         guard let fluffel = fluffel else { return }
-        
-        // 调试输出，帮助诊断问题
-        if currentTime - lastActivityTime > boredThreshold - 1.0 {
-            print("无聊检测: 当前状态=\(fluffel.state), 是否在边缘=\(isFollowingEdge), 剩余时间=\(boredThreshold - (currentTime - lastActivityTime))")
-        }
         
         // 只有在正常状态下才检查无聊
         guard fluffel.state != .falling && 
@@ -243,49 +253,115 @@ class FluffelScene: SKScene {
         isCheckingBoredom = true
     }
     
-    // Move Fluffel along the current edge
+    // 优化: 沿边缘移动的优化版本
     private func followEdge(currentTime: TimeInterval) {
         guard let fluffel = fluffel, fluffel.state == .onEdge else {
             // 如果 Fluffel 不在边缘状态，重置标志
             isFollowingEdge = false
+            edgeFollowingDirection = nil
             return
         }
         
         // 设置标志表示正在沿边缘移动
         isFollowingEdge = true
         
-        // 其余代码保持不变
-        _ = edgeMoveSpeed
-
-        switch fluffel.currentEdge {
-        case .top, .bottom:
-            // Move horizontally along top or bottom edge
-            let direction = fluffel.xScale > 0 ? Direction.right : Direction.left
-            moveFluffel(direction: direction)
-
-            // Reverse direction if hitting scene bounds (simple bounce-back)
-            if fluffel.position.x <= 10 || fluffel.position.x >= size.width - 10 {
-                turnFluffelToFace(direction: direction == .right ? .left : .right)
-            }
-
-        case .left, .right:
-            // Move vertically along left or right edge
-            let direction = fluffel.position.y > size.height / 2 ? Direction.down : Direction.up
-            moveFluffel(direction: direction)
-
-            // Reverse direction at vertical bounds
-            if fluffel.position.y <= 10 || fluffel.position.y >= size.height - 10 {
-                fluffel.position.y = max(10, min(size.height - 10, fluffel.position.y))
-            }
-        case .none:
-            // 如果没有边缘状态，不执行任何操作
-            break
+        // 降低在边缘移动时的检查频率和移动频率
+        let edgeMovementDelay: TimeInterval = 0.2
+        
+        if currentTime - FluffelScene.lastEdgeMovementTime < edgeMovementDelay {
+            return
         }
+        FluffelScene.lastEdgeMovementTime = currentTime
+        
+        // 随机性，降低移动频率，增加静止概率
+        let canMove = Double.random(in: 0...1) < 0.6 // 60%概率移动
 
-        NotificationCenter.default.post(name: .fluffelDidMove, object: self)
+        // 如果没有确定方向，或者需要重新确定，随机选择一个方向
+        if edgeFollowingDirection == nil {
+            switch fluffel.currentEdge {
+            case .top, .bottom:
+                edgeFollowingDirection = Bool.random() ? .left : .right
+            case .left, .right:
+                edgeFollowingDirection = Bool.random() ? .up : .down
+            case .none:
+                isFollowingEdge = false
+                return
+            }
+        }
+        
+        // 使用确定的方向移动
+        if canMove, let direction = edgeFollowingDirection {
+            // 不使用标准的 moveFluffel 方法，因为它会导致 Fluffel 离开边缘
+            // 根据方向直接调整位置
+            var newPosition = fluffel.position
+            
+            switch direction {
+            case .left:
+                newPosition.x -= edgeMoveSpeed
+                fluffel.xScale = -abs(fluffel.xScale) // 确保朝向左侧
+            case .right:
+                newPosition.x += edgeMoveSpeed
+                fluffel.xScale = abs(fluffel.xScale) // 确保朝向右侧
+            case .up:
+                newPosition.y += edgeMoveSpeed
+            case .down:
+                newPosition.y -= edgeMoveSpeed
+            }
+            
+            // 检查新位置是否在场景边界内
+            let padding: CGFloat = 20.0
+            let fluffelSize = fluffel.size
+            
+            if newPosition.x < fluffelSize.width/2 + padding || 
+               newPosition.x > size.width - fluffelSize.width/2 - padding ||
+               newPosition.y < fluffelSize.height/2 + padding || 
+               newPosition.y > size.height - fluffelSize.height/2 - padding {
+                
+                // 如果到达边界，反转方向
+                switch direction {
+                case .left:
+                    edgeFollowingDirection = .right
+                    fluffel.xScale = abs(fluffel.xScale)
+                case .right:
+                    edgeFollowingDirection = .left
+                    fluffel.xScale = -abs(fluffel.xScale)
+                case .up:
+                    edgeFollowingDirection = .down
+                case .down:
+                    edgeFollowingDirection = .up
+                }
+                
+                // 远离边界一点，避免卡住
+                switch edgeFollowingDirection! {
+                case .left:
+                    fluffel.position.x -= padding/2
+                case .right:
+                    fluffel.position.x += padding/2
+                case .up:
+                    fluffel.position.y += padding/2
+                case .down:
+                    fluffel.position.y -= padding/2
+                }
+                
+                // 只有在方向改变时才记录日志
+                if currentTime - lastBoundaryLogTime >= boundaryLogInterval {
+                    print("Fluffel 到达边界，改变方向为: \(edgeFollowingDirection!)")
+                    lastBoundaryLogTime = currentTime
+                }
+            } else {
+                // 如果不会碰到边界，则应用新位置
+                fluffel.position = newPosition
+            }
+            
+            // 不要每次移动都发送通知，降低通知频率
+            if currentTime - FluffelScene.lastEdgeNotificationTime > 0.5 {
+                NotificationCenter.default.post(name: .fluffelDidMove, object: self)
+                FluffelScene.lastEdgeNotificationTime = currentTime
+            }
+        }
     }
     
-    // 检查 Fluffel 是否靠近窗口边缘
+    // 检查 Fluffel 是否靠近窗口边缘 - 优化版本
     private func checkForWindowEdges(currentTime: TimeInterval) {
         guard let fluffel = fluffel, 
               fluffel.state != .falling, // 如果正在下落，不检查边缘
@@ -293,7 +369,7 @@ class FluffelScene: SKScene {
             return
         }
 
-        // Get Fluffel's global position (existing code)
+        // 获取 Fluffel 全局位置
         let fluffelScenePosition = fluffel.position
         let fluffelViewPosition = self.view!.convert(fluffelScenePosition, from: self)
         var fluffelWindowPosition = fluffelViewPosition
@@ -304,27 +380,59 @@ class FluffelScene: SKScene {
         )
         lastKnownGlobalPosition = fluffelGlobalPosition
 
-        // Check edge status
-        let edgeResult = WindowUtility.isPointOnWindowEdge(fluffelGlobalPosition, tolerance: edgeDetectionTolerance)
+        // 使用更小的容差值进行边缘检测
+        let strictTolerance = edgeDetectionTolerance
+        let edgeResult = WindowUtility.isPointOnWindowEdge(fluffelGlobalPosition, tolerance: strictTolerance)
 
-        if edgeResult.isOnEdge, let edge = edgeResult.edge, let detectedWindow = edgeResult.window {
-            if !fluffel.isOnEdge {
-                // Moved to a new edge
-                fluffel.setOnEdge(window: detectedWindow, edge: edge)
-                isFollowingEdge = true // 确保设置标志
-                print("Fluffel moved to edge: \(edge)")
-            } else if fluffel.currentWindow?.id != detectedWindow.id {
-                // Window changed, update it
-                fluffel.setOnEdge(window: detectedWindow, edge: edge)
-                isFollowingEdge = true // 确保设置标志
-                print("Fluffel switched to new window edge: \(edge)")
+        // 调试信息
+        if isDebugMode {
+            let debugInfo = """
+            Fluffel位置: \(fluffelGlobalPosition.x), \(fluffelGlobalPosition.y)
+            容差值: \(strictTolerance)
+            检测结果: \(edgeResult.isOnEdge ? "在边缘上" : "不在边缘上")
+            边缘类型: \(edgeResult.edge?.description ?? "无")
+            连续检测次数: \(consecutiveEdgeDetections)/\(edgeDetectionThreshold)
+            """
+            NotificationCenter.default.post(name: .fluffelDebugInfo, object: self, userInfo: ["debugInfo": debugInfo])
+        }
+
+        if edgeResult.isOnEdge, let edge = edgeResult.edge {
+            // 增加连续检测计数器
+            consecutiveEdgeDetections += 1
+            
+            // 只有连续多次检测到边缘才认为真正在边缘上
+            if consecutiveEdgeDetections >= edgeDetectionThreshold {
+                // 如果已在同一边缘上，不做任何改变
+                if fluffel.isOnEdge && fluffel.currentEdge == edge {
+                    return
+                }
+                
+                // 如果是新边缘或不同边缘
+                if let detectedWindow = edgeResult.window {
+                    fluffel.setOnEdge(window: detectedWindow, edge: edge)
+                } else {
+                    // 如果是屏幕边缘而非窗口
+                    fluffel.setOnScreenEdge(edge: edge)
+                }
+                
+                // 初始化边缘跟随方向
+                edgeFollowingDirection = nil
+                isFollowingEdge = true
+                
+                print("Fluffel 到达\(edge.description)边缘")
             }
-        } else if fluffel.isOnEdge {
-            // No longer on an edge, initiate fall
-            fluffel.leaveEdge()
-            isFollowingEdge = false // 确保重置标志
-            startFalling()
-            print("Fluffel fell off edge")
+        } else {
+            // 重置连续检测计数器
+            consecutiveEdgeDetections = 0
+            
+            // 如果之前在边缘上，现在不在了，触发下落
+            if fluffel.isOnEdge {
+                fluffel.leaveEdge()
+                isFollowingEdge = false
+                edgeFollowingDirection = nil
+                startFalling()
+                print("Fluffel 离开边缘")
+            }
         }
     }
     
@@ -380,7 +488,12 @@ class FluffelScene: SKScene {
            fluffel.position.y > size.height - fluffelSize.height/2 - padding {
             // 如果超出边界，恢复到原始位置
             fluffel.position = originalPosition
-            print("Fluffel 到达屏幕边界，无法再移动")
+            
+            // 限制边界消息的输出频率
+            if currentTime - lastBoundaryLogTime >= boundaryLogInterval {
+                print("Fluffel 到达屏幕边界，无法再移动")
+                lastBoundaryLogTime = currentTime
+            }
         }
         
         // 重置无聊计时器，因为有移动发生
@@ -571,5 +684,10 @@ class FluffelScene: SKScene {
         NotificationCenter.default.post(name: .fluffelDidMove, object: self)
         
         print("Fluffel 已重置到屏幕中心")
+    }
+    
+    // 设置调试模式
+    func setDebugMode(_ enabled: Bool) {
+        isDebugMode = enabled
     }
 } 

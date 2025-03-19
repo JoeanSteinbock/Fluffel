@@ -119,8 +119,17 @@ extension Fluffel {
     func removeSpeechBubble() {
         // 查找并移除名为 "speechBubble" 的子节点
         var didRemoveBubble = false
-        self.children.forEach { node in
-            if node.name == "speechBubble" {
+        
+        // 移除所有与说话气泡相关的节点
+        for node in children {
+            if let _ = node as? SKShapeNode,
+               node.name?.contains("speechBubble") ?? false {
+                node.run(SKAction.sequence([
+                    SKAction.fadeOut(withDuration: 0.3),
+                    SKAction.removeFromParent()
+                ]))
+                didRemoveBubble = true
+            } else if node.name == "speechBubble" {
                 node.removeFromParent()
                 didRemoveBubble = true
             }

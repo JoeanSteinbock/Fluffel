@@ -266,4 +266,23 @@ class FluffelWindowController: NSWindowController {
         // 重置原始高度
         originalWindowHeight = 0
     }
+    
+    func repositionWindow(to point: CGPoint, for spritePosition: CGPoint) {
+        guard let window = window,
+              let scene = fluffelScene,
+              let view = window.contentView as? SKView else { return }
+        
+        // 计算正确的窗口位置以使 Fluffel 位于鼠标位置
+        // 将精灵位置从场景坐标系转换为窗口坐标系
+        let viewPosition = view.convert(spritePosition, from: scene)
+        
+        // 计算新的窗口位置
+        let newWindowX = point.x - viewPosition.x
+        let newWindowY = point.y - viewPosition.y
+        
+        // 设置窗口的新位置
+        window.setFrameOrigin(NSPoint(x: newWindowX, y: newWindowY))
+        
+        print("窗口已重定位到: \(newWindowX), \(newWindowY)")
+    }
 } 
