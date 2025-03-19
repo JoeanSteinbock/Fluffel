@@ -470,7 +470,9 @@ class FluffelScene: SKScene {
         menu.addItem(withTitle: "Conversation", action: #selector(AppDelegate.startConversation(_:)), keyEquivalent: "c")
         
         // 添加音乐选项
-        menu.addItem(withTitle: "Listen to music", action: #selector(AppDelegate.startListeningToMusic(_:)), keyEquivalent: "m")
+        let musicMenuItem = NSMenuItem(title: "Listen to music", action: #selector(AppDelegate.startListeningToMusic(_:)), keyEquivalent: "m")
+        musicMenuItem.target = NSApp.delegate
+        menu.addItem(musicMenuItem)
         
         menu.addItem(NSMenuItem.separator())
         
@@ -565,4 +567,4 @@ class FluffelScene: SKScene {
         
         print("Music playback stopped by FluffelScene")
     }
-} 
+}

@@ -1,4 +1,7 @@
 import Cocoa
+import AVFoundation
+// Import our playlist manager
+import Foundation
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -505,6 +508,72 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // 音乐相关方法
     @objc func startListeningToMusic(_ sender: Any) {
+        // 如果是从菜单项调用，显示子菜单
+        if let menuItem = sender as? NSMenuItem, menuItem.submenu == nil {
+            // 加载播放列表
+            FluffelPixabayPlaylists.shared.loadPlaylists { [weak self] success in
+                guard success else {
+                    // 如果加载失败，使用默认行为
+                    self?.playDefaultMusic()
+                    return
+                }
+                
+                if menuItem.submenu == nil {
+                    self?.playDefaultMusic()
+                    return
+                }
+                
+                // 创建播放列表子菜单
+                DispatchQueue.main.async {
+                    self?.showPlaylistSubmenu(for: menuItem)
+                }
+            }
+        } else {
+            // 直接播放默认音乐
+            playDefaultMusic()
+        }
+    }
+    
+    /// 显示播放列表子菜单
+    private func showPlaylistSubmenu(for menuItem: NSMenuItem) {
+        // 创建子菜单
+        let submenu = NSMenu(title: "Playlists")
+        
+        // 获取播放列表
+        let playlists = FluffelPixabayPlaylists.shared.playlists
+        
+        // 添加播放列表菜单项
+        for playlist in playlists {
+            let playlistItem = NSMenuItem(title: playlist.title, action: #selector(playPlaylist(_:)), keyEquivalent: "")
+            playlistItem.representedObject = playlist.id
+            playlistItem.target = self
+            submenu.addItem(playlistItem)
+            
+            // 为每个播放列表创建子菜单，包含所有曲目
+            let tracksSubmenu = NSMenu(title: playlist.title)
+            for track in playlist.tracks {
+                let trackItem = NSMenuItem(title: "\(track.title) (\(track.formattedDuration))", action: #selector(playTrack(_:)), keyEquivalent: "")
+                trackItem.representedObject = track.id
+                trackItem.target = self
+                tracksSubmenu.addItem(trackItem)
+            }
+            
+            // 将曲目子菜单添加到播放列表菜单项
+            playlistItem.submenu = tracksSubmenu
+        }
+        
+        // 添加分隔线和停止音乐选项
+        submenu.addItem(NSMenuItem.separator())
+        let stopItem = NSMenuItem(title: "Stop Music", action: #selector(stopMusic(_:)), keyEquivalent: "")
+        stopItem.target = self
+        submenu.addItem(stopItem)
+        
+        // 设置子菜单
+        menuItem.submenu = submenu
+    }
+    
+    /// 播放默认音乐
+    private func playDefaultMusic() {
         executeAction { [weak self] in
             guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
             
@@ -543,6 +612,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    /// 播放选定的播放列表
+    @objc func playPlaylist(_ sender: NSMenuItem) {
+        guard let playlistId = sender.representedObject as? String,
+              let playlist = FluffelPixabayPlaylists.shared.getPlaylist(id: playlistId),
+              let firstTrack = playlist.tracks.first else {
+            return
+        }
+        
+        // 播放播放列表中的第一首曲目
+        playTrackWithId(firstTrack.id)
+    }
+    
+    /// 播放选定的曲目
+    @objc func playTrack(_ sender: NSMenuItem) {
+        guard let trackId = sender.representedObject as? String else {
+            return
+        }
+        
+        playTrackWithId(trackId)
+    }
+    
+    /// 根据ID播放曲目
+    private func playTrackWithId(_ trackId: String) {
+        executeAction { [weak self] in
+            guard let fluffel = self?.fluffelWindowController?.fluffel,
+                  let track = FluffelPixabayPlaylists.shared.getTrack(id: trackId) else {
+                return
+            }
+            
+            // 播放选定的曲目
+            fluffel.playMusicFromURL(track.url) { success in
+                if success {
+                    print("Track playback completed successfully: \(track.title)")
+                } else {
+                    print("Failed to play track: \(track.title)")
+                    // 通知用户
+                    fluffel.speak(text: "Sorry, I couldn't play the music", duration: 3.0)
+                }
+            }
+        }
+    }
+    
     @objc func stopMusic(_ sender: Any) {
         executeAction { [weak self] in
             guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
@@ -571,4 +682,4 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             fluffel.speak(text: "Voice updated!", duration: 2.0)
         }
     }
-} 
+}

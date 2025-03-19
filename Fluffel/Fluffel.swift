@@ -28,6 +28,12 @@ class Fluffel: SKNode {
     internal let rightEar: SKShapeNode
     internal let glowEffect: SKShapeNode // 添加发光效果节点
     
+    // 耳机组件 - 只在听音乐时显示
+    internal let headphones: SKNode
+    internal let leftHeadphone: SKShapeNode
+    internal let rightHeadphone: SKShapeNode
+    internal let headband: SKShapeNode
+    
     // Fluffel 状态相关变量
     var state: FluffelState = .idle
     
@@ -137,6 +143,50 @@ class Fluffel: SKNode {
         rightEar.strokeColor = .clear
         rightEar.position = CGPoint(x: 18, y: 18)
         
+        // 创建耳机组件
+        // 耳机父节点
+        headphones = SKNode()
+        
+        // 左耳机
+        leftHeadphone = SKShapeNode(circleOfRadius: 10)
+        leftHeadphone.fillColor = NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.3, alpha: 1.0) // 深灰色
+        leftHeadphone.strokeColor = NSColor.black
+        leftHeadphone.lineWidth = 1.0
+        leftHeadphone.position = CGPoint(x: -23, y: 15) // 位于左耳附近
+        
+        // 右耳机
+        rightHeadphone = SKShapeNode(circleOfRadius: 10)
+        rightHeadphone.fillColor = NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
+        rightHeadphone.strokeColor = NSColor.black
+        rightHeadphone.lineWidth = 1.0
+        rightHeadphone.position = CGPoint(x: 23, y: 15) // 位于右耳附近
+        
+        // 头带连接左右耳机
+        let headbandPath = CGMutablePath()
+        headbandPath.move(to: CGPoint(x: -20, y: 21))
+        headbandPath.addCurve(
+            to: CGPoint(x: 20, y: 21), 
+            control1: CGPoint(x: -10, y: 30), 
+            control2: CGPoint(x: 10, y: 30)
+        )
+        
+        headband = SKShapeNode(path: headbandPath)
+        headband.strokeColor = NSColor.black
+        headband.lineWidth = 2.0
+        
+        // 添加蓝色高光到耳机，使其更有立体感
+        let leftHeadphoneHighlight = SKShapeNode(circleOfRadius: 4)
+        leftHeadphoneHighlight.fillColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.9, alpha: 0.5)
+        leftHeadphoneHighlight.strokeColor = .clear
+        leftHeadphoneHighlight.position = CGPoint(x: -2, y: 2)
+        leftHeadphone.addChild(leftHeadphoneHighlight)
+        
+        let rightHeadphoneHighlight = SKShapeNode(circleOfRadius: 4)
+        rightHeadphoneHighlight.fillColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.9, alpha: 0.5)
+        rightHeadphoneHighlight.strokeColor = .clear
+        rightHeadphoneHighlight.position = CGPoint(x: 2, y: 2)
+        rightHeadphone.addChild(rightHeadphoneHighlight)
+        
         super.init()
         
         print("Fluffel 初始化开始")
@@ -152,11 +202,20 @@ class Fluffel: SKNode {
         addChild(leftCheek)
         addChild(rightCheek)
         
+        // 添加耳机组件
+        headphones.addChild(leftHeadphone)
+        headphones.addChild(rightHeadphone)
+        headphones.addChild(headband)
+        addChild(headphones)
+        
         // 启动基本动画
         startBreathingAnimation()
         
         // 启动发光效果动画
         startGlowAnimation()
+        
+        // 隐藏耳机组件
+        headphones.isHidden = true
         
         print("Fluffel 初始化完成")
     }

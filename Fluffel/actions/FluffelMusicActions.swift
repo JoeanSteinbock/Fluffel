@@ -29,6 +29,14 @@ extension Fluffel: AVAudioPlayerDelegate {
         // 设置状态
         setState(.listeningToMusic)
         
+        // 显示耳机
+        headphones.isHidden = false
+        
+        // 添加耳机出现动画
+        headphones.alpha = 0
+        let fadeIn = SKAction.fadeIn(withDuration: 0.5)
+        headphones.run(fadeIn)
+        
         // 创建愉悦表情
         let happyFaceAction = SKAction.run { [weak self] in
             guard let self = self else { return }
@@ -185,6 +193,15 @@ extension Fluffel: AVAudioPlayerDelegate {
         
         // 恢复正常表情
         smile()
+        
+        // 隐藏耳机
+        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+        let hideHeadphones = SKAction.run { [weak self] in
+            self?.headphones.isHidden = true
+            self?.headphones.alpha = 1 // 重置alpha值，以便下次显示
+        }
+        let sequence = SKAction.sequence([fadeOut, hideHeadphones])
+        headphones.run(sequence)
         
         // 避免使用setState触发潜在的循环调用
         // 直接修改状态变量
