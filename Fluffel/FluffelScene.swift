@@ -480,16 +480,50 @@ class FluffelScene: SKScene {
         menu.addItem(withTitle: "Share facts", action: #selector(AppDelegate.shareFact(_:)), keyEquivalent: "f")
         menu.addItem(withTitle: "Conversation", action: #selector(AppDelegate.startConversation(_:)), keyEquivalent: "c")
         
-        // 添加音乐选项
-        let musicMenuItem = NSMenuItem(title: "Listen to music", action: #selector(AppDelegate.startListeningToMusic(_:)), keyEquivalent: "m")
-        musicMenuItem.target = NSApp.delegate
+        // 创建音乐子菜单
+        let musicMenu = NSMenu(title: "Listen to music")
+        let musicMenuItem = NSMenuItem(title: "Listen to music", action: nil, keyEquivalent: "m")
+        musicMenuItem.submenu = musicMenu
+        
+        // 添加音乐类别
+        for category in FluffelPixabayPlaylists.PlaylistCategory.allCases {
+            let categoryItem = NSMenuItem(
+                title: category.rawValue,
+                action: #selector(AppDelegate.showPlaylistWindow(_:)),
+                keyEquivalent: ""
+            )
+            categoryItem.representedObject = category
+            categoryItem.target = NSApp.delegate
+            musicMenu.addItem(categoryItem)
+        }
+        
+        // 添加分隔线和其他音乐选项
+        musicMenu.addItem(NSMenuItem.separator())
+        
+        // 添加随机播放选项
+        let shuffleAllItem = NSMenuItem(
+            title: "Shuffle All Music",
+            action: #selector(AppDelegate.playRandomTrackFromAll(_:)),
+            keyEquivalent: ""
+        )
+        shuffleAllItem.target = NSApp.delegate
+        musicMenu.addItem(shuffleAllItem)
+        
+        // 添加停止音乐选项
+        let stopItem = NSMenuItem(
+            title: "Stop Music",
+            action: #selector(AppDelegate.stopMusic(_:)),
+            keyEquivalent: ""
+        )
+        stopItem.target = NSApp.delegate
+        musicMenu.addItem(stopItem)
+        
         menu.addItem(musicMenuItem)
         
         menu.addItem(NSMenuItem.separator())
         
         // 添加声音选项子菜单
         let voiceMenu = NSMenu(title: "Voice Options")
-        
         let voiceMenuItem = NSMenuItem(title: "Voice Options", action: nil, keyEquivalent: "")
         voiceMenuItem.submenu = voiceMenu
         
@@ -519,13 +553,8 @@ class FluffelScene: SKScene {
         
         // 为菜单项设置目标
         for item in menu.items {
-            item.target = NSApp.delegate
-            
-            // 为子菜单中的项目也设置目标
-            if let submenu = item.submenu {
-                for subItem in submenu.items {
-                    subItem.target = NSApp.delegate
-                }
+            if item.action != nil {
+                item.target = NSApp.delegate
             }
         }
         
