@@ -33,18 +33,62 @@ class FluffelScene: SKScene {
     private var isCheckingBoredom = false
     
     // 说话相关
-    private var greetings = [
-        "你好！",
-        "嗨！我是 Fluffel！",
-        "今天天气真好！",
-        "你在做什么呢？",
-        "需要帮忙吗？",
-        "点击我可以让我说话哦！",
-        "我喜欢在桌面上跑来跑去！",
-        "我们一起玩吧！",
-        "今天过得怎么样？",
-        "我感觉很开心！"
+    private var boredGreetings = [
+"Bored? Let’s bounce around!",
+"Eep, I’ll wiggle for you!",
+"Ooh, wanna chase my tail?",
+"Hop hop, let’s play now!",
+"I’ll twirl ‘til you giggle!",
+"Boop! Surprise fluff attack!",
+"Let’s count my sparkles!",
+"Puff puff, boredom’s gone!",
+"Wiggle dance, just for you!",
+"Eep, I’ll be your clown!",
+"Bouncy Fluffel to the rescue!",
+"Ooh, let’s make silly faces!",
+"I’ll hop ‘til you laugh!",
+"Teehee, watch me spin!",
+"Bored? Pat my fluff!",
+"Let’s play peekaboo, okay?",
+"Wheee, I’m your fun pet!",
+"Paws up, no more blah!",
+"I’ll eep ‘til you smile!",
+"Ooh, let’s chase pixels!",
+"Fluffel’s got a silly trick!",
+"Hop hop, boredom buster!",
+"Twirl twirl, fun’s here!",
+"Eep, I’ll tickle your screen!",
+"Let’s bounce away the yawn!",
+"Puffy fluff, instant fun!",
+"Wiggle wiggle, wake up!",
+"Ooh, I’ll boop your nose!",
+"Bored? Watch my fluff dance!",
+"Eep eep, giggle time!",
+"I’ll spin ‘til you cheer!",
+"Hop along with me!",
+"Teehee, I’m your fluff fix!",
+"Let’s play a tiny game!",
+"Paws wave, boredom’s out!",
+"Ooh, I’ll sparkle extra!",
+"Fluffel’s here, no more dull!",
+"Wiggle hop, fun starts!",
+"Eep, let’s make mischief!",
+"Bouncy me, happy you!",
+"Twirl twirl, yawn no more!",
+"Ooh, I’ll puff up big!",
+"Let’s chase my fluffy tail!",
+"Hop hop, fun explosion!",
+"Eep, I’m your silly pal!",
+"Wiggle fluff, boredom’s done!",
+"Puffy pet, instant joy!",
+"Ooh, watch me tumble!",
+"Bored? Fluffel’s gotcha!",
+"Teehee, let’s bounce forever!",
     ]
+    
+    // 添加一个防止重复触发说话功能的标志
+    private var isSpeakingInProgress = false
+    private var speakingDebounceTimer: Timer?
     
     override func sceneDidLoad() {
         super.sceneDidLoad()
@@ -403,11 +447,23 @@ class FluffelScene: SKScene {
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
         
+        // 如果已经在说话中，忽略此次点击
+        if isSpeakingInProgress {
+            print("Fluffel正在说话，忽略重复点击")
+            return
+        }
+        
         // 将鼠标位置转换到场景坐标系
         let location = event.location(in: self)
         
         // 检测是否点击了 Fluffel
         if let fluffel = fluffel, fluffel.contains(location) {
+            // 设置标志，防止重复触发
+            isSpeakingInProgress = true
+            
+            // 取消可能存在的定时器
+            speakingDebounceTimer?.invalidate()
+            
             // 使用我们创建的说话演示
             if let appDelegate = NSApp.delegate as? AppDelegate {
                 // 随机选择一个动作：问候、笑话或事实
@@ -426,6 +482,11 @@ class FluffelScene: SKScene {
                 // 如果找不到 AppDelegate，仍然使用原有的方法
                 makeFluffelSpeak()
             }
+            
+            // 设置定时器，延迟清除标志
+            speakingDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+                self?.isSpeakingInProgress = false
+            }
         }
         
         // 更新最后活动时间
@@ -436,14 +497,31 @@ class FluffelScene: SKScene {
     func makeFluffelSpeak(_ text: String? = nil) {
         guard let fluffel = fluffel else { return }
         
+        // 如果正在说话中，不要再触发新的说话
+        if isSpeakingInProgress {
+            return
+        }
+        
+        // 设置标志，防止重复触发
+        isSpeakingInProgress = true
+        
         // 如果没有指定文本，随机选择一句问候语
-        let speechText = text ?? greetings.randomElement() ?? "你好！"
+        let speechText = text ?? boredGreetings.randomElement() ?? "你好！"
         
         // 根据文本长度调整显示时间
         let duration = min(max(TimeInterval(speechText.count) * 0.15, 2.0), 5.0)
         
         // 让 Fluffel 说话
-        fluffel.speak(text: speechText, duration: duration)
+        fluffel.speak(text: speechText, duration: duration) { [weak self] in
+            // 说话结束后重置标志
+            self?.isSpeakingInProgress = false
+        }
+        
+        // 设置安全计时器，以防说话完成回调未被调用
+        speakingDebounceTimer?.invalidate()
+        speakingDebounceTimer = Timer.scheduledTimer(withTimeInterval: duration + 1.0, repeats: false) { [weak self] _ in
+            self?.isSpeakingInProgress = false
+        }
     }
     
     // 将 Fluffel 重置到第一屏中心
@@ -480,7 +558,7 @@ class FluffelScene: SKScene {
         
         // 让 Fluffel 说话，表明它已经回到中心
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            self.makeFluffelSpeak("我回来啦！")
+            self.makeFluffelSpeak("I'm back!")
         }
         
         // 重置朝向为右侧

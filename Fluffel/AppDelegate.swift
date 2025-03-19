@@ -5,6 +5,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     var fluffelWindowController: FluffelWindowController?
     var speakingDemo: FluffelSpeakingDemo?
+    
+    // 添加一个标志，防止动作重复触发
+    private var isActionInProgress = false
+    // 添加计时器，用于防止快速连续触发
+    private var actionDebounceTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 关闭任何可能由 storyboard 创建的窗口
@@ -51,6 +56,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationWillTerminate(_ notification: Notification) {
         // 清理代码
+        actionDebounceTimer?.invalidate()
+        actionDebounceTimer = nil
     }
     
     // 设置应用菜单
@@ -85,27 +92,58 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = mainMenu
     }
     
+    // 辅助方法：防止动作重复触发
+    private func executeAction(_ action: () -> Void) {
+        // 如果已经有动作在执行，忽略此次调用
+        guard !isActionInProgress else {
+            print("动作已在执行中，忽略重复调用")
+            return
+        }
+        
+        // 标记动作开始执行
+        isActionInProgress = true
+        
+        // 执行动作
+        action()
+        
+        // 设置计时器，延迟清除标志，防止快速连续触发
+        actionDebounceTimer?.invalidate()
+        actionDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            self?.isActionInProgress = false
+        }
+    }
+    
     // 菜单动作方法
     @objc func speakGreeting(_ sender: Any) {
-        speakingDemo?.speakRandomGreeting()
+        executeAction { [weak self] in
+            self?.speakingDemo?.speakRandomGreeting()
+        }
     }
     
     @objc func tellJoke(_ sender: Any) {
-        speakingDemo?.tellRandomJoke()
+        executeAction { [weak self] in
+            self?.speakingDemo?.tellRandomJoke()
+        }
     }
     
     @objc func shareFact(_ sender: Any) {
-        speakingDemo?.shareRandomFact()
+        executeAction { [weak self] in
+            self?.speakingDemo?.shareRandomFact()
+        }
     }
     
     @objc func startConversation(_ sender: Any) {
-        speakingDemo?.performConversation()
+        executeAction { [weak self] in
+            self?.speakingDemo?.performConversation()
+        }
     }
     
     // 新增重置 Fluffel 到中心的方法
     @objc func resetFluffelToCenter(_ sender: Any) {
-        if let scene = fluffelWindowController?.fluffelScene {
-            scene.resetFluffelToCenter()
+        executeAction { [weak self] in
+            if let scene = self?.fluffelWindowController?.fluffelScene {
+                scene.resetFluffelToCenter()
+            }
         }
     }
     

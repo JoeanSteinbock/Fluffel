@@ -17,6 +17,18 @@ extension Fluffel {
         
         // 创建气泡节点
         let bubble = createSpeechBubble(withText: text, fontSize: fontSize)
+        
+        // 计算气泡的边界，用于扩大窗口
+        let bubbleFrame = bubble.calculateAccumulatedFrame()
+        
+        // 发送通知，让窗口控制器知道需要更多空间用于气泡
+        NotificationCenter.default.post(
+            name: NSNotification.Name("fluffelWillSpeak"), 
+            object: self,
+            userInfo: ["bubbleHeight": bubbleFrame.height + 10]
+        )
+        
+        // 添加气泡到Fluffel
         addChild(bubble)
         
         // 淡入动画
@@ -32,6 +44,10 @@ extension Fluffel {
         // 移除气泡
         let remove = SKAction.run { [weak self] in
             bubble.removeFromParent()
+            
+            // 发送通知，让窗口控制器知道气泡已被移除
+            NotificationCenter.default.post(name: NSNotification.Name("fluffelDidStopSpeaking"), object: self)
+            
             // 执行完成回调
             completion?()
         }
@@ -102,10 +118,17 @@ extension Fluffel {
     /// 移除当前的对话气泡
     func removeSpeechBubble() {
         // 查找并移除名为 "speechBubble" 的子节点
+        var didRemoveBubble = false
         self.children.forEach { node in
             if node.name == "speechBubble" {
                 node.removeFromParent()
+                didRemoveBubble = true
             }
+        }
+        
+        // 如果确实移除了气泡，发送通知让窗口控制器知道气泡已被移除
+        if didRemoveBubble {
+            NotificationCenter.default.post(name: NSNotification.Name("fluffelDidStopSpeaking"), object: self)
         }
         
         // 停止说话动画

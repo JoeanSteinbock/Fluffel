@@ -12,6 +12,9 @@ class FluffelWindowController: NSWindowController {
     private var activeKeys: Set<UInt16> = []
     private var moveTimer: Timer?
     
+    // 储存原始窗口高度，用于说话结束后恢复
+    private var originalWindowHeight: CGFloat = 0
+    
     public var fluffel: Fluffel {
         return (window?.contentView as? SKView)?.scene?.childNode(withName: "fluffel") as! Fluffel
     }
@@ -76,6 +79,21 @@ class FluffelWindowController: NSWindowController {
             self,
             selector: #selector(fluffelDidMove(_:)),
             name: .fluffelDidMove,
+            object: nil
+        )
+        
+        // 添加说话相关的通知监听
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(fluffelWillSpeak(_:)),
+            name: NSNotification.Name("fluffelWillSpeak"),
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(fluffelDidStopSpeaking(_:)),
+            name: NSNotification.Name("fluffelDidStopSpeaking"),
             object: nil
         )
     }
@@ -190,5 +208,62 @@ class FluffelWindowController: NSWindowController {
         default:
             return nil
         }
+    }
+    
+    @objc private func fluffelWillSpeak(_ notification: Notification) {
+        guard let window = self.window,
+              let userInfo = notification.userInfo,
+              let bubbleHeight = userInfo["bubbleHeight"] as? CGFloat else {
+            return
+        }
+        
+        // 保存当前窗口高度
+        originalWindowHeight = window.frame.height
+        
+        // 计算新的窗口高度，确保有足够空间显示气泡
+        let newWindowHeight = originalWindowHeight + bubbleHeight
+        
+        // 更新窗口高度，保持窗口的x坐标和宽度不变
+        var newFrame = window.frame
+        newFrame.origin.y -= bubbleHeight // 向下扩展窗口，这样Fluffel的位置保持不变
+        newFrame.size.height = newWindowHeight
+        
+        // 使用动画平滑过渡到新的窗口大小
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.3
+            window.animator().setFrame(newFrame, display: true)
+        }, completionHandler: nil)
+        
+        // 更新场景大小
+        if let fluffelScene = self.fluffelScene {
+            fluffelScene.size = CGSize(width: newFrame.width, height: newFrame.height)
+        }
+    }
+    
+    @objc private func fluffelDidStopSpeaking(_ notification: Notification) {
+        guard let window = self.window,
+              originalWindowHeight > 0 else {
+            return
+        }
+        
+        // 恢复原始窗口高度
+        var newFrame = window.frame
+        let currentHeight = newFrame.height
+        newFrame.origin.y += (currentHeight - originalWindowHeight) // 向上收缩窗口
+        newFrame.size.height = originalWindowHeight
+        
+        // 使用动画平滑过渡回原始大小
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.3
+            window.animator().setFrame(newFrame, display: true)
+        }, completionHandler: nil)
+        
+        // 更新场景大小
+        if let fluffelScene = self.fluffelScene {
+            fluffelScene.size = CGSize(width: newFrame.width, height: newFrame.height)
+        }
+        
+        // 重置原始高度
+        originalWindowHeight = 0
     }
 } 
