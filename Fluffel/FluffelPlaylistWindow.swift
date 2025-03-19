@@ -145,14 +145,30 @@ class FluffelPlaylistWindow: NSWindow {
         let headerView = NSView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
         
+        // 获取播放列表数据
+        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        let totalDuration = tracks.reduce(0) { $0 + $1.duration }
+        let formattedDuration = { () -> String in
+            let minutes = totalDuration / 60
+            let seconds = totalDuration % 60
+            return String(format: "%d:%02d", minutes, seconds)
+        }()
+        
         // 创建标题标签
         let titleLabel = NSTextField(labelWithString: category.rawValue)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
         headerView.addSubview(titleLabel)
         
+        // 创建统计信息标签
+        let statsLabel = NSTextField(labelWithString: "\(tracks.count) tracks · \(formattedDuration)")
+        statsLabel.translatesAutoresizingMaskIntoConstraints = false
+        statsLabel.font = .systemFont(ofSize: 12)
+        statsLabel.textColor = .secondaryLabelColor
+        headerView.addSubview(statsLabel)
+        
         // 创建描述标签
-        let descLabel = NSTextField(labelWithString: "A collection of \(category.rawValue.lowercased()) music")
+        let descLabel = NSTextField(wrappingLabelWithString: getPlaylistDescription(for: category))
         descLabel.translatesAutoresizingMaskIntoConstraints = false
         descLabel.font = .systemFont(ofSize: 12)
         descLabel.textColor = .secondaryLabelColor
@@ -162,34 +178,115 @@ class FluffelPlaylistWindow: NSWindow {
         let playAllButton = NSButton(title: "Play All", target: self, action: #selector(playAllTracks))
         playAllButton.translatesAutoresizingMaskIntoConstraints = false
         playAllButton.bezelStyle = .rounded
+        playAllButton.contentTintColor = category.color
         headerView.addSubview(playAllButton)
         
         // 创建随机播放按钮
         let shuffleButton = NSButton(title: "Shuffle", target: self, action: #selector(shufflePlaylist))
         shuffleButton.translatesAutoresizingMaskIntoConstraints = false
         shuffleButton.bezelStyle = .rounded
+        shuffleButton.contentTintColor = category.color
         headerView.addSubview(shuffleButton)
         
-        // 设置约束
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor),
-            titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            titleLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+        // 如果有背景图片，添加背景图片视图
+        if let bgImageUrl = getPlaylistBackgroundImage(for: category) {
+            let imageView = NSImageView()
+            imageView.translatesAutoresizingMaskIntoConstraints = false
             
-            descLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            descLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            descLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            // 异步加载图片
+            DispatchQueue.global().async {
+                if let imageData = try? Data(contentsOf: bgImageUrl),
+                   let image = NSImage(data: imageData) {
+                    DispatchQueue.main.async {
+                        imageView.image = image
+                        imageView.wantsLayer = true
+                        imageView.layer?.cornerRadius = 8
+                        imageView.layer?.masksToBounds = true
+                    }
+                }
+            }
             
-            playAllButton.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 12),
-            playAllButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            headerView.addSubview(imageView)
             
-            shuffleButton.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 12),
-            shuffleButton.leadingAnchor.constraint(equalTo: playAllButton.trailingAnchor, constant: 8),
+            // 设置图片视图约束
+            NSLayoutConstraint.activate([
+                imageView.topAnchor.constraint(equalTo: headerView.topAnchor),
+                imageView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+                imageView.widthAnchor.constraint(equalToConstant: 120),
+                imageView.heightAnchor.constraint(equalToConstant: 120)
+            ])
             
-            headerView.bottomAnchor.constraint(equalTo: playAllButton.bottomAnchor)
-        ])
+            // 调整其他元素的约束以适应图片
+            NSLayoutConstraint.activate([
+                titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor),
+                titleLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 16),
+                titleLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
+                
+                statsLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+                statsLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+                statsLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+                
+                descLabel.topAnchor.constraint(equalTo: statsLabel.bottomAnchor, constant: 8),
+                descLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+                descLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+                
+                playAllButton.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 12),
+                playAllButton.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+                
+                shuffleButton.topAnchor.constraint(equalTo: playAllButton.topAnchor),
+                shuffleButton.leadingAnchor.constraint(equalTo: playAllButton.trailingAnchor, constant: 8),
+                
+                headerView.bottomAnchor.constraint(equalTo: imageView.bottomAnchor)
+            ])
+        } else {
+            // 没有图片时的约束
+            NSLayoutConstraint.activate([
+                titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor),
+                titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+                titleLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+                
+                statsLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
+                statsLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+                statsLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+                
+                descLabel.topAnchor.constraint(equalTo: statsLabel.bottomAnchor, constant: 8),
+                descLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+                descLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+                
+                playAllButton.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 12),
+                playAllButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+                
+                shuffleButton.topAnchor.constraint(equalTo: playAllButton.topAnchor),
+                shuffleButton.leadingAnchor.constraint(equalTo: playAllButton.trailingAnchor, constant: 8),
+                
+                headerView.bottomAnchor.constraint(equalTo: playAllButton.bottomAnchor)
+            ])
+        }
         
         return headerView
+    }
+    
+    // 获取播放列表描述
+    private func getPlaylistDescription(for category: FluffelPixabayPlaylists.PlaylistCategory) -> String {
+        if let url = Bundle.main.url(forResource: "playlists", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let allPlaylists = try? JSONDecoder().decode([PlaylistData].self, from: data),
+           let matchingPlaylist = allPlaylists.first(where: { $0.categories?.contains(category.rawValue.lowercased()) ?? false }) {
+            return matchingPlaylist.description
+        }
+        return "A collection of \(category.rawValue.lowercased()) music"
+    }
+    
+    // 获取播放列表背景图片 URL
+    private func getPlaylistBackgroundImage(for category: FluffelPixabayPlaylists.PlaylistCategory) -> URL? {
+        if let url = Bundle.main.url(forResource: "playlists", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let allPlaylists = try? JSONDecoder().decode([PlaylistData].self, from: data),
+           let matchingPlaylist = allPlaylists.first(where: { $0.categories?.contains(category.rawValue.lowercased()) ?? false }),
+           let bgImageSrc = matchingPlaylist.bgImageSrc {
+            return URL(string: bgImageSrc)
+        }
+        return nil
     }
     
     private func createSeparator() -> NSView {

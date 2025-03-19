@@ -52,6 +52,15 @@ class FluffelPixabayService: NSObject {
             // 将播放列表按类别分类
             categorizeAndStorePlaylists(allPlaylists)
             
+            // 打印加载信息
+            print("Successfully loaded \(allPlaylists.count) playlists")
+            for playlist in allPlaylists {
+                print("- \(playlist.title) (\(playlist.audioCount) tracks, \(playlist.formattedDuration))")
+                if let categories = playlist.categories {
+                    print("  Categories: \(categories.joined(separator: ", "))")
+                }
+            }
+            
         } catch {
             print("Error loading playlists.json: \(error)")
         }
@@ -61,34 +70,33 @@ class FluffelPixabayService: NSObject {
         // 清空现有播放列表
         playlists.removeAll()
         
-        // 遍历所有播放列表，根据其类别进行分类
+        // 遍历所有播放列表
         for playlist in allPlaylists {
-            let audio = createAudioFromPlaylist(playlist)
+            // 创建音频对象
+            let audio = PixabayAudio(
+                id: playlist.id,
+                title: playlist.title,
+                duration: playlist.duration,
+                user: "Pixabay",
+                audioURL: playlist.fullUrl
+            )
             
-            // 将播放列表添加到每个类别中
-            for category in playlist.categories ?? [] {
-                let categoryKey = category.lowercased()
-                if playlists[categoryKey] == nil {
-                    playlists[categoryKey] = []
+            // 将播放列表添加到每个相关类别中
+            if let categories = playlist.categories {
+                for category in categories {
+                    let categoryKey = category.lowercased()
+                    if playlists[categoryKey] == nil {
+                        playlists[categoryKey] = []
+                    }
+                    playlists[categoryKey]?.append(audio)
                 }
-                playlists[categoryKey]?.append(audio)
             }
         }
         
-        // 打印加载的播放列表信息
+        // 打印分类结果
         for (category, items) in playlists {
-            print("Loaded \(items.count) playlists for category '\(category)'")
+            print("Category '\(category)' has \(items.count) playlists")
         }
-    }
-    
-    private func createAudioFromPlaylist(_ playlist: PlaylistData) -> PixabayAudio {
-        return PixabayAudio(
-            id: playlist.id,
-            title: playlist.title,
-            duration: playlist.duration,
-            user: "Pixabay",
-            audioURL: "https://pixabay.com\(playlist.publicUrl)"
-        )
     }
     
     /// 从 Pixabay 获取播放列表内容
@@ -205,10 +213,25 @@ class FluffelPixabayService: NSObject {
                     )
                 }
                 
+                // 从预定义播放列表中获取额外信息
+                let description: String
+                let bgImageSrc: String?
+                
+                if let url = Bundle.main.url(forResource: "playlists", withExtension: "json"),
+                   let data = try? Data(contentsOf: url),
+                   let allPlaylists = try? JSONDecoder().decode([PlaylistData].self, from: data),
+                   let matchingPlaylist = allPlaylists.first(where: { $0.belongsTo(category: category.searchPath) }) {
+                    description = matchingPlaylist.description
+                    bgImageSrc = matchingPlaylist.bgImageSrc
+                } else {
+                    description = "A collection of \(category.rawValue.lowercased()) music"
+                    bgImageSrc = nil
+                }
+                
                 let playlist = FluffelPixabayPlaylists.Playlist(
                     id: category.rawValue.lowercased(),
                     title: category.rawValue,
-                    description: "A collection of \(category.rawValue.lowercased()) music from Pixabay",
+                    description: description,
                     tracks: tracks
                 )
                 
@@ -234,6 +257,23 @@ struct PlaylistData: Codable {
     let categories: [String]?
     let bgImageSrc: String?
     let isFeatured: Bool?
+    
+    // 辅助方法：获取格式化的时长
+    var formattedDuration: String {
+        let minutes = duration / 60
+        let seconds = duration % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+    
+    // 辅助方法：获取完整的 URL
+    var fullUrl: String {
+        return "https://pixabay.com\(publicUrl)"
+    }
+    
+    // 辅助方法：检查是否属于某个类别
+    func belongsTo(category: String) -> Bool {
+        return categories?.contains { $0.lowercased() == category.lowercased() } ?? false
+    }
 }
 
 /// 用于音频数据的模型
