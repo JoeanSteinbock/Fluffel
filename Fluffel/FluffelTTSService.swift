@@ -2,7 +2,7 @@ import Cocoa
 import AVFoundation
 
 /// FluffelTTSService 负责处理文本转语音功能
-class FluffelTTSService {
+class FluffelTTSService: NSObject {
     
     // 单例实例
     static let shared = FluffelTTSService()
@@ -16,6 +16,9 @@ class FluffelTTSService {
     // 请求队列，避免并发问题
     private let requestQueue = DispatchQueue(label: "com.fluffel.tts.requestQueue")
     
+    // API 密钥
+    private var apiKey: String?
+    
     // 语音配置
     private struct VoiceConfig {
         static let languageCode = "en-US"
@@ -24,7 +27,25 @@ class FluffelTTSService {
     }
     
     // 私有初始化方法
-    private init() {}
+    private override init() {
+        super.init()
+        // 尝试从 UserDefaults 加载 API 密钥
+        apiKey = UserDefaults.standard.string(forKey: "GoogleCloudAPIKey")
+    }
+    
+    /// 设置 Google Cloud API 密钥
+    /// - Parameter key: API 密钥
+    func setApiKey(_ key: String) {
+        apiKey = key
+        // 保存到 UserDefaults
+        UserDefaults.standard.set(key, forKey: "GoogleCloudAPIKey")
+    }
+    
+    /// 检查是否已设置 API 密钥
+    /// - Returns: 布尔值，表示是否已设置 API 密钥
+    func hasApiKey() -> Bool {
+        return apiKey != nil && !apiKey!.isEmpty
+    }
     
     /// 将文本转换为语音并播放
     /// - Parameters:
@@ -34,6 +55,13 @@ class FluffelTTSService {
         // 确保在后台线程处理网络请求
         requestQueue.async { [weak self] in
             guard let self = self else { return }
+            
+            // 检查是否有 API 密钥
+            guard let apiKey = self.apiKey, !apiKey.isEmpty else {
+                print("TTS 错误: 未设置 API 密钥")
+                DispatchQueue.main.async { completion?() }
+                return
+            }
             
             // 构建请求体
             let requestBody: [String: Any] = [
@@ -49,59 +77,25 @@ class FluffelTTSService {
                 ]
             ]
             
-            // 获取认证信息
-            self.getAuthToken { token in
-                guard let token = token else {
-                    print("TTS 错误: 无法获取认证令牌")
+            // 发送 API 请求
+            self.sendTTSRequest(requestBody: requestBody, apiKey: apiKey) { audioData in
+                guard let audioData = audioData else {
+                    print("TTS 错误: 未能获取音频数据")
                     DispatchQueue.main.async { completion?() }
                     return
                 }
                 
-                // 发送 API 请求
-                self.sendTTSRequest(requestBody: requestBody, token: token) { audioData in
-                    guard let audioData = audioData else {
-                        print("TTS 错误: 未能获取音频数据")
-                        DispatchQueue.main.async { completion?() }
-                        return
-                    }
-                    
-                    // 播放音频
-                    self.playAudio(audioData) {
-                        DispatchQueue.main.async { completion?() }
-                    }
+                // 播放音频
+                self.playAudio(audioData) {
+                    DispatchQueue.main.async { completion?() }
                 }
             }
         }
     }
     
-    /// 获取 Google Cloud 认证令牌
-    private func getAuthToken(completion: @escaping (String?) -> Void) {
-        // 使用 gcloud CLI 获取令牌
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        task.arguments = ["gcloud", "auth", "print-access-token"]
-        
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        
-        do {
-            try task.run()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let token = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
-                completion(token)
-            } else {
-                completion(nil)
-            }
-        } catch {
-            print("TTS 错误: 无法执行 gcloud 命令: \(error)")
-            completion(nil)
-        }
-    }
-    
     /// 发送 Text-to-Speech API 请求
-    private func sendTTSRequest(requestBody: [String: Any], token: String, completion: @escaping (Data?) -> Void) {
-        guard let url = URL(string: "https://texttospeech.googleapis.com/v1/text:synthesize") else {
+    private func sendTTSRequest(requestBody: [String: Any], apiKey: String, completion: @escaping (Data?) -> Void) {
+        guard let url = URL(string: "https://texttospeech.googleapis.com/v1/text:synthesize?key=\(apiKey)") else {
             completion(nil)
             return
         }
@@ -115,24 +109,6 @@ class FluffelTTSService {
         request.httpMethod = "POST"
         request.httpBody = jsonData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let projectTask = Process()
-        projectTask.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        projectTask.arguments = ["gcloud", "config", "list", "--format=value(core.project)"]
-        
-        let projectPipe = Pipe()
-        projectTask.standardOutput = projectPipe
-        
-        do {
-            try projectTask.run()
-            let projectData = projectPipe.fileHandleForReading.readDataToEndOfFile()
-            if let project = String(data: projectData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
-                request.setValue(project, forHTTPHeaderField: "X-Goog-User-Project")
-            }
-        } catch {
-            print("TTS 错误: 无法获取项目ID: \(error)")
-        }
         
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {

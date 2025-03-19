@@ -23,9 +23,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 隐藏 Dock 图标和菜单栏
         NSApp.setActivationPolicy(.accessory)
         
-        // 设置菜单栏
-        setupMenu()
-        
         // 初始化说话演示
         if let scene = fluffelWindowController?.fluffelScene,
            let fluffel = scene.fluffel {
@@ -67,9 +64,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // 测试 TTS 功能
     private func testTTS() {
+        // 检查是否已设置 API 密钥
+        if !FluffelTTSService.shared.hasApiKey() {
+            // 如果没有设置 API 密钥，显示提示信息而不是自动打开设置窗口
+            makeFluffelSpeak("请先通过右键菜单设置API密钥")
+            return
+        }
+        
         let testText = "Hello, I'm Fluffel, your fluffy desktop pet!"
         FluffelTTSService.shared.speak(testText) {
             print("TTS 测试完成!")
+        }
+    }
+    
+    // 创建一个辅助方法让 Fluffel 显示提示信息
+    private func makeFluffelSpeak(_ text: String) {
+        if let fluffel = fluffelWindowController?.fluffel {
+            fluffel.speak(text: text, duration: 3.0)
         }
     }
     
@@ -102,40 +113,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 清除对象引用
         speakingDemo = nil
         fluffelWindowController = nil
-    }
-    
-    // 设置应用菜单
-    private func setupMenu() {
-        let mainMenu = NSMenu(title: "MainMenu")
-        
-        // 应用菜单
-        let appMenuItem = NSMenuItem()
-        mainMenu.addItem(appMenuItem)
-        
-        let appMenu = NSMenu()
-        appMenuItem.submenu = appMenu
-        
-        appMenu.addItem(withTitle: "About Fluffel", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
-        appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Quit", action: #selector(quitApp(_:)), keyEquivalent: "q")
-        
-        // Fluffel 菜单
-        let fluffelMenuItem = NSMenuItem(title: "Fluffel", action: nil, keyEquivalent: "")
-        mainMenu.addItem(fluffelMenuItem)
-        
-        let fluffelMenu = NSMenu(title: "Fluffel")
-        fluffelMenuItem.submenu = fluffelMenu
-        
-        fluffelMenu.addItem(withTitle: "Reset to Center", action: #selector(resetFluffelToCenter), keyEquivalent: "r")
-        fluffelMenu.addItem(NSMenuItem.separator())
-        fluffelMenu.addItem(withTitle: "Greeting", action: #selector(speakGreeting), keyEquivalent: "g")
-        fluffelMenu.addItem(withTitle: "Joke", action: #selector(tellJoke), keyEquivalent: "j")
-        fluffelMenu.addItem(withTitle: "Share Fact", action: #selector(shareFact), keyEquivalent: "f")
-        fluffelMenu.addItem(withTitle: "Conversation", action: #selector(startConversation), keyEquivalent: "c")
-        fluffelMenu.addItem(NSMenuItem.separator())
-        fluffelMenu.addItem(withTitle: "Test TTS", action: #selector(testTTSFromMenu), keyEquivalent: "t")
-        
-        NSApp.mainMenu = mainMenu
     }
     
     // 测试 TTS 功能的菜单动作
@@ -213,6 +190,136 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         executeAction { [weak self] in
             guard let scene = self?.fluffelWindowController?.fluffelScene else { return }
             scene.resetFluffelToCenter()
+        }
+    }
+    
+    // 显示 API 密钥设置窗口
+    @objc func showApiKeySettings(_ sender: Any) {
+        executeAction { [weak self] in
+            self?.showApiKeyWindow()
+        }
+    }
+    
+    // 创建并显示 API 密钥设置窗口
+    private func showApiKeyWindow() {
+        // 创建窗口
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 200),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.center()
+        window.title = "Google Cloud API Key Settings"
+        
+        // 创建内容视图
+        let contentView = NSView(frame: NSRect(x: 0, y: 0, width: 500, height: 200))
+        
+        // 创建标签
+        let label = NSTextField(labelWithString: "Google Cloud API Key:")
+        label.frame = NSRect(x: 20, y: 120, width: 460, height: 20)
+        contentView.addSubview(label)
+        
+        // 创建说明标签
+        let infoLabel = NSTextField(wrappingLabelWithString: "请输入您的 Google Cloud API Key。您可以在 Google Cloud Console 的 API 和服务 > 凭据页面获取或创建密钥。")
+        infoLabel.frame = NSRect(x: 20, y: 150, width: 460, height: 40)
+        contentView.addSubview(infoLabel)
+        
+        // 创建输入框
+        let textField = NSTextField(frame: NSRect(x: 20, y: 90, width: 460, height: 24))
+        textField.placeholderString = "输入您的 Google Cloud API Key"
+        // 从 UserDefaults 加载现有密钥
+        textField.stringValue = UserDefaults.standard.string(forKey: "GoogleCloudAPIKey") ?? ""
+        contentView.addSubview(textField)
+        
+        // 创建保存按钮
+        let saveButton = NSButton(title: "保存", target: nil, action: #selector(saveApiKey(_:)))
+        saveButton.frame = NSRect(x: 380, y: 20, width: 100, height: 32)
+        saveButton.bezelStyle = .rounded
+        
+        // 存储文本字段引用，以便在操作方法中使用
+        objc_setAssociatedObject(saveButton, "textField", textField, .OBJC_ASSOCIATION_RETAIN)
+        saveButton.target = self
+        contentView.addSubview(saveButton)
+        
+        // 创建测试按钮
+        let testButton = NSButton(title: "测试", target: nil, action: #selector(testApiKey(_:)))
+        testButton.frame = NSRect(x: 270, y: 20, width: 100, height: 32)
+        testButton.bezelStyle = .rounded
+        
+        // 存储文本字段引用，以便在操作方法中使用
+        objc_setAssociatedObject(testButton, "textField", textField, .OBJC_ASSOCIATION_RETAIN)
+        testButton.target = self
+        contentView.addSubview(testButton)
+        
+        // 创建状态标签
+        let statusLabel = NSTextField(labelWithString: "")
+        statusLabel.frame = NSRect(x: 20, y: 60, width: 460, height: 20)
+        statusLabel.textColor = .systemGray
+        contentView.addSubview(statusLabel)
+        
+        // 存储状态标签引用，以便在操作方法中使用
+        objc_setAssociatedObject(saveButton, "statusLabel", statusLabel, .OBJC_ASSOCIATION_RETAIN)
+        objc_setAssociatedObject(testButton, "statusLabel", statusLabel, .OBJC_ASSOCIATION_RETAIN)
+        
+        // 设置内容视图
+        window.contentView = contentView
+        
+        // 显示窗口
+        window.makeKeyAndOrderFront(nil)
+    }
+    
+    // 保存 API 密钥
+    @objc func saveApiKey(_ sender: NSButton) {
+        guard let textField = objc_getAssociatedObject(sender, "textField") as? NSTextField,
+              let statusLabel = objc_getAssociatedObject(sender, "statusLabel") as? NSTextField else {
+            return
+        }
+        
+        let apiKey = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if apiKey.isEmpty {
+            statusLabel.stringValue = "错误: API 密钥不能为空"
+            statusLabel.textColor = .systemRed
+            return
+        }
+        
+        // 保存到 TTS 服务
+        FluffelTTSService.shared.setApiKey(apiKey)
+        
+        statusLabel.stringValue = "API 密钥已保存！"
+        statusLabel.textColor = .systemGreen
+    }
+    
+    // 测试 API 密钥
+    @objc func testApiKey(_ sender: NSButton) {
+        guard let textField = objc_getAssociatedObject(sender, "textField") as? NSTextField,
+              let statusLabel = objc_getAssociatedObject(sender, "statusLabel") as? NSTextField else {
+            return
+        }
+        
+        let apiKey = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if apiKey.isEmpty {
+            statusLabel.stringValue = "错误: 请先输入 API 密钥"
+            statusLabel.textColor = .systemRed
+            return
+        }
+        
+        // 临时设置 API 密钥进行测试
+        FluffelTTSService.shared.setApiKey(apiKey)
+        
+        // 更新状态
+        statusLabel.stringValue = "正在测试 API 密钥..."
+        statusLabel.textColor = .systemBlue
+        
+        // 测试 TTS
+        let testText = "Hello, I'm Fluffel!"
+        FluffelTTSService.shared.speak(testText) {
+            DispatchQueue.main.async {
+                statusLabel.stringValue = "测试成功！API 密钥有效。"
+                statusLabel.textColor = .systemGreen
+            }
         }
     }
     
