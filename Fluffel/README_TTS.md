@@ -1,0 +1,95 @@
+# Fluffel 文本转语音功能使用指南
+
+## 概述
+
+Fluffel 现在支持文本转语音（TTS）功能！当 Fluffel 说话时，不仅会显示对话气泡，还会用可爱的语音朗读文本内容，让互动体验更加生动有趣。
+
+## 前提条件
+
+要使用 TTS 功能，您需要：
+
+1. 拥有 Google Cloud Platform 账户
+2. 启用 Google Cloud Text-to-Speech API
+3. 安装并配置 `gcloud` CLI 工具
+4. 已授权 `gcloud` 使用您的 Google Cloud 账户
+
+## 设置步骤
+
+1. **创建 Google Cloud 项目**（如果您还没有）：
+   ```
+   gcloud projects create fluffel-tts
+   ```
+
+2. **启用计费**（必须为项目启用计费才能使用 API）：
+   ```
+   gcloud billing projects link fluffel-tts --billing-account=YOUR_BILLING_ACCOUNT_ID
+   ```
+
+3. **启用 Text-to-Speech API**：
+   ```
+   gcloud services enable texttospeech.googleapis.com
+   ```
+
+4. **验证授权**：
+   ```
+   gcloud auth login
+   ```
+
+## 使用方法
+
+### 测试 TTS 功能
+
+1. 启动 Fluffel 应用程序
+2. 从菜单栏中选择 "Fluffel" > "Test TTS"
+3. 您应该能听到 Fluffel 说话："Hello, I'm Fluffel, your fluffy desktop pet!"
+
+### 自定义语音
+
+默认情况下，Fluffel 使用 Google 的 `en-US-Chirp3-HD-Kore` 声音，这是一个听起来可爱且适合 Fluffel 角色的声音。如果您想更改语音，可以修改 `FluffelTTSService.swift` 文件中的 `VoiceConfig` 结构体。
+
+Google Cloud 提供了多种不同语言和风格的声音选项，您可以在 [Google Cloud TTS 文档](https://cloud.google.com/text-to-speech/docs/voices) 中查看完整列表。
+
+### 添加新的对话内容
+
+您可以通过编辑 `Fluffel/Resources/FluffelDialogues.json` 文件来添加新的对话内容。TTS 系统会自动朗读这些对话。
+
+## 技术说明
+
+TTS 功能的实现基于以下组件：
+
+1. **FluffelTTSService**：负责与 Google Cloud Text-to-Speech API 通信并播放返回的音频
+2. **AVFoundation**：用于播放音频
+3. **Google Cloud Text-to-Speech API**：将文本转换为语音
+
+## 故障排除
+
+如果您遇到 TTS 相关问题：
+
+1. **无声音输出**：
+   - 检查系统音量
+   - 确认您已正确设置 Google Cloud 授权
+   - 检查控制台日志中的错误消息
+
+2. **API 错误**：
+   - 验证您的 API 密钥是否有效
+   - 确保您已启用计费
+   - 检查您是否超出了 API 配额
+
+3. **语音质量问题**：
+   - 尝试不同的声音选项
+   - 对过长的文本进行分段处理
+
+## 资源使用注意事项
+
+Google Cloud Text-to-Speech API 是一项付费服务，有以下注意事项：
+
+1. 每月有一定的免费配额（通常为 100 万字符）
+2. 超出免费配额后将按使用量收费
+3. 使用高质量 HD 语音会消耗更多配额
+
+## 未来改进计划
+
+- 支持多语言 TTS
+- 添加语音速度和音调控制
+- 在气泡中显示语音状态指示
+- 为不同的 Fluffel 状态使用不同的语音风格 

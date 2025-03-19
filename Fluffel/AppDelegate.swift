@@ -60,6 +60,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             return event
         }
+        
+        // 测试 TTS 功能
+        // testTTS()
+    }
+    
+    // 测试 TTS 功能
+    private func testTTS() {
+        let testText = "Hello, I'm Fluffel, your fluffy desktop pet!"
+        FluffelTTSService.shared.speak(testText) {
+            print("TTS 测试完成!")
+        }
     }
     
     // 处理Fluffel说话事件，确保线程安全
@@ -84,6 +95,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // 清除所有通知监听器
         NotificationCenter.default.removeObserver(self)
+        
+        // 停止任何正在播放的音频
+        FluffelTTSService.shared.stopCurrentAudio()
         
         // 清除对象引用
         speakingDemo = nil
@@ -118,8 +132,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         fluffelMenu.addItem(withTitle: "Joke", action: #selector(tellJoke), keyEquivalent: "j")
         fluffelMenu.addItem(withTitle: "Share Fact", action: #selector(shareFact), keyEquivalent: "f")
         fluffelMenu.addItem(withTitle: "Conversation", action: #selector(startConversation), keyEquivalent: "c")
+        fluffelMenu.addItem(NSMenuItem.separator())
+        fluffelMenu.addItem(withTitle: "Test TTS", action: #selector(testTTSFromMenu), keyEquivalent: "t")
         
         NSApp.mainMenu = mainMenu
+    }
+    
+    // 测试 TTS 功能的菜单动作
+    @objc func testTTSFromMenu(_ sender: Any) {
+        executeAction { [weak self] in
+            self?.testTTS()
+        }
     }
     
     // 辅助方法：防止动作重复触发，并在主线程中安全执行

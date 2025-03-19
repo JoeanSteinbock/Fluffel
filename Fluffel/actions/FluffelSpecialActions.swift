@@ -36,6 +36,9 @@ extension Fluffel {
             // 添加表情变化，使 Fluffel 看起来像在说话
             self.animateTalkingExpression(duration: duration)
             
+            // 使用 TTS 服务播放语音
+            FluffelTTSService.shared.speak(text)
+            
             // 设置定时器，在说话结束后执行完成回调
             if let completion = completion {
                 DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.6) {
@@ -52,6 +55,9 @@ extension Fluffel {
         
         // 恢复正常表情 - 这个可以在任何线程上执行
         resetFacialExpression()
+        
+        // 停止当前正在播放的语音
+        FluffelTTSService.shared.stopCurrentAudio()
         
         // 发送通知，通知控制器关闭气泡窗口 - 确保在主线程上执行
         DispatchQueue.main.async { [weak self] in

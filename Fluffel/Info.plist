@@ -1,2 +1,11 @@
 <key>CFBundleIconFile</key>
 <string>AppIcon</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Fluffel 需要访问麦克风以便进行语音分析</string>
+<key>NSSpeechRecognitionUsageDescription</key>
+<string>Fluffel 需要使用语音识别来理解您的指令</string>
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+</dict>
