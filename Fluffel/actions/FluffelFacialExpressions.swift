@@ -23,6 +23,9 @@ extension Fluffel {
         oMouthPath.addEllipse(in: CGRect(x: -5, y: -10, width: 10, height: 6))
         mouth.path = oMouthPath
         mouth.fillColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.4, alpha: 1.0)
+        
+        // 确保鼻子可见
+        nose.isHidden = false
     }
     
     // Morty 风格的微笑 - 更加紧张和不确定
@@ -42,6 +45,9 @@ extension Fluffel {
         smilePath.addQuadCurve(to: CGPoint(x: 7, y: -8), control: CGPoint(x: 0, y: -11))
         
         mouth.path = smilePath
+        
+        // 确保鼻子可见
+        nose.isHidden = false
     }
     
     // Morty 风格的担忧表情 - 更加明显的下垂
@@ -60,6 +66,9 @@ extension Fluffel {
         worriedPath.addQuadCurve(to: CGPoint(x: 7, y: -8), control: CGPoint(x: 0, y: -2))
         
         mouth.path = worriedPath
+        
+        // 确保鼻子可见
+        nose.isHidden = false
     }
     
     // 添加一个眨眼的表情
@@ -79,6 +88,10 @@ extension Fluffel {
         
         leftEye.run(blinkAction)
         rightEye.run(blinkAction)
+        
+        // 确保头发和鼻子可见
+        hair.isHidden = false
+        nose.isHidden = false
     }
     
     // 欢悦表情 - Morty风格，紧张但兴奋
@@ -104,6 +117,9 @@ extension Fluffel {
         // 使脸颊稍微更红，表示兴奋但不太明显
         leftCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.7, blue: 0.6, alpha: 0.4)
         rightCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.7, blue: 0.6, alpha: 0.4)
+        
+        // 确保鼻子可见
+        nose.isHidden = false
         
         // 定时恢复脸颊颜色
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in

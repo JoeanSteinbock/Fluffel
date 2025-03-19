@@ -80,6 +80,9 @@ extension Fluffel {
         // 保存当前的嘴巴路径以便之后恢复
         let currentMouthPath = mouth.path
         
+        // 确保鼻子可见
+        nose.isHidden = false
+        
         // 创建说话动画序列 - Morty说话时嘴巴动作更加紧张和不确定
         let openMouth = SKAction.run { [weak self] in
             guard let self = self else { return }
@@ -89,6 +92,9 @@ extension Fluffel {
             openMouthPath.move(to: CGPoint(x: -7, y: -8))
             openMouthPath.addQuadCurve(to: CGPoint(x: 7, y: -8), control: CGPoint(x: 0, y: -12))
             self.mouth.path = openMouthPath
+            
+            // 确保鼻子可见
+            self.nose.isHidden = false
         }
         
         let closeMouth = SKAction.run { [weak self] in
@@ -99,6 +105,9 @@ extension Fluffel {
             closeMouthPath.move(to: CGPoint(x: -7, y: -8))
             closeMouthPath.addQuadCurve(to: CGPoint(x: 7, y: -8), control: CGPoint(x: 0, y: -6))
             self.mouth.path = closeMouthPath
+            
+            // 确保鼻子可见
+            self.nose.isHidden = false
         }
         
         // 创建一个说话动画序列
@@ -150,6 +159,10 @@ extension Fluffel {
         
         removeAction(forKey: "blinkWhileTalking")
         
+        // 确保头发和鼻子可见
+        hair.isHidden = false
+        nose.isHidden = false
+        
         // 恢复正常表情
         smile()
     }
@@ -179,6 +192,10 @@ extension Fluffel {
             sleepyMouthPath.move(to: CGPoint(x: -5, y: -8))
             sleepyMouthPath.addQuadCurve(to: CGPoint(x: 5, y: -8), control: CGPoint(x: 0, y: -6))
             self.mouth.path = sleepyMouthPath
+            
+            // 确保鼻子和头发可见
+            self.nose.isHidden = false
+            self.hair.isHidden = false
         }
         
         // 创建"Z"字符动画表示睡眠

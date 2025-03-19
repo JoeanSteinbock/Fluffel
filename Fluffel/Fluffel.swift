@@ -27,6 +27,8 @@ class Fluffel: SKNode {
     internal let leftEar: SKShapeNode
     internal let rightEar: SKShapeNode
     internal let glowEffect: SKShapeNode // 添加发光效果节点
+    internal let hair: SKShapeNode // Morty风格的棕色头发
+    internal let nose: SKShapeNode // Morty的鼻子
     
     // 耳机组件 - 只在听音乐时显示
     internal let headphones: SKNode
@@ -104,16 +106,18 @@ class Fluffel: SKNode {
         rightCheek.strokeColor = .clear
         rightCheek.position = CGPoint(x: 15, y: -3)
         
-        // 添加 Morty 风格的耳朵
-        leftEar = SKShapeNode(circleOfRadius: 8)
+        // 添加 Morty 风格的耳朵 - 适当增大耳朵尺寸
+        leftEar = SKShapeNode(circleOfRadius: 7) // 增大耳朵尺寸
         leftEar.fillColor = NSColor(calibratedRed: 0.98, green: 0.85, blue: 0.65, alpha: 1.0) // 与肤色相同
-        leftEar.strokeColor = .clear
-        leftEar.position = CGPoint(x: -18, y: 18)
+        leftEar.strokeColor = NSColor(calibratedRed: 0.95, green: 0.8, blue: 0.6, alpha: 1.0) // 添加轮廓
+        leftEar.lineWidth = 0.5
+        leftEar.position = CGPoint(x: -22, y: 0) // 保持位置
         
-        rightEar = SKShapeNode(circleOfRadius: 8)
+        rightEar = SKShapeNode(circleOfRadius: 7) // 增大耳朵尺寸
         rightEar.fillColor = NSColor(calibratedRed: 0.98, green: 0.85, blue: 0.65, alpha: 1.0) // 与肤色相同
-        rightEar.strokeColor = .clear
-        rightEar.position = CGPoint(x: 18, y: 18)
+        rightEar.strokeColor = NSColor(calibratedRed: 0.95, green: 0.8, blue: 0.6, alpha: 1.0) // 添加轮廓
+        rightEar.lineWidth = 0.5
+        rightEar.position = CGPoint(x: 22, y: 0) // 保持位置
         
         // 创建耳机组件
         // 耳机父节点
@@ -124,22 +128,22 @@ class Fluffel: SKNode {
         leftHeadphone.fillColor = NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.3, alpha: 1.0) // 深灰色
         leftHeadphone.strokeColor = NSColor.black
         leftHeadphone.lineWidth = 1.0
-        leftHeadphone.position = CGPoint(x: -23, y: 15) // 位于左耳附近
+        leftHeadphone.position = CGPoint(x: -25, y: 0) // 位于左耳附近
         
         // 右耳机
         rightHeadphone = SKShapeNode(circleOfRadius: 10)
         rightHeadphone.fillColor = NSColor(calibratedRed: 0.3, green: 0.3, blue: 0.3, alpha: 1.0)
         rightHeadphone.strokeColor = NSColor.black
         rightHeadphone.lineWidth = 1.0
-        rightHeadphone.position = CGPoint(x: 23, y: 15) // 位于右耳附近
+        rightHeadphone.position = CGPoint(x: 25, y: 0) // 位于右耳附近
         
         // 头带连接左右耳机
         let headbandPath = CGMutablePath()
-        headbandPath.move(to: CGPoint(x: -20, y: 21))
+        headbandPath.move(to: CGPoint(x: -22, y: 6))
         headbandPath.addCurve(
-            to: CGPoint(x: 20, y: 21), 
-            control1: CGPoint(x: -10, y: 30), 
-            control2: CGPoint(x: 10, y: 30)
+            to: CGPoint(x: 22, y: 6), 
+            control1: CGPoint(x: -10, y: 15), 
+            control2: CGPoint(x: 10, y: 15)
         )
         
         headband = SKShapeNode(path: headbandPath)
@@ -159,6 +163,51 @@ class Fluffel: SKNode {
         rightHeadphoneHighlight.position = CGPoint(x: 2, y: 2)
         rightHeadphone.addChild(rightHeadphoneHighlight)
         
+        // 创建 Morty 风格的头发
+        hair = SKShapeNode()
+        let hairPath = CGMutablePath()
+        
+        // 创建头发的形状 - Morty风格的凌乱短发，增加高度
+        // 使用闭合路径使头发可以填充
+        hairPath.move(to: CGPoint(x: -15, y: 20))
+        hairPath.addCurve(to: CGPoint(x: 0, y: 30), control1: CGPoint(x: -10, y: 28), control2: CGPoint(x: -5, y: 30)) // 增加高度
+        hairPath.addCurve(to: CGPoint(x: 15, y: 20), control1: CGPoint(x: 5, y: 30), control2: CGPoint(x: 10, y: 28)) // 增加高度
+        // 闭合路径，连接回起点
+        hairPath.addCurve(to: CGPoint(x: -15, y: 20), control1: CGPoint(x: 10, y: 25), control2: CGPoint(x: -10, y: 25))
+        
+        // 添加一些凌乱的发丝，增加高度
+        let spikePath1 = CGMutablePath()
+        spikePath1.move(to: CGPoint(x: -8, y: 25))
+        spikePath1.addLine(to: CGPoint(x: -10, y: 33)) // 增加高度
+        
+        let spikePath2 = CGMutablePath()
+        spikePath2.move(to: CGPoint(x: 0, y: 30))
+        spikePath2.addLine(to: CGPoint(x: 0, y: 36)) // 增加高度
+        
+        let spikePath3 = CGMutablePath()
+        spikePath3.move(to: CGPoint(x: 8, y: 25))
+        spikePath3.addLine(to: CGPoint(x: 10, y: 33)) // 增加高度
+        
+        hair.path = hairPath
+        hair.fillColor = NSColor(calibratedRed: 0.6, green: 0.4, blue: 0.2, alpha: 1.0) // 棕色头发
+        hair.strokeColor = NSColor(calibratedRed: 0.5, green: 0.3, blue: 0.1, alpha: 1.0)
+        hair.lineWidth = 1.0
+        hair.position = CGPoint(x: 0, y: 0)
+        hair.zPosition = 0.5 // 确保头发在身体之上，可见
+        
+        // 创建 Morty 风格的鼻子
+        nose = SKShapeNode()
+        let nosePath = CGMutablePath()
+        // 创建一个更明显的鼻子形状
+        nosePath.move(to: CGPoint(x: -2, y: 0))
+        nosePath.addQuadCurve(to: CGPoint(x: 2, y: 0), control: CGPoint(x: 0, y: -2))
+        
+        nose.path = nosePath
+        nose.strokeColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.4, alpha: 1.0)
+        nose.lineWidth = 1.5
+        nose.position = CGPoint(x: 0, y: -2) // 调整位置到眼睛下方
+        nose.zPosition = 1 // 确保鼻子在前面可见
+        
         super.init()
         
         print("Fluffel 初始化开始")
@@ -173,6 +222,8 @@ class Fluffel: SKNode {
         addChild(mouth)
         addChild(leftCheek)
         addChild(rightCheek)
+        addChild(hair)
+        addChild(nose)
         
         // 添加耳机组件
         headphones.addChild(leftHeadphone)
