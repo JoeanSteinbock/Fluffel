@@ -30,133 +30,25 @@ extension Fluffel: AVAudioPlayerDelegate {
         setState(.listeningToMusic)
         
         // 显示耳机
-        headphones.isHidden = false
+        self.headphones.isHidden = false
         
-        // 添加耳机出现动画
-        headphones.alpha = 0
+        // 添加耳机淡入动画
         let fadeIn = SKAction.fadeIn(withDuration: 0.5)
-        headphones.run(fadeIn)
+        self.headphones.alpha = 0
+        self.headphones.run(fadeIn)
         
-        // 创建愉悦表情
-        let happyFaceAction = SKAction.run { [weak self] in
-            guard let self = self else { return }
-            
-            // 稍微更大的眼睛，显示愉悦
-            self.leftEye.setScale(1.1)
-            self.rightEye.setScale(1.1)
-            
-            // 微笑表情，但不同于普通微笑
-            let enjoyingMusicMouthPath = CGMutablePath()
-            enjoyingMusicMouthPath.move(to: CGPoint(x: -7, y: -8))
-            enjoyingMusicMouthPath.addQuadCurve(to: CGPoint(x: 7, y: -8), control: CGPoint(x: 0, y: -13))
-            self.mouth.path = enjoyingMusicMouthPath
-        }
+        // 表现为享受音乐的样子
+        blink()
+        expressionDelight()
         
-        // 头部随节奏轻微摇摆的动画
-        let headBobSequence = SKAction.sequence([
-            SKAction.rotate(byAngle: 0.1, duration: 0.3),
-            SKAction.rotate(byAngle: -0.2, duration: 0.6),
-            SKAction.rotate(byAngle: 0.1, duration: 0.3)
-        ])
+        // 创建轻微的摇头动作，表示享受音乐
+        let rotateLeft = SKAction.rotate(byAngle: -0.05, duration: 0.5)
+        let rotateRight = SKAction.rotate(byAngle: 0.05, duration: 0.5)
+        let rotateSequence = SKAction.sequence([rotateLeft, rotateRight])
+        let repeatRotate = SKAction.repeatForever(rotateSequence)
         
-        // 身体随音乐波动的动画
-        let bodyBopSequence = SKAction.sequence([
-            SKAction.scaleY(to: 1.05, duration: 0.3),
-            SKAction.scaleY(to: 0.95, duration: 0.3),
-            SKAction.scaleY(to: 1.0, duration: 0.3)
-        ])
-        
-        // 耳朵随节奏抖动的动画
-        let earsWiggleAction = SKAction.run { [weak self] in
-            guard let self = self else { return }
-            
-            // 左耳动画
-            let leftEarWiggle = SKAction.sequence([
-                SKAction.rotate(byAngle: 0.1, duration: 0.2),
-                SKAction.rotate(byAngle: -0.1, duration: 0.2)
-            ])
-            self.leftEar.run(SKAction.repeatForever(leftEarWiggle))
-            
-            // 右耳动画
-            let rightEarWiggle = SKAction.sequence([
-                SKAction.rotate(byAngle: -0.1, duration: 0.2),
-                SKAction.rotate(byAngle: 0.1, duration: 0.2)
-            ])
-            self.rightEar.run(SKAction.repeatForever(rightEarWiggle))
-        }
-        
-        // 组合动画动作
-        let setupAction = SKAction.run { [weak self] in
-            happyFaceAction.duration = 0
-            self?.run(happyFaceAction)
-            self?.run(earsWiggleAction)
-        }
-        
-        let musicListeningSequence = SKAction.sequence([
-            setupAction,
-            SKAction.group([
-                headBobSequence,
-                bodyBopSequence
-            ])
-        ])
-        
-        // 循环执行动画
-        run(SKAction.repeatForever(musicListeningSequence), withKey: "listeningToMusicAction")
-        
-        // 添加音符特效
-        let createNotes = SKAction.run { [weak self] in
-            guard let self = self else { return }
-            
-            // 创建音符
-            let noteSymbols = ["♪", "♫", "♬", "♩"]
-            let noteColors: [NSColor] = [
-                NSColor(calibratedRed: 0.4, green: 0.4, blue: 1.0, alpha: 0.8), // 蓝色
-                NSColor(calibratedRed: 0.5, green: 0.8, blue: 1.0, alpha: 0.8), // 天蓝色
-                NSColor(calibratedRed: 0.8, green: 0.4, blue: 1.0, alpha: 0.8), // 紫色
-                NSColor(calibratedRed: 0.4, green: 0.8, blue: 0.6, alpha: 0.8)  // 蓝绿色
-            ]
-            
-            // 随机选择音符和颜色
-            let randomIndex = Int.random(in: 0..<noteSymbols.count)
-            let noteNode = SKLabelNode(text: noteSymbols[randomIndex])
-            noteNode.fontSize = 16
-            noteNode.fontColor = noteColors[Int.random(in: 0..<noteColors.count)]
-            
-            // 从Fluffel的耳朵附近生成音符
-            let side = Bool.random() ? 1.0 : -1.0 // 随机左右耳
-            let randomX = side * CGFloat.random(in: 15...25)
-            let randomY = CGFloat.random(in: 15...30)
-            noteNode.position = CGPoint(x: randomX, y: randomY)
-            noteNode.zPosition = 5
-            noteNode.alpha = 0
-            self.addChild(noteNode)
-            
-            // 音符淡入，向上漂移，然后淡出的动画
-            let fadeIn = SKAction.fadeIn(withDuration: 0.3)
-            let moveUp = SKAction.moveBy(x: CGFloat.random(in: -10...10), y: 30, duration: 1.5)
-            let rotate = SKAction.rotate(byAngle: CGFloat.random(in: -CGFloat.pi/4...CGFloat.pi/4), duration: 1.5)
-            let fadeOut = SKAction.fadeAlpha(to: 0, duration: 0.5)
-            let group = SKAction.sequence([
-                fadeIn,
-                SKAction.group([moveUp, rotate]),
-                fadeOut
-            ])
-            let remove = SKAction.removeFromParent()
-            let sequence = SKAction.sequence([group, remove])
-            
-            noteNode.run(sequence)
-        }
-        
-        // 定期创建音符，频率比跳舞时更低
-        let noteSequence = SKAction.sequence([
-            createNotes,
-            SKAction.wait(forDuration: 0.8)
-        ])
-        
-        run(SKAction.repeatForever(noteSequence), withKey: "musicListeningNotes")
-        
-        // 发送开始播放音乐的通知，供外部组件使用
-        NotificationCenter.default.post(name: .fluffelWillPlayMusic, object: self)
+        // 运行摇头动作
+        run(repeatRotate, withKey: "listeningToMusicAction")
     }
     
     /// 停止听音乐动画
@@ -169,46 +61,26 @@ extension Fluffel: AVAudioPlayerDelegate {
             return
         }
         
-        // 移除听音乐相关动画
+        // 停止摇头动作
         removeAction(forKey: "listeningToMusicAction")
-        removeAction(forKey: "musicListeningNotes")
         
-        // 停止耳朵抖动
-        leftEar.removeAllActions()
-        rightEar.removeAllActions()
-        
-        // 移除所有音符
-        children.forEach { node in
-            if let label = node as? SKLabelNode, ["♪", "♫", "♬", "♩"].contains(label.text ?? "") {
-                label.removeFromParent()
-            }
-        }
-        
-        // 恢复正常外观
-        leftEye.setScale(1.0)
-        rightEye.setScale(1.0)
-        xScale = 1.0
-        yScale = 1.0
+        // 重置旋转
         zRotation = 0
         
         // 恢复正常表情
         smile()
         
-        // 隐藏耳机
+        // 淡出耳机动画
         let fadeOut = SKAction.fadeOut(withDuration: 0.3)
         let hideHeadphones = SKAction.run { [weak self] in
             self?.headphones.isHidden = true
             self?.headphones.alpha = 1 // 重置alpha值，以便下次显示
         }
         let sequence = SKAction.sequence([fadeOut, hideHeadphones])
-        headphones.run(sequence)
+        self.headphones.run(sequence)
         
-        // 避免使用setState触发潜在的循环调用
-        // 直接修改状态变量
+        // 直接修改状态变量，避免递归调用
         state = .idle
-        
-        // 发送停止音乐的通知，供外部组件使用
-        NotificationCenter.default.post(name: .fluffelDidStopMusic, object: self)
     }
     
     // MARK: - 音乐播放器

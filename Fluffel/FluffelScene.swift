@@ -55,10 +55,21 @@ class FluffelScene: SKScene {
             // 让 Fluffel 微笑，看起来更友好
             fluffel.smile()
             
-            // 添加一个短暂的延迟，然后让 Fluffel 眨眼，显得更加活泼
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                fluffel.happyBlink()
-                print("Fluffel 完成眨眼动画")
+            // 偶尔眨眨眼睛，看起来更自然
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                guard let fluffel = self?.fluffel else { return }
+                fluffel.blink()
+            }
+            
+            // 定期眨眼
+            Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] timer in
+                guard let self = self, let fluffel = self.fluffel else {
+                    timer.invalidate()
+                    return
+                }
+                
+                // 眨眼
+                fluffel.blink()
             }
             
             print("Fluffel 已添加到场景，位置: \(fluffel.position)")
@@ -161,7 +172,7 @@ class FluffelScene: SKScene {
             
         case 4:
             // 眨眼动画
-            fluffel.happyBlink()
+            fluffel.blink()
             print("Fluffel 感到无聊，眨了眨眼")
             
             // 眨眼是瞬时的，不需要停止

@@ -63,11 +63,11 @@ extension Fluffel {
     }
     
     // 添加一个眨眼的开心表情
-    func happyBlink() {
+    func blink() {
         // 确保在主线程上执行UI操作
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in
-                self?.happyBlink()
+                self?.blink()
             }
             return
         }
@@ -79,5 +79,37 @@ extension Fluffel {
         
         leftEye.run(blinkAction)
         rightEye.run(blinkAction)
+    }
+    
+    // 欢悦表情 - 适合听音乐时显示
+    func expressionDelight() {
+        // 确保在主线程上执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.expressionDelight()
+            }
+            return
+        }
+        
+        // 稍微更大的眼睛，显示愉悦
+        leftEye.setScale(1.1)
+        rightEye.setScale(1.1)
+        
+        // 微笑表情，但弧度更大，显示更加愉悦
+        let delightedMouthPath = CGMutablePath()
+        delightedMouthPath.move(to: CGPoint(x: -8, y: -8))
+        delightedMouthPath.addQuadCurve(to: CGPoint(x: 8, y: -8), control: CGPoint(x: 0, y: -16))
+        mouth.path = delightedMouthPath
+        
+        // 使脸颊稍微更红，表示兴奋
+        leftCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.6, blue: 0.7, alpha: 0.5)
+        rightCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.6, blue: 0.7, alpha: 0.5)
+        
+        // 定时恢复脸颊颜色
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+            guard let self = self else { return }
+            self.leftCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.6, blue: 0.7, alpha: 0.3)
+            self.rightCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.6, blue: 0.7, alpha: 0.3)
+        }
     }
 } 

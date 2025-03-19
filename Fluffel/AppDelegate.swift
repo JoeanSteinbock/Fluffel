@@ -508,28 +508,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // 音乐相关方法
     @objc func startListeningToMusic(_ sender: Any) {
-        // 如果是从菜单项调用，显示子菜单
-        if let menuItem = sender as? NSMenuItem, menuItem.submenu == nil {
+        // 直接判断是否为菜单项
+        if let menuItem = sender as? NSMenuItem {
+            // 检查菜单项是否已经有子菜单
+            if menuItem.submenu != nil {
+                // 已经有子菜单，用户可能点击了菜单标题，不做任何操作
+                return
+            }
+            
             // 加载播放列表
             FluffelPixabayPlaylists.shared.loadPlaylists { [weak self] success in
-                guard success else {
-                    // 如果加载失败，使用默认行为
-                    self?.playDefaultMusic()
-                    return
-                }
+                guard let self = self else { return }
                 
-                if menuItem.submenu == nil {
-                    self?.playDefaultMusic()
-                    return
-                }
-                
-                // 创建播放列表子菜单
                 DispatchQueue.main.async {
-                    self?.showPlaylistSubmenu(for: menuItem)
+                    if success {
+                        // 成功加载播放列表，显示子菜单
+                        self.showPlaylistSubmenu(for: menuItem)
+                    } else {
+                        // 加载失败，播放默认音乐
+                        self.playDefaultMusic()
+                    }
                 }
             }
         } else {
-            // 直接播放默认音乐
+            // 如果不是菜单项，直接播放默认音乐
             playDefaultMusic()
         }
     }
@@ -575,7 +577,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 播放默认音乐
     private func playDefaultMusic() {
         executeAction { [weak self] in
-            guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
+            guard let fluffel = self?.fluffelWindowController?.fluffel else { 
+                print("无法播放音乐，fluffel对象为nil")
+                return 
+            }
+            
+            print("开始播放默认音乐...")
             
             // 获取示例URL - 使用更可靠的 Pixabay 音频 URL
             let sampleURL = URL(string: "https://cdn.pixabay.com/audio/2023/07/30/audio_e0908e8569.mp3")!

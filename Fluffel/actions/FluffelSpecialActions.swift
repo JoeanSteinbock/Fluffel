@@ -127,7 +127,7 @@ extension Fluffel {
         // 偶尔眨眨眼睛，看起来更自然
         let randomBlink = SKAction.run { [weak self] in
             guard let self = self else { return }
-            self.happyBlink()
+            self.blink()
         }
         
         let waitForBlink = SKAction.wait(forDuration: 1.0)
