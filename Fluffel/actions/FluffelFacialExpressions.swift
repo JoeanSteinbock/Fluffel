@@ -6,6 +6,14 @@ extension Fluffel {
     
     // 惊讶表情 - 用于下落时
     func surprisedFace() {
+        // 确保在主线程上执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.surprisedFace()
+            }
+            return
+        }
+        
         // 眼睛变大
         leftEye.setScale(1.3)
         rightEye.setScale(1.3)
@@ -19,6 +27,14 @@ extension Fluffel {
     
     // 修正微笑方法，使用向上的曲线而不是向下的曲线
     func smile() {
+        // 确保在主线程上执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.smile()
+            }
+            return
+        }
+        
         // 创建一个真正的微笑曲线 (向上弯曲)
         let smilePath = CGMutablePath()
         smilePath.move(to: CGPoint(x: -7, y: -8))
@@ -30,6 +46,14 @@ extension Fluffel {
     
     // 担忧表情
     func worried() {
+        // 确保在主线程上执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.worried()
+            }
+            return
+        }
+        
         let worriedPath = CGMutablePath()
         worriedPath.move(to: CGPoint(x: -7, y: -8))
         // 担忧的表情，嘴巴向下弯曲
@@ -40,6 +64,14 @@ extension Fluffel {
     
     // 添加一个眨眼的开心表情
     func happyBlink() {
+        // 确保在主线程上执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.happyBlink()
+            }
+            return
+        }
+        
         // 眨眼动画序列
         let close = SKAction.scaleY(to: 0.3, duration: 0.1)
         let open = SKAction.scaleY(to: 1.0, duration: 0.1)

@@ -169,6 +169,14 @@ class Fluffel: SKNode {
     
     // 设置 Fluffel 的状态
     func setState(_ newState: FluffelState) {
+        // 确保状态更改在主线程上执行
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.setState(newState)
+            }
+            return
+        }
+        
         // 在改变状态前清理当前状态
         if state != newState {
             // 移除任何显示的对话气泡
@@ -189,8 +197,18 @@ class Fluffel: SKNode {
                 leftEar.removeAllActions()
                 rightEar.removeAllActions()
                 
-                // 停止所有正在播放的音乐
-                (self.parent?.scene as? FluffelScene)?.stopMusic()
+                // 注释掉这一行，避免循环调用
+                // 这里不应该调用FluffelScene.stopMusic()，因为可能会导致无限递归
+                // (self.parent?.scene as? FluffelScene)?.stopMusic()
+                
+                // 直接停止音频播放器，无需通过场景
+                if Fluffel.musicPlayer != nil {
+                    Fluffel.musicPlayer?.stop()
+                    Fluffel.musicPlayer = nil
+                    Fluffel.musicTimer?.invalidate()
+                    Fluffel.musicTimer = nil
+                    print("Music player stopped directly in setState")
+                }
             default:
                 break
             }

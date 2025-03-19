@@ -2,12 +2,20 @@ import SpriteKit
 import AVFoundation
 
 // Fluffel 的音乐相关动作扩展
-extension Fluffel {
+extension Fluffel: AVAudioPlayerDelegate {
     
     // MARK: - 听音乐动画
     
     /// 开始听音乐动画
     func startListeningToMusicAnimation() {
+        // 确保在主线程执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.startListeningToMusicAnimation()
+            }
+            return
+        }
+        
         // 移除其他可能正在进行的动画
         removeAction(forKey: "walkingAction")
         removeAction(forKey: "fallingAction")
@@ -145,6 +153,14 @@ extension Fluffel {
     
     /// 停止听音乐动画
     func stopListeningToMusicAnimation() {
+        // 确保在主线程执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.stopListeningToMusicAnimation()
+            }
+            return
+        }
+        
         // 移除听音乐相关动画
         removeAction(forKey: "listeningToMusicAction")
         removeAction(forKey: "musicListeningNotes")
@@ -170,65 +186,114 @@ extension Fluffel {
         // 恢复正常表情
         smile()
         
-        // 更新状态
-        setState(.idle)
+        // 避免使用setState触发潜在的循环调用
+        // 直接修改状态变量
+        state = .idle
         
         // 发送停止音乐的通知，供外部组件使用
         NotificationCenter.default.post(name: .fluffelDidStopMusic, object: self)
     }
     
-    // MARK: - 音乐播放器准备
+    // MARK: - 音乐播放器
     
-    // 音乐播放器属性（准备将来实现）
-    private static var musicPlayer: AVAudioPlayer?
-    private static var musicTimer: Timer?
+    // 音乐播放器属性
+    internal static var musicPlayer: AVAudioPlayer?
+    internal static var musicTimer: Timer?
+    private static var completionHandler: ((Bool) -> Void)?
     
-    /// 准备将来实现的音乐播放功能
+    /// 播放音乐
     func playMusicFromURL(_ url: URL, completion: @escaping (Bool) -> Void) {
-        // 开始听音乐动画
+        // 保存完成回调
+        Fluffel.completionHandler = completion
+        
+        // 开始听音乐动画（这个方法已经确保会在主线程执行）
         startListeningToMusicAnimation()
         
-        // 为将来的实现留下占位符
-        print("将来会从URL播放音乐: \(url)")
-        
-        // 为将来播放Pixabay音乐做准备（占位代码）
-        /*
-        do {
-            Fluffel.musicPlayer = try AVAudioPlayer(contentsOf: url)
-            Fluffel.musicPlayer?.prepareToPlay()
-            Fluffel.musicPlayer?.play()
+        // 调用 FluffelScene 的音乐播放功能
+        if let scene = self.parent?.scene as? FluffelScene {
+            scene.startPlayingMusic(from: url)
             
-            // 音乐播放结束时停止动画
-            Fluffel.musicTimer = Timer.scheduledTimer(withTimeInterval: Fluffel.musicPlayer?.duration ?? 30, repeats: false) { [weak self] _ in
-                self?.stopListeningToMusicAnimation()
-                Fluffel.musicPlayer = nil
-                Fluffel.musicTimer?.invalidate()
-                Fluffel.musicTimer = nil
-                completion(true)
+            // 标记当前为正在播放状态
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                // 检查1秒后是否有播放器实例
+                if Fluffel.musicPlayer == nil {
+                    // 如果1秒后还没有播放器实例，认为播放失败
+                    // 确保在主线程上停止动画
+                    DispatchQueue.main.async {
+                        self?.stopListeningToMusicAnimation()
+                        Fluffel.completionHandler?(false)
+                        Fluffel.completionHandler = nil
+                    }
+                } else {
+                    // 设置代理接收播放结束事件
+                    Fluffel.musicPlayer?.delegate = self
+                }
             }
-            
-            return
-        } catch {
-            print("播放音乐失败: \(error)")
-            stopListeningToMusicAnimation()
-            completion(false)
-        }
-        */
-        
-        // 临时代码：10秒后自动停止动画
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
-            self?.stopListeningToMusicAnimation()
-            completion(true)
+        } else {
+            print("Error: Cannot find FluffelScene to play music")
+            // 确保在主线程上停止动画
+            DispatchQueue.main.async { [weak self] in
+                self?.stopListeningToMusicAnimation()
+                Fluffel.completionHandler?(false)
+                Fluffel.completionHandler = nil
+            }
         }
     }
     
-    /// 停止音乐播放（准备将来实现）
+    /// 停止音乐播放
     func stopMusic() {
-        Fluffel.musicPlayer?.stop()
-        Fluffel.musicPlayer = nil
+        // 确保在主线程执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.stopMusic()
+            }
+            return
+        }
+        
+        // 停止所有定时器
         Fluffel.musicTimer?.invalidate()
         Fluffel.musicTimer = nil
         
+        // 直接停止音频播放，而不是通过场景
+        Fluffel.musicPlayer?.stop()
+        Fluffel.musicPlayer = nil
+        
+        // 取消回调
+        Fluffel.completionHandler = nil
+        
+        // 停止动画
         stopListeningToMusicAnimation()
+        
+        print("Music playback stopped by Fluffel")
     }
-} 
+    
+    // MARK: - AVAudioPlayerDelegate
+    
+    /// 音频播放结束时调用
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        // 确保在主线程处理回调
+        DispatchQueue.main.async { [weak self] in
+            // 停止动画
+            self?.stopListeningToMusicAnimation()
+            
+            // 调用完成回调
+            Fluffel.completionHandler?(flag)
+            Fluffel.completionHandler = nil
+        }
+    }
+    
+    /// 音频播放出错时调用
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        // 确保在主线程处理回调
+        DispatchQueue.main.async { [weak self] in
+            print("Audio playback error: \(error?.localizedDescription ?? "unknown error")")
+            
+            // 停止动画
+            self?.stopListeningToMusicAnimation()
+            
+            // 调用完成回调
+            Fluffel.completionHandler?(false)
+            Fluffel.completionHandler = nil
+        }
+    }
+}

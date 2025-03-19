@@ -1,4 +1,5 @@
 import SpriteKit
+import AVFoundation
 
 // 删除不再使用的Direction枚举，使用FluffelTypes.swift中的MovementDirection代替
 // enum Direction {
@@ -519,24 +520,49 @@ class FluffelScene: SKScene {
         NSMenu.popUpContextMenu(menu, with: NSApp.currentEvent!, for: view)
     }
     
-    /// 让 Fluffel 开始播放音乐
-    func startPlayingMusic() {
-        guard let fluffel = fluffel else { return }
+    /// 开始播放音乐
+    func startPlayingMusic(from url: URL) {
+        // 确保 Fluffel 存在
+        guard fluffel != nil else {
+            print("Error: Cannot play music - Fluffel not found")
+            return
+        }
         
-        // 启动音乐动画
-        let sampleURL = URL(string: "https://example.com/sample.mp3")!
-        fluffel.playMusicFromURL(sampleURL) { success in
-            if success {
-                print("音乐播放完成")
-            } else {
-                print("音乐播放失败")
-            }
+        print("Attempting to play music from URL: \(url)")
+        
+        // 停止现有音乐
+        stopMusic()
+                    
+        // 创建音频播放器
+        do {
+            let audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer.prepareToPlay()
+            audioPlayer.play()
+            
+            // 保存到 Fluffel 类的静态属性中
+            Fluffel.musicPlayer = audioPlayer
+            
+            print("Music playback started successfully")
+            
+            // 发送通知
+            NotificationCenter.default.post(name: .fluffelWillPlayMusic, object: self)
+        } catch {
+            print("Failed to play music from downloaded file: \(error)")
         }
     }
     
     /// 停止 Fluffel 播放音乐
     func stopMusic() {
-        guard let fluffel = fluffel else { return }
-        fluffel.stopMusic()
+        // 直接停止音频播放
+        Fluffel.musicPlayer?.stop()
+        Fluffel.musicPlayer = nil
+        
+        // 如果有 fluffel 实例，通知它停止动画但不调用其 stopMusic 方法
+        if let fluffel = fluffel {
+            // 只停止动画，不会引起递归
+            fluffel.stopListeningToMusicAnimation()
+        }
+        
+        print("Music playback stopped by FluffelScene")
     }
 } 

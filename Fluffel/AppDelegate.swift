@@ -508,15 +508,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         executeAction { [weak self] in
             guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
             
-            // 获取示例URL（将来会使用Pixabay API）
-            let sampleURL = URL(string: "https://cdn.pixabay.com/audio/2025/03/18/audio_a5668a7aff.mp3")!
+            // 获取示例URL - 使用更可靠的 Pixabay 音频 URL
+            let sampleURL = URL(string: "https://cdn.pixabay.com/audio/2023/07/30/audio_e0908e8569.mp3")!
             
-            // 启动音乐动画
-            fluffel.playMusicFromURL(sampleURL) { success in
+            // 添加错误处理和备选方案
+            fluffel.playMusicFromURL(sampleURL) { [weak self] success in
                 if success {
-                    print("音乐播放完成")
+                    print("Music playback completed successfully")
                 } else {
-                    print("音乐播放失败")
+                    print("Online music playback failed, trying local file")
+                    
+                    // 尝试使用本地文件作为备选
+                    if let bundleURL = Bundle.main.url(forResource: "sample_music", withExtension: "mp3") {
+                        fluffel.playMusicFromURL(bundleURL) { success in
+                            if success {
+                                print("Local music playback completed successfully")
+                            } else {
+                                print("Local music playback also failed")
+                                // 通知用户
+                                if let fluffel = self?.fluffelWindowController?.fluffel {
+                                    fluffel.speak(text: "Sorry, I couldn't play the music", duration: 3.0)
+                                }
+                            }
+                        }
+                    } else {
+                        print("No local music file found")
+                        // 通知用户
+                        if let fluffel = self?.fluffelWindowController?.fluffel {
+                            fluffel.speak(text: "Sorry, I couldn't play the music", duration: 3.0)
+                        }
+                    }
                 }
             }
         }
@@ -525,7 +546,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func stopMusic(_ sender: Any) {
         executeAction { [weak self] in
             guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
-            fluffel.stopMusic()
+            
+            // 安全地停止音乐
+            DispatchQueue.main.async {
+                print("AppDelegate: Stopping music")
+                fluffel.stopMusic()
+            }
         }
     }
     

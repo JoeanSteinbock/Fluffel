@@ -50,23 +50,29 @@ extension Fluffel {
     
     /// 移除当前的对话气泡
     func removeSpeechBubble() {
-        // 停止说话动画 - 这个可以在任何线程上执行
+        // 检查是否在主线程，如果不是，则切换到主线程执行
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.removeSpeechBubble()
+            }
+            return
+        }
+        
+        // 以下操作在主线程上执行
+        // 停止说话动画
         removeAction(forKey: "talkingAction")
         
-        // 恢复正常表情 - 这个可以在任何线程上执行
+        // 恢复正常表情
         resetFacialExpression()
         
         // 停止当前正在播放的语音
         FluffelTTSService.shared.stopCurrentAudio()
         
-        // 发送通知，通知控制器关闭气泡窗口 - 确保在主线程上执行
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            NotificationCenter.default.post(
-                name: NSNotification.Name.fluffelDidStopSpeaking,
-                object: self
-            )
-        }
+        // 发送通知，通知控制器关闭气泡窗口
+        NotificationCenter.default.post(
+            name: NSNotification.Name.fluffelDidStopSpeaking,
+            object: self
+        )
     }
     
     /// 当 Fluffel 说话时的表情动画
@@ -133,6 +139,14 @@ extension Fluffel {
     
     /// 重置面部表情到正常状态
     private func resetFacialExpression() {
+        // 确保在主线程上执行UI操作
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
+                self?.resetFacialExpression()
+            }
+            return
+        }
+        
         removeAction(forKey: "blinkWhileTalking")
         
         // 恢复正常表情
