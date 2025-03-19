@@ -543,7 +543,7 @@ class FluffelScene: SKScene {
         menu.addItem(NSMenuItem.separator())
         
         // 添加API密钥设置选项
-        menu.addItem(withTitle: "Set API key", action: #selector(AppDelegate.showApiKeySettings(_:)), keyEquivalent: "k")
+        menu.addItem(withTitle: "Set Google Cloud API key", action: #selector(AppDelegate.showApiKeySettings(_:)), keyEquivalent: "k")
         menu.addItem(withTitle: "Fix network permissions", action: #selector(AppDelegate.openNetworkSettings(_:)), keyEquivalent: "n")
         
         menu.addItem(NSMenuItem.separator())

@@ -1,0 +1,548 @@
+[
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2020/11/12/17/14/concert-5736160_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2020/11/12/17/14/concert-5736160_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2020/11/12/17/14/concert-5736160_1280.jpg"
+    },
+    "id": 24274664,
+    "title": "Dance Party",
+    "description": "A selection of tracks by the Pixabay community to set the mood for your next dance party.",
+    "duration": 3139,
+    "user": {
+      "id": 43090885,
+      "username": "43090885",
+      "url": "/users/43090885-43090885/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 19,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2020/11/12/17/14/concert-5736160_640.jpg",
+    "publicUrl": "/playlists/dance-party-24274664/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2016/11/02/11/08/monk-1791113_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2016/11/02/11/08/monk-1791113_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2016/11/02/11/08/monk-1791113_1280.jpg"
+    },
+    "id": 23032217,
+    "title": "Zen Meditation",
+    "description": "This is the place to find peace. Take a deep breath, close your eyes and immerse yourself...",
+    "duration": 19388,
+    "user": {
+      "id": 43090885,
+      "username": "43090885",
+      "url": "/users/43090885-43090885/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 30,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2016/11/02/11/08/monk-1791113_640.jpg",
+    "publicUrl": "/playlists/zen-meditation-23032217/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2016/10/20/18/35/earth-1756274_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2016/10/20/18/35/earth-1756274_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2016/10/20/18/35/earth-1756274_1280.jpg"
+    },
+    "id": 22139477,
+    "title": "Cosmos",
+    "description": "This is what space feels like... Dive deep into our selected cosmic tracks and touch the stars.",
+    "duration": 11360,
+    "user": {
+      "id": 17049045,
+      "username": "17049045",
+      "url": "/users/17049045-17049045/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 49,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2016/10/20/18/35/earth-1756274_640.jpg",
+    "publicUrl": "/playlists/cosmos-22139477/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2023/06/20/01/30/ai-generated-8075768_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2023/06/20/01/30/ai-generated-8075768_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2023/06/20/01/30/ai-generated-8075768_1280.jpg"
+    },
+    "id": 17503730,
+    "title": "Chill Beats",
+    "description": "Chill Beats playlist: Smooth, mellow and laid-back rhythms. Perfect for cooking, relaxing, de-stressing.",
+    "duration": 4334,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 25,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2023/06/20/01/30/ai-generated-8075768_640.jpg",
+    "publicUrl": "/playlists/chill-beats-17503730/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2018/09/18/16/45/forest-3686632_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2018/09/18/16/45/forest-3686632_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2018/09/18/16/45/forest-3686632_1280.jpg"
+    },
+    "id": 20707654,
+    "title": "Nature Sleep Sounds",
+    "description": "Soothe your senses with the sounds of whispering winds, rustling leaves, and rain for a tranquil sleep.",
+    "duration": 13970,
+    "user": {
+      "id": 17049045,
+      "username": "17049045",
+      "url": "/users/17049045-17049045/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 35,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2018/09/18/16/45/forest-3686632_640.jpg",
+    "publicUrl": "/playlists/nature-sleep-sounds-20707654/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2019/12/16/10/49/building-4699096_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2019/12/16/10/49/building-4699096_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2019/12/16/10/49/building-4699096_1280.jpg"
+    },
+    "id": 19870823,
+    "title": "Cyberpunk/Future sounds",
+    "description": "Immerse yourself in the pulsating rhythms of the future and neon lights. This is the ultimate Cyberpunk sound.",
+    "duration": 4360,
+    "user": {
+      "id": 17049045,
+      "username": "17049045",
+      "url": "/users/17049045-17049045/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 25,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2019/12/16/10/49/building-4699096_640.jpg",
+    "publicUrl": "/playlists/cyberpunkfuture-sounds-19870823/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2017/08/06/00/27/yoga-2587066_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2017/08/06/00/27/yoga-2587066_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2017/08/06/00/27/yoga-2587066_1280.jpg"
+    },
+    "id": 22334466,
+    "title": "Yoga Session",
+    "description": "Selected tracks for balancing mind and body. This is the perfect playlist for your peaceful and relaxing yoga session.",
+    "duration": 9576,
+    "user": {
+      "id": 43090885,
+      "username": "43090885",
+      "url": "/users/43090885-43090885/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 23,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2017/08/06/00/27/yoga-2587066_640.jpg",
+    "publicUrl": "/playlists/yoga-session-22334466/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2020/09/27/03/38/woman-5605529_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2020/09/27/03/38/woman-5605529_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2020/09/27/03/38/woman-5605529_1280.jpg"
+    },
+    "id": 22335330,
+    "title": "Running",
+    "description": "Your daily dose of motivation. Get up, run better and run faster with Pixabay top tracks!",
+    "duration": 3192,
+    "user": {
+      "id": 43090885,
+      "username": "43090885",
+      "url": "/users/43090885-43090885/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 29,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2020/09/27/03/38/woman-5605529_640.jpg",
+    "publicUrl": "/playlists/running-22335330/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2018/03/27/21/43/startup-3267505_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2018/03/27/21/43/startup-3267505_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2018/03/27/21/43/startup-3267505_1280.jpg"
+    },
+    "id": 17501847,
+    "title": "Get Focused",
+    "description": "A stimulating mix to get your brain into the right flow. Conquer your workload with our tunnel vision tracks.",
+    "duration": 9606,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 35,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2018/03/27/21/43/startup-3267505_640.jpg",
+    "publicUrl": "/playlists/get-focused-17501847/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075771_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075771_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075771_1280.jpg"
+    },
+    "id": 17503543,
+    "title": "LoFi Chillout",
+    "description": "Relax & unwind with our Lofi Chillout playlist. Perfect beats for working, relaxing, or chilling out.",
+    "duration": 3980,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 27,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075771_640.jpg",
+    "publicUrl": "/playlists/lofi-chillout-17503543/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2023/06/28/10/00/ai-generated-8093991_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2023/06/28/10/00/ai-generated-8093991_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2023/06/28/10/00/ai-generated-8093991_1280.jpg"
+    },
+    "id": 17501840,
+    "title": "LoFi Study",
+    "description": "Boost focus with our Lofi Study playlist. Smooth, calming beats to enhance concentration and productivity.",
+    "duration": 4375,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 24,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2023/06/28/10/00/ai-generated-8093991_640.jpg",
+    "publicUrl": "/playlists/lofi-study-17501840/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2016/11/28/10/48/christmas-background-1864718_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2016/11/28/10/48/christmas-background-1864718_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2016/11/28/10/48/christmas-background-1864718_1280.jpg"
+    },
+    "id": 20708121,
+    "title": "Childrens Music",
+    "description": "Joyful tunes for little ears - our 'Children's Music' playlist is a magical mix of giggles and melodies.",
+    "duration": 5343,
+    "user": {
+      "id": 17049045,
+      "username": "17049045",
+      "url": "/users/17049045-17049045/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 43,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2016/11/28/10/48/christmas-background-1864718_640.jpg",
+    "publicUrl": "/playlists/childrens-music-20708121/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2018/01/24/15/08/live-3104077_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2018/01/24/15/08/live-3104077_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2018/01/24/15/08/live-3104077_1280.jpg"
+    },
+    "id": 17501839,
+    "title": "Ambient Sleep",
+    "description": "Dream peacefully with our soothing and calming melodies featuring ambient tunes for a quality sleep.",
+    "duration": 12696,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 24,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2018/01/24/15/08/live-3104077_640.jpg",
+    "publicUrl": "/playlists/ambient-sleep-17501839/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2019/10/28/21/21/halloween-4585684_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2019/10/28/21/21/halloween-4585684_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2019/10/28/21/21/halloween-4585684_1280.jpg"
+    },
+    "id": 18699821,
+    "title": "Halloween",
+    "description": "The perfect playlist to get into the spooky spirit with this haunting Halloween playlist.",
+    "duration": 6487,
+    "user": {
+      "id": 17049045,
+      "username": "17049045",
+      "url": "/users/17049045-17049045/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 51,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2019/10/28/21/21/halloween-4585684_640.jpg",
+    "publicUrl": "/playlists/halloween-18699821/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2019/01/11/12/02/christmas-tree-3926970_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2019/01/11/12/02/christmas-tree-3926970_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2019/01/11/12/02/christmas-tree-3926970_1280.jpg"
+    },
+    "id": 19724504,
+    "title": "Christmas",
+    "description": "Get into the holiday spirit with our festive Christmas songs, a perfect mix of classic carols and contemporary tunes.",
+    "duration": 4797,
+    "user": {
+      "id": 17049045,
+      "username": "17049045",
+      "url": "/users/17049045-17049045/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 39,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2019/01/11/12/02/christmas-tree-3926970_640.jpg",
+    "publicUrl": "/playlists/christmas-19724504/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2017/08/07/14/02/man-2604149_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2017/08/07/14/02/man-2604149_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2017/08/07/14/02/man-2604149_1280.jpg"
+    },
+    "id": 17503542,
+    "title": "Gym Workout",
+    "description": "Pump up your workout with full of high-energy tracks to boost motivation and performance.",
+    "duration": 3089,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 22,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2017/08/07/14/02/man-2604149_640.jpg",
+    "publicUrl": "/playlists/gym-workout-17503542/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2015/01/08/18/25/desk-593327_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2015/01/08/18/25/desk-593327_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2015/01/08/18/25/desk-593327_1280.jpg"
+    },
+    "id": 17501846,
+    "title": "Working From Home",
+    "description": "Boost productivity from Pixabay to your home office, featuring soft hits and upbeat tracks.",
+    "duration": 5559,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 30,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2015/01/08/18/25/desk-593327_640.jpg",
+    "publicUrl": "/playlists/working-from-home-17501846/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2019/07/30/06/33/sax-4372140_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2019/07/30/06/33/sax-4372140_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2019/07/30/06/33/sax-4372140_1280.jpg"
+    },
+    "id": 19890395,
+    "title": "Jazz",
+    "description": "Jazz playlist: Elegant, soothing tracks perfect for relaxing, entertaining, or enhancing your mood anytime.",
+    "duration": 4858,
+    "user": {
+      "id": 17049045,
+      "username": "17049045",
+      "url": "/users/17049045-17049045/",
+      "profileImage": "/static/img/profile_images/green.svg"
+    },
+    "audioCount": 30,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2019/07/30/06/33/sax-4372140_640.jpg",
+    "publicUrl": "/playlists/jazz-19890395/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2015/02/09/00/07/party-629241_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2015/02/09/00/07/party-629241_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2015/02/09/00/07/party-629241_1280.jpg"
+    },
+    "id": 17501842,
+    "title": "Underground Techno",
+    "description": "Welcome to the underground club! Get lost in the rhythm with our techno playlist, featuring pulsing beats.",
+    "duration": 6482,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 23,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2015/02/09/00/07/party-629241_640.jpg",
+    "publicUrl": "/playlists/underground-techno-17501842/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2017/08/06/05/27/people-2589091_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2017/08/06/05/27/people-2589091_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2017/08/06/05/27/people-2589091_1280.jpg"
+    },
+    "id": 17501844,
+    "title": "House Party",
+    "description": "Move to the beat with our dance and party music, featuring high-energy tracks for a magic night.",
+    "duration": 4258,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 23,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2017/08/06/05/27/people-2589091_640.jpg",
+    "publicUrl": "/playlists/house-party-17501844/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2021/04/13/02/28/wine-6174460_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2021/04/13/02/28/wine-6174460_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2021/04/13/02/28/wine-6174460_1280.jpg"
+    },
+    "id": 17501843,
+    "title": "Dinner Time",
+    "description": "Set the mood and enjoy your evening with our dinner playlist, featuring soothing and romantic tunes.",
+    "duration": 5545,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 30,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2021/04/13/02/28/wine-6174460_640.jpg",
+    "publicUrl": "/playlists/dinner-time-17501843/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075773_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075773_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075773_1280.jpg"
+    },
+    "id": 17501841,
+    "title": "LoFi HipHop",
+    "description": "Chill out with mellow hiphop. Perfect for relaxation, study, or a laid-back vibe.",
+    "duration": 3869,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 28,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075773_640.jpg",
+    "publicUrl": "/playlists/lofi-hiphop-17501841/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075771_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075771_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075771_1280.jpg"
+    },
+    "id": 17503543,
+    "title": "LoFi Chillout",
+    "description": "Relax & unwind with our Lofi Chillout playlist. Perfect beats for working, relaxing, or chilling out.",
+    "duration": 3980,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 27,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2023/06/20/01/31/ai-generated-8075771_640.jpg",
+    "publicUrl": "/playlists/lofi-chillout-17503543/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2023/06/20/01/30/ai-generated-8075768_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2023/06/20/01/30/ai-generated-8075768_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2023/06/20/01/30/ai-generated-8075768_1280.jpg"
+    },
+    "id": 17503730,
+    "title": "Chill Beats",
+    "description": "Chill Beats playlist: Smooth, mellow and laid-back rhythms. Perfect for cooking, relaxing, de-stressing.",
+    "duration": 4334,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 25,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2023/06/20/01/30/ai-generated-8075768_640.jpg",
+    "publicUrl": "/playlists/chill-beats-17503730/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2023/06/28/10/00/ai-generated-8093991_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2023/06/28/10/00/ai-generated-8093991_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2023/06/28/10/00/ai-generated-8093991_1280.jpg"
+    },
+    "id": 17501840,
+    "title": "LoFi Study",
+    "description": "Boost focus with our Lofi Study playlist. Smooth, calming beats to enhance concentration and productivity.",
+    "duration": 4375,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 24,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2023/06/28/10/00/ai-generated-8093991_640.jpg",
+    "publicUrl": "/playlists/lofi-study-17501840/",
+    "isFeatured": true
+  },
+  {
+    "bgImageSources": {
+      "640w": "https://cdn.pixabay.com/photo/2018/01/24/15/08/live-3104077_640.jpg",
+      "960w": "https://cdn.pixabay.com/photo/2018/01/24/15/08/live-3104077_960_720.jpg",
+      "1280w": "https://cdn.pixabay.com/photo/2018/01/24/15/08/live-3104077_1280.jpg"
+    },
+    "id": 17501839,
+    "title": "Ambient Sleep",
+    "description": "Dream peacefully with our soothing and calming melodies featuring ambient tunes for a quality sleep.",
+    "duration": 12696,
+    "user": {
+      "id": 1,
+      "username": "1",
+      "url": "/users/1-1/",
+      "profileImage": "/static/img/profile_images/orange.svg"
+    },
+    "audioCount": 24,
+    "bgImageSrc": "https://cdn.pixabay.com/photo/2018/01/24/15/08/live-3104077_640.jpg",
+    "publicUrl": "/playlists/ambient-sleep-17501839/",
+    "isFeatured": true
+  }
+]

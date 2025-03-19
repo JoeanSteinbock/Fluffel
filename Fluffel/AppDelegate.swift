@@ -533,18 +533,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
     }
     
-    /// 播放整个播放列表
-    func playPlaylist(_ playlist: Playlist) {
-        guard let firstTrack = playlist.tracks.first else { return }
-        playTrack(firstTrack)
-    }
-    
     /// 播放单个曲目
     func playTrack(_ track: Track) {
         executeAction { [weak self] in
-            guard let fluffel = self?.fluffelWindowController?.fluffel else { return }
+            guard let fluffel = self?.fluffelWindowController?.fluffel,
+                  let url = URL(string: track.url) else { 
+                print("无法播放曲目：无效的 URL")
+                return 
+            }
             
-            fluffel.playMusicFromURL(track.url) { success in
+            fluffel.playMusicFromURL(url) { success in
                 if success {
                     print("Track playback completed successfully: \(track.title)")
                 } else {
@@ -636,5 +634,100 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let fluffel = fluffelWindowController?.fluffel {
             fluffel.speak(text: "Voice updated!", duration: 2.0)
         }
+    }
+    
+    // 显示上下文菜单
+    private func showContextMenu(at location: NSPoint, in view: NSView?) {
+        guard let view = view else { return }
+        
+        // 创建菜单
+        let menu = NSMenu(title: "Fluffel Menu")
+        
+        // 添加交互选项
+        menu.addItem(withTitle: "Greeting", action: #selector(AppDelegate.speakGreeting(_:)), keyEquivalent: "g")
+        menu.addItem(withTitle: "Joke", action: #selector(AppDelegate.tellJoke(_:)), keyEquivalent: "j")
+        menu.addItem(withTitle: "Share facts", action: #selector(AppDelegate.shareFact(_:)), keyEquivalent: "f")
+        menu.addItem(withTitle: "Conversation", action: #selector(AppDelegate.startConversation(_:)), keyEquivalent: "c")
+        
+        // 创建音乐子菜单
+        let musicMenu = NSMenu(title: "Listen to music")
+        let musicMenuItem = NSMenuItem(title: "Listen to music", action: nil, keyEquivalent: "m")
+        musicMenuItem.submenu = musicMenu
+        
+        // 添加音乐类别
+        for category in FluffelPixabayPlaylists.PlaylistCategory.allCases {
+            let categoryItem = NSMenuItem(
+                title: category.rawValue,
+                action: #selector(AppDelegate.showPlaylistWindow(_:)),
+                keyEquivalent: ""
+            )
+            categoryItem.representedObject = category
+            categoryItem.target = NSApp.delegate
+            musicMenu.addItem(categoryItem)
+        }
+        
+        // 添加分隔线和其他音乐选项
+        musicMenu.addItem(NSMenuItem.separator())
+        
+        // 添加随机播放选项
+        let shuffleAllItem = NSMenuItem(
+            title: "Shuffle All Music",
+            action: #selector(AppDelegate.playRandomTrackFromAll(_:)),
+            keyEquivalent: ""
+        )
+        shuffleAllItem.target = NSApp.delegate
+        musicMenu.addItem(shuffleAllItem)
+        
+        // 添加停止音乐选项
+        let stopItem = NSMenuItem(
+            title: "Stop Music",
+            action: #selector(AppDelegate.stopMusic(_:)),
+            keyEquivalent: ""
+        )
+        stopItem.target = NSApp.delegate
+        musicMenu.addItem(stopItem)
+        
+        menu.addItem(musicMenuItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 添加声音选项子菜单
+        let voiceMenu = NSMenu(title: "Voice Options")
+        let voiceMenuItem = NSMenuItem(title: "Voice Options", action: nil, keyEquivalent: "")
+        voiceMenuItem.submenu = voiceMenu
+        
+        // 添加声音选项
+        voiceMenu.addItem(withTitle: "Squeaky", action: #selector(AppDelegate.setVoiceSqueaky(_:)), keyEquivalent: "1")
+        voiceMenu.addItem(withTitle: "Deep", action: #selector(AppDelegate.setVoiceDeep(_:)), keyEquivalent: "2")
+        voiceMenu.addItem(withTitle: "Chipmunk", action: #selector(AppDelegate.setVoiceChipmunk(_:)), keyEquivalent: "3")
+        voiceMenu.addItem(withTitle: "Robot", action: #selector(AppDelegate.setVoiceRobot(_:)), keyEquivalent: "4")
+        voiceMenu.addItem(withTitle: "Cute (Default)", action: #selector(AppDelegate.setVoiceCute(_:)), keyEquivalent: "5")
+        
+        menu.addItem(voiceMenuItem)
+        
+        // 添加操作选项
+        menu.addItem(withTitle: "Reset to center", action: #selector(AppDelegate.resetFluffelToCenter(_:)), keyEquivalent: "r")
+        menu.addItem(withTitle: "Test voice", action: #selector(AppDelegate.testTTSFromMenu(_:)), keyEquivalent: "t")
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 添加API密钥设置选项
+        menu.addItem(withTitle: "Set Google Cloud API key", action: #selector(AppDelegate.showApiKeySettings(_:)), keyEquivalent: "k")
+        menu.addItem(withTitle: "Fix network permissions", action: #selector(AppDelegate.openNetworkSettings(_:)), keyEquivalent: "n")
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // 添加退出选项
+        menu.addItem(withTitle: "Quit", action: #selector(AppDelegate.quitApp(_:)), keyEquivalent: "q")
+        
+        // 为菜单项设置目标
+        for item in menu.items {
+            if item.action != nil {
+                item.target = NSApp.delegate
+            }
+        }
+        
+        // 显示菜单
+        NSMenu.popUpContextMenu(menu, with: NSApp.currentEvent!, for: view)
     }
 }

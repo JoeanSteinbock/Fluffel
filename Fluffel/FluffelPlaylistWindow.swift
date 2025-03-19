@@ -7,6 +7,7 @@ class FluffelPlaylistWindow: NSWindow {
     internal weak var appDelegate: AppDelegate?
     
     init(category: FluffelPixabayPlaylists.PlaylistCategory, delegate: AppDelegate) {
+        print("Initializing playlist window for category: \(category.rawValue)")
         self.category = category
         self.appDelegate = delegate
         
@@ -29,9 +30,13 @@ class FluffelPlaylistWindow: NSWindow {
         
         // 创建内容视图
         setupContentView()
+        
+        print("Playlist window initialized")
     }
     
     private func setupContentView() {
+        print("Setting up content view")
+        
         // 创建主视图
         playlistView = NSView(frame: contentView?.bounds ?? .zero)
         playlistView.wantsLayer = true
@@ -46,43 +51,33 @@ class FluffelPlaylistWindow: NSWindow {
         containerView.translatesAutoresizingMaskIntoConstraints = false
         
         // 获取播放列表
-        if let playlist = FluffelPixabayPlaylists.shared.getPlaylistByCategory(category) {
-            // 添加播放列表标题
-            let headerView = createHeaderView(playlist: playlist)
-            containerView.addSubview(headerView)
+        print("Fetching tracks for category: \(category.rawValue)")
+        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        print("Retrieved \(tracks.count) tracks")
+        
+        // 如果没有曲目，显示加载中状态
+        if tracks.isEmpty {
+            print("No tracks found, loading playlists")
+            // 显示加载指示器
+            let loadingText = NSTextField(labelWithString: "Loading playlists...")
+            loadingText.translatesAutoresizingMaskIntoConstraints = false
+            containerView.addSubview(loadingText)
             
-            // 添加分隔线
-            let separator = createSeparator()
-            containerView.addSubview(separator)
-            
-            // 添加曲目列表
-            var lastView: NSView = separator
-            for (index, track) in playlist.tracks.enumerated() {
-                let trackView = createTrackView(track: track, isLast: index == playlist.tracks.count - 1)
-                containerView.addSubview(trackView)
-                
-                // 设置约束
-                NSLayoutConstraint.activate([
-                    trackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                    trackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                    trackView.topAnchor.constraint(equalTo: lastView.bottomAnchor, constant: 8)
-                ])
-                
-                lastView = trackView
-            }
-            
-            // 设置容器视图约束
             NSLayoutConstraint.activate([
-                headerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-                headerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-                headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-                
-                separator.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
-                separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                
-                lastView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
+                loadingText.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+                loadingText.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
             ])
+            
+            // 开始加载播放列表
+            FluffelPixabayPlaylists.shared.loadPlaylists { [weak self] success in
+                print("Playlists load completed with success: \(success)")
+                DispatchQueue.main.async {
+                    self?.refreshContentView()
+                }
+            }
+        } else {
+            print("Setting up UI with \(tracks.count) tracks")
+            setupUIWithTracks(tracks, in: containerView)
         }
         
         // 设置文档视图
@@ -93,20 +88,71 @@ class FluffelPlaylistWindow: NSWindow {
         
         // 设置内容视图
         contentView = playlistView
+        
+        print("Content view setup completed")
     }
     
-    private func createHeaderView(playlist: Playlist) -> NSView {
+    // 添加刷新方法
+    private func refreshContentView() {
+        print("Refreshing content view")
+        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        print("Retrieved \(tracks.count) tracks after refresh")
+        
+        // 重新创建内容视图
+        setupContentView()
+    }
+    
+    private func setupUIWithTracks(_ tracks: [Track], in containerView: NSView) {
+        // 创建播放列表标题
+        let headerView = createHeaderView(category: category)
+        containerView.addSubview(headerView)
+        
+        // 添加分隔线
+        let separator = createSeparator()
+        containerView.addSubview(separator)
+        
+        // 添加曲目列表
+        var lastView: NSView = separator
+        for (index, track) in tracks.enumerated() {
+            let trackView = createTrackView(track: track, isLast: index == tracks.count - 1)
+            containerView.addSubview(trackView)
+            
+            // 设置约束
+            NSLayoutConstraint.activate([
+                trackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+                trackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+                trackView.topAnchor.constraint(equalTo: lastView.bottomAnchor, constant: 8)
+            ])
+            
+            lastView = trackView
+        }
+        
+        // 设置容器视图约束
+        NSLayoutConstraint.activate([
+            headerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            headerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            
+            separator.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
+            separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            
+            lastView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
+        ])
+    }
+    
+    private func createHeaderView(category: FluffelPixabayPlaylists.PlaylistCategory) -> NSView {
         let headerView = NSView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
         
         // 创建标题标签
-        let titleLabel = NSTextField(labelWithString: playlist.title)
+        let titleLabel = NSTextField(labelWithString: category.rawValue)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
         headerView.addSubview(titleLabel)
         
         // 创建描述标签
-        let descLabel = NSTextField(labelWithString: playlist.description)
+        let descLabel = NSTextField(labelWithString: "A collection of \(category.rawValue.lowercased()) music")
         descLabel.translatesAutoresizingMaskIntoConstraints = false
         descLabel.font = .systemFont(ofSize: 12)
         descLabel.textColor = .secondaryLabelColor
@@ -230,20 +276,21 @@ class FluffelPlaylistWindow: NSWindow {
     // MARK: - Actions
     
     @objc private func playAllTracks() {
-        if let playlist = FluffelPixabayPlaylists.shared.getPlaylistByCategory(category) {
-            appDelegate?.playPlaylist(playlist)
+        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        if let firstTrack = tracks.first {
+            appDelegate?.playTrack(firstTrack)
         }
     }
     
     @objc private func shufflePlaylist() {
-        if let playlist = FluffelPixabayPlaylists.shared.getPlaylistByCategory(category),
-           let track = FluffelPixabayPlaylists.shared.getRandomTrack(from: playlist) {
+        if let track = FluffelPixabayPlaylists.shared.getRandomTrack(from: category) {
             appDelegate?.playTrack(track)
         }
     }
     
     @objc private func playTrack(_ sender: NSButton) {
-        if let track = FluffelPixabayPlaylists.shared.getTrack(id: String(sender.tag)) {
+        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        if let track = tracks.first(where: { $0.id == String(sender.tag) }) {
             appDelegate?.playTrack(track)
         }
     }
