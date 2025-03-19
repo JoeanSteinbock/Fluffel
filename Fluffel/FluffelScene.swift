@@ -25,6 +25,10 @@ class FluffelScene: SKScene {
     private var isSpeakingInProgress = false
     private var speakingDebounceTimer: Timer?
     
+    // 添加连续点击计数和最后点击时间记录
+    private var consecutiveClicks: Int = 0
+    private var lastClickTime: TimeInterval = 0
+    
     // 调试状态
     private var isDebugMode = false
     
@@ -183,11 +187,6 @@ class FluffelScene: SKScene {
     func moveFluffel(direction: MovementDirection) {
         guard let fluffel = fluffel else { return }
         
-        // 如果 Fluffel 在边缘上，先离开边缘
-        if fluffel.isOnEdge {
-            fluffel.leaveEdge()
-        }
-        
         let currentTime = CACurrentMediaTime()
         // 添加小延迟避免移动过快
         if currentTime - lastMoveTime < moveDelay {
@@ -203,10 +202,7 @@ class FluffelScene: SKScene {
         // 增加移动距离，使移动更明显
         let moveDistance: CGFloat = 8.0
         
-        // 临时保存当前位置，以便在越界时恢复
-        let originalPosition = fluffel.position
-        
-        // 根据方向移动 Fluffel
+        // 根据方向移动 Fluffel - 不再检查边界
         switch direction {
         case .left:
             fluffel.position.x -= moveDistance
@@ -218,19 +214,6 @@ class FluffelScene: SKScene {
             fluffel.position.y += moveDistance
         case .down:
             fluffel.position.y -= moveDistance
-        }
-        
-        // 简单的边界检查，确保Fluffel不会移出场景
-        let fluffelSize = fluffel.size
-        let padding: CGFloat = 10.0  // 边缘安全距离
-        
-        if fluffel.position.x < fluffelSize.width/2 + padding || 
-           fluffel.position.x > size.width - fluffelSize.width/2 - padding ||
-           fluffel.position.y < fluffelSize.height/2 + padding || 
-           fluffel.position.y > size.height - fluffelSize.height/2 - padding {
-            // 如果超出边界，恢复到原始位置
-            fluffel.position = originalPosition
-            print("Fluffel 到达场景边界")
         }
         
         // 重置无聊计时器，因为有移动发生
@@ -281,8 +264,43 @@ class FluffelScene: SKScene {
                 // 使用场景的isSpeakingInProgress标志而不是局部标志
                 // 如果正在说话中，不要再触发新的说话
                 if self.isSpeakingInProgress {
+                    // 检查点击时间间隔，如果在0.5秒内连续点击则增加计数
+                    let currentTime = CACurrentMediaTime()
+                    if currentTime - self.lastClickTime < 0.5 {
+                        self.consecutiveClicks += 1
+                        print("Fluffel正在说话中，连续点击次数: \(self.consecutiveClicks)")
+                        
+                        // 如果连续点击超过5次，强制重置说话状态
+                        if self.consecutiveClicks >= 5 {
+                            print("检测到多次快速点击，强制重置说话状态")
+                            self.isSpeakingInProgress = false
+                            self.consecutiveClicks = 0
+                            
+                            // 清除任何可能存在的计时器
+                            self.speakingDebounceTimer?.invalidate()
+                            self.speakingDebounceTimer = nil
+                            
+                            // 发送通知让气泡窗口关闭
+                            NotificationCenter.default.post(
+                                name: NSNotification.Name.fluffelDidStopSpeaking,
+                                object: nil
+                            )
+                            
+                            return
+                        }
+                    } else {
+                        // 不在连续点击范围内，重置连续点击计数
+                        self.consecutiveClicks = 1
+                    }
+                    
+                    // 更新最后点击时间
+                    self.lastClickTime = currentTime
                     return
                 }
+                
+                // 如果能走到这里，说明不在说话状态，重置计数器
+                self.consecutiveClicks = 1
+                self.lastClickTime = CACurrentMediaTime()
                 
                 // 设置标志，防止重复触发
                 self.isSpeakingInProgress = true
@@ -365,11 +383,6 @@ class FluffelScene: SKScene {
         // 停止任何当前动画或状态
         if fluffel.state != .idle {
             fluffel.setState(.idle)
-        }
-        
-        // 确保不在边缘上
-        if fluffel.isOnEdge {
-            fluffel.leaveEdge()
         }
         
         // 创建移动到中心的动画

@@ -48,6 +48,11 @@ class BubbleWindow: NSWindow {
         scheduleDismissal(after: duration)
     }
     
+    // 覆盖canBecomeKey方法，允许窗口成为key window，避免警告
+    override var canBecomeKey: Bool {
+        return true
+    }
+    
     private func setupSpriteKitView(frame: NSRect) {
         // 创建 SpriteKit 视图
         bubbleView = SKView(frame: frame)

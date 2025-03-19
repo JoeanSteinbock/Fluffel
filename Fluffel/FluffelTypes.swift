@@ -9,15 +9,15 @@ enum MovementDirection {
     case right
 }
 
-// 场景边缘枚举
-extension FluffelScene {
-    enum SceneEdge {
-        case top
-        case bottom
-        case left
-        case right
-    }
-}
+// 移除场景边缘枚举
+// extension FluffelScene {
+//    enum SceneEdge {
+//        case top
+//        case bottom
+//        case left
+//        case right
+//    }
+// }
 
 // 通知名称扩展
 extension NSNotification.Name {

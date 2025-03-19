@@ -9,8 +9,7 @@ extension Fluffel {
         if state == .falling { return }
         
         // 停止其他动画
-        // 直接清理边缘行走相关动作
-        removeAction(forKey: "edgeWalkingAction")
+        // 移除边缘行走相关代码
         body.removeAction(forKey: "bodyWobble")
         leftEar.removeAction(forKey: "leftEarWobble")
         rightEar.removeAction(forKey: "rightEarWobble")

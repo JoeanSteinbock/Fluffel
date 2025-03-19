@@ -29,7 +29,6 @@ class Fluffel: SKNode {
     
     // Fluffel 状态相关变量
     var state: FluffelState = .idle
-    var isOnEdge: Bool = false
     
     public let size: CGSize = CGSize(width: 50, height: 50)
     
@@ -194,10 +193,5 @@ class Fluffel: SKNode {
         default:
             break
         }
-    }
-    
-    // 让 Fluffel 离开边缘
-    func leaveEdge() {
-        isOnEdge = false
     }
 }

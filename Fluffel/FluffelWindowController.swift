@@ -18,7 +18,7 @@ class FluffelWindowController: NSWindowController {
     private var isSpeakingInProgress: Bool = false
     
     // 当前活跃的气泡窗口
-    private var activeBubbleWindow: BubbleWindow?
+    public var activeBubbleWindow: BubbleWindow?
     
     public var fluffel: Fluffel {
         return (window?.contentView as? SKView)?.scene?.childNode(withName: "fluffel") as! Fluffel
@@ -189,19 +189,33 @@ class FluffelWindowController: NSWindowController {
         // 处理所有当前按下的键
         for keyCode in activeKeys {
             if let direction = directionForKeyCode(keyCode) {
+                // 使用日志记录事件，帮助调试
+                print("处理按键：\(keyCode)，方向：\(direction)")
                 fluffelScene?.moveFluffel(direction: direction)
             }
         }
     }
     
     func handleKeyDown(with event: NSEvent) {
-        // 简单地将按下的键添加到活动键集合
-        activeKeys.insert(event.keyCode)
+        // 记录键盘按下事件，并确认日志
+        let keyCode = event.keyCode
+        activeKeys.insert(keyCode)
+        
+        // 仅记录方向键的日志，减少输出噪音
+        if keyCode == 123 || keyCode == 124 || keyCode == 125 || keyCode == 126 {
+            print("键盘按下：\(keyCode) - 当前活动键：\(activeKeys)")
+        }
     }
     
     func handleKeyUp(with event: NSEvent) {
-        // 从活动键集合中移除释放的键
-        activeKeys.remove(event.keyCode)
+        // 记录键盘松开事件，并确认日志
+        let keyCode = event.keyCode
+        activeKeys.remove(keyCode)
+        
+        // 仅记录方向键的日志，减少输出噪音
+        if keyCode == 123 || keyCode == 124 || keyCode == 125 || keyCode == 126 {
+            print("键盘松开：\(keyCode) - 当前活动键：\(activeKeys)")
+        }
     }
     
     private func directionForKeyCode(_ keyCode: UInt16) -> MovementDirection? {
@@ -348,8 +362,8 @@ class FluffelWindowController: NSWindowController {
             // 将气泡窗口定位到 Fluffel 窗口上方
             bubbleWindow.positionAboveFluffelWindow()
             
-            // 显示气泡窗口
-            bubbleWindow.makeKeyAndOrderFront(Optional.none)
+            // 显示气泡窗口 - 使用orderFront替代makeKeyAndOrderFront，避免警告
+            bubbleWindow.orderFront(nil)
             
             // 保存引用
             self.activeBubbleWindow = bubbleWindow
