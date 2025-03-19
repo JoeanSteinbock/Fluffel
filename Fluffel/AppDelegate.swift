@@ -471,4 +471,52 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:")!)
         }
     }
+    
+    // 新增设置卡通角色声音的方法
+    @objc func setVoiceSqueaky(_ sender: Any) {
+        executeAction { [weak self] in
+            self?.setFluffelVoice(.squeaky)
+        }
+    }
+    
+    @objc func setVoiceDeep(_ sender: Any) {
+        executeAction { [weak self] in
+            self?.setFluffelVoice(.deep)
+        }
+    }
+    
+    @objc func setVoiceChipmunk(_ sender: Any) {
+        executeAction { [weak self] in
+            self?.setFluffelVoice(.chipmunk)
+        }
+    }
+    
+    @objc func setVoiceRobot(_ sender: Any) {
+        executeAction { [weak self] in
+            self?.setFluffelVoice(.robot)
+        }
+    }
+    
+    @objc func setVoiceCute(_ sender: Any) {
+        executeAction { [weak self] in
+            self?.setFluffelVoice(.cute)
+        }
+    }
+    
+    // 设置Fluffel声音类型并播放示例
+    private func setFluffelVoice(_ voiceType: FluffelTTSService.CartoonVoiceType) {
+        // 设置声音类型
+        FluffelTTSService.shared.setCartoonVoice(voiceType)
+        
+        // 播放示例
+        let demoText = "Hello! This is my new voice!"
+        FluffelTTSService.shared.speak(demoText) {
+            print("Voice changed successfully!")
+        }
+        
+        // 让Fluffel显示消息泡泡
+        if let fluffel = fluffelWindowController?.fluffel {
+            fluffel.speak(text: "Voice updated!", duration: 2.0)
+        }
+    }
 } 

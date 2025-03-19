@@ -470,6 +470,21 @@ class FluffelScene: SKScene {
         
         menu.addItem(NSMenuItem.separator())
         
+        // 添加声音选项子菜单
+        let voiceMenu = NSMenu(title: "Voice Options")
+        
+        let voiceMenuItem = NSMenuItem(title: "Voice Options", action: nil, keyEquivalent: "")
+        voiceMenuItem.submenu = voiceMenu
+        
+        // 添加声音选项
+        voiceMenu.addItem(withTitle: "Squeaky", action: #selector(AppDelegate.setVoiceSqueaky(_:)), keyEquivalent: "1")
+        voiceMenu.addItem(withTitle: "Deep", action: #selector(AppDelegate.setVoiceDeep(_:)), keyEquivalent: "2")
+        voiceMenu.addItem(withTitle: "Chipmunk", action: #selector(AppDelegate.setVoiceChipmunk(_:)), keyEquivalent: "3")
+        voiceMenu.addItem(withTitle: "Robot", action: #selector(AppDelegate.setVoiceRobot(_:)), keyEquivalent: "4")
+        voiceMenu.addItem(withTitle: "Cute (Default)", action: #selector(AppDelegate.setVoiceCute(_:)), keyEquivalent: "5")
+        
+        menu.addItem(voiceMenuItem)
+        
         // 添加操作选项
         menu.addItem(withTitle: "Reset to center", action: #selector(AppDelegate.resetFluffelToCenter(_:)), keyEquivalent: "r")
         menu.addItem(withTitle: "Test voice", action: #selector(AppDelegate.testTTSFromMenu(_:)), keyEquivalent: "t")
@@ -488,6 +503,13 @@ class FluffelScene: SKScene {
         // 为菜单项设置目标
         for item in menu.items {
             item.target = NSApp.delegate
+            
+            // 为子菜单中的项目也设置目标
+            if let submenu = item.submenu {
+                for subItem in submenu.items {
+                    subItem.target = NSApp.delegate
+                }
+            }
         }
         
         // 显示菜单

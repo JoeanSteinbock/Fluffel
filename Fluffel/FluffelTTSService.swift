@@ -19,11 +19,46 @@ class FluffelTTSService: NSObject {
     // API 密钥
     private var apiKey: String?
     
+    // 卡通角色声音类型
+    enum CartoonVoiceType: CustomStringConvertible {
+        case squeaky      // 尖细的声音
+        case deep         // 低沉的声音
+        case chipmunk     // 花栗鼠声音
+        case robot        // 机器人声音
+        case cute         // 可爱的声音（默认）
+        case custom(pitch: Double, rate: Double, gain: Double)  // 自定义配置
+        
+        var description: String {
+            switch self {
+            case .squeaky:
+                return "Squeaky"
+            case .deep:
+                return "Deep"
+            case .chipmunk:
+                return "Chipmunk"
+            case .robot:
+                return "Robot"
+            case .cute:
+                return "Cute"
+            case let .custom(pitch, rate, gain):
+                return "Custom(pitch: \(pitch), rate: \(rate), gain: \(gain))"
+            }
+        }
+    }
+    
+    // 当前声音类型
+    private var currentVoiceType: CartoonVoiceType = .cute
+    
     // 语音配置
     private struct VoiceConfig {
         static let languageCode = "en-US"
-        static let voiceName = "en-US-Chirp3-HD-Kore" // 默认使用可爱的声音
+        static let voiceName = "en-US-Standard-D" // 基础声音
         static let audioEncoding = "LINEAR16"
+        
+        // 默认参数（可爱声音）
+        static let defaultPitch = 4.0
+        static let defaultRate = 1.1
+        static let defaultGain = 2.0
     }
     
     // 私有初始化方法
@@ -31,6 +66,9 @@ class FluffelTTSService: NSObject {
         super.init()
         // 尝试从 UserDefaults 加载 API 密钥
         apiKey = UserDefaults.standard.string(forKey: "GoogleCloudAPIKey")
+        
+        // 尝试从 UserDefaults 加载声音设置
+        loadVoiceSettings()
     }
     
     /// 设置 Google Cloud API 密钥
@@ -59,6 +97,84 @@ class FluffelTTSService: NSObject {
         return apiKey != nil && !apiKey!.isEmpty
     }
     
+    /// 保存当前声音设置到 UserDefaults
+    private func saveVoiceSettings() {
+        var voiceTypeInt: Int
+        
+        switch currentVoiceType {
+        case .squeaky:
+            voiceTypeInt = 0
+        case .deep:
+            voiceTypeInt = 1
+        case .chipmunk:
+            voiceTypeInt = 2
+        case .robot:
+            voiceTypeInt = 3
+        case .cute:
+            voiceTypeInt = 4
+        case .custom:
+            voiceTypeInt = 5
+        }
+        
+        UserDefaults.standard.set(voiceTypeInt, forKey: "FluffelVoiceType")
+        UserDefaults.standard.synchronize()
+        
+        print("Voice setting saved: \(voiceTypeInt)")
+    }
+    
+    /// 从 UserDefaults 加载声音设置
+    private func loadVoiceSettings() {
+        if let voiceTypeInt = UserDefaults.standard.object(forKey: "FluffelVoiceType") as? Int {
+            switch voiceTypeInt {
+            case 0:
+                currentVoiceType = .squeaky
+            case 1:
+                currentVoiceType = .deep
+            case 2:
+                currentVoiceType = .chipmunk
+            case 3:
+                currentVoiceType = .robot
+            case 5:
+                currentVoiceType = .custom(pitch: 0.0, rate: 1.0, gain: 0.0)
+            default:
+                currentVoiceType = .cute
+            }
+            
+            print("Voice setting loaded: \(currentVoiceType)")
+        } else {
+            currentVoiceType = .cute
+            print("No saved voice setting found, using default (cute)")
+        }
+    }
+    
+    /// 设置卡通角色声音类型
+    /// - Parameter voiceType: 卡通角色声音类型
+    func setCartoonVoice(_ voiceType: CartoonVoiceType) {
+        currentVoiceType = voiceType
+        print("Voice set to: \(voiceType)")
+        
+        // 保存设置
+        saveVoiceSettings()
+    }
+    
+    /// 获取当前声音类型的配置
+    private func getCurrentVoiceConfig() -> (pitch: Double, rate: Double, gain: Double) {
+        switch currentVoiceType {
+        case .squeaky:
+            return (pitch: 10.0, rate: 1.3, gain: 2.0)
+        case .deep:
+            return (pitch: -5.0, rate: 0.8, gain: 3.0)
+        case .chipmunk:
+            return (pitch: 12.0, rate: 1.5, gain: 1.0)
+        case .robot:
+            return (pitch: 0.0, rate: 0.9, gain: 4.0)
+        case .cute:
+            return (pitch: VoiceConfig.defaultPitch, rate: VoiceConfig.defaultRate, gain: VoiceConfig.defaultGain)
+        case .custom(let pitch, let rate, let gain):
+            return (pitch: pitch, rate: rate, gain: gain)
+        }
+    }
+    
     /// 将文本转换为语音并播放
     /// - Parameters:
     ///   - text: 要转换为语音的文本
@@ -70,10 +186,13 @@ class FluffelTTSService: NSObject {
             
             // 检查是否有 API 密钥
             guard let apiKey = self.apiKey, !apiKey.isEmpty else {
-                print("TTS 错误: 未设置 API 密钥")
+                print("TTS error: API key not set")
                 DispatchQueue.main.async { completion?() }
                 return
             }
+            
+            // 获取当前声音配置
+            let voiceConfig = self.getCurrentVoiceConfig()
             
             // 构建请求体
             let requestBody: [String: Any] = [
@@ -85,7 +204,10 @@ class FluffelTTSService: NSObject {
                     "name": VoiceConfig.voiceName
                 ],
                 "audioConfig": [
-                    "audioEncoding": VoiceConfig.audioEncoding
+                    "audioEncoding": VoiceConfig.audioEncoding,
+                    "pitch": voiceConfig.pitch,
+                    "speakingRate": voiceConfig.rate,
+                    "volumeGainDb": voiceConfig.gain
                 ]
             ]
             
