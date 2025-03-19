@@ -75,28 +75,29 @@ extension Fluffel {
         )
     }
     
-    /// 当 Fluffel 说话时的表情动画
+    /// 当 Fluffel 说话时的表情动画 - Morty风格
     private func animateTalkingExpression(duration: TimeInterval) {
         // 保存当前的嘴巴路径以便之后恢复
         let currentMouthPath = mouth.path
         
-        // 创建说话动画序列
+        // 创建说话动画序列 - Morty说话时嘴巴动作更加紧张和不确定
         let openMouth = SKAction.run { [weak self] in
             guard let self = self else { return }
             
-            // 张开嘴巴的路径
+            // 张开嘴巴的路径 - Morty风格，更加不规则
             let openMouthPath = CGMutablePath()
-            openMouthPath.addEllipse(in: CGRect(x: -5, y: -10, width: 10, height: 5))
+            openMouthPath.move(to: CGPoint(x: -7, y: -8))
+            openMouthPath.addQuadCurve(to: CGPoint(x: 7, y: -8), control: CGPoint(x: 0, y: -12))
             self.mouth.path = openMouthPath
         }
         
         let closeMouth = SKAction.run { [weak self] in
             guard let self = self else { return }
             
-            // 闭上嘴巴的路径 - 只是一条短线
+            // 闭上嘴巴的路径 - Morty风格，略微下垂
             let closeMouthPath = CGMutablePath()
-            closeMouthPath.move(to: CGPoint(x: -5, y: -8))
-            closeMouthPath.addLine(to: CGPoint(x: 5, y: -8))
+            closeMouthPath.move(to: CGPoint(x: -7, y: -8))
+            closeMouthPath.addQuadCurve(to: CGPoint(x: 7, y: -8), control: CGPoint(x: 0, y: -6))
             self.mouth.path = closeMouthPath
         }
         
@@ -522,4 +523,4 @@ extension Fluffel {
         self.yScale = 1.0
         smile()
     }
-} 
+}
