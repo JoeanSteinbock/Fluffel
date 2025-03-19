@@ -460,30 +460,30 @@ class FluffelScene: SKScene {
         guard let view = view else { return }
         
         // 创建菜单
-        let menu = NSMenu(title: "Fluffel菜单")
+        let menu = NSMenu(title: "Fluffel Menu")
         
         // 添加交互选项
-        menu.addItem(withTitle: "问候", action: #selector(AppDelegate.speakGreeting(_:)), keyEquivalent: "g")
-        menu.addItem(withTitle: "笑话", action: #selector(AppDelegate.tellJoke(_:)), keyEquivalent: "j")
-        menu.addItem(withTitle: "分享知识", action: #selector(AppDelegate.shareFact(_:)), keyEquivalent: "f")
-        menu.addItem(withTitle: "对话", action: #selector(AppDelegate.startConversation(_:)), keyEquivalent: "c")
+        menu.addItem(withTitle: "Greeting", action: #selector(AppDelegate.speakGreeting(_:)), keyEquivalent: "g")
+        menu.addItem(withTitle: "Joke", action: #selector(AppDelegate.tellJoke(_:)), keyEquivalent: "j")
+        menu.addItem(withTitle: "Share facts", action: #selector(AppDelegate.shareFact(_:)), keyEquivalent: "f")
+        menu.addItem(withTitle: "Conversation", action: #selector(AppDelegate.startConversation(_:)), keyEquivalent: "c")
         
         menu.addItem(NSMenuItem.separator())
         
         // 添加操作选项
-        menu.addItem(withTitle: "重置到中心", action: #selector(AppDelegate.resetFluffelToCenter(_:)), keyEquivalent: "r")
-        menu.addItem(withTitle: "测试语音", action: #selector(AppDelegate.testTTSFromMenu(_:)), keyEquivalent: "t")
+        menu.addItem(withTitle: "Reset to center", action: #selector(AppDelegate.resetFluffelToCenter(_:)), keyEquivalent: "r")
+        menu.addItem(withTitle: "Test voice", action: #selector(AppDelegate.testTTSFromMenu(_:)), keyEquivalent: "t")
         
         menu.addItem(NSMenuItem.separator())
         
         // 添加API密钥设置选项
-        menu.addItem(withTitle: "设置API密钥", action: #selector(AppDelegate.showApiKeySettings(_:)), keyEquivalent: "k")
-        menu.addItem(withTitle: "修复网络权限", action: #selector(AppDelegate.openNetworkSettings(_:)), keyEquivalent: "n")
+        menu.addItem(withTitle: "Set API key", action: #selector(AppDelegate.showApiKeySettings(_:)), keyEquivalent: "k")
+        menu.addItem(withTitle: "Fix network permissions", action: #selector(AppDelegate.openNetworkSettings(_:)), keyEquivalent: "n")
         
         menu.addItem(NSMenuItem.separator())
         
         // 添加退出选项
-        menu.addItem(withTitle: "退出", action: #selector(AppDelegate.quitApp(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: "Quit", action: #selector(AppDelegate.quitApp(_:)), keyEquivalent: "q")
         
         // 为菜单项设置目标
         for item in menu.items {
