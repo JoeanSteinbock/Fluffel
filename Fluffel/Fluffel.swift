@@ -50,67 +50,39 @@ class Fluffel: SKNode {
         glowEffect.blendMode = .add // 使用叠加混合模式使发光效果更明显
         glowEffect.zPosition = -1 // 确保在 Fluffel 下方
         
-        // 创建 Fluffel 的圆形身体 (使用更明亮、更可爱的粉色)
+        // 创建 Fluffel 的圆形身体 (使用 Morty 的肤色)
         body = SKShapeNode(circleOfRadius: 25)
-        body.fillColor = NSColor(calibratedRed: 1.0, green: 0.8, blue: 0.85, alpha: 1.0) // 更明亮的粉色
-        body.strokeColor = NSColor(calibratedRed: 0.95, green: 0.7, blue: 0.75, alpha: 1.0) // 柔和的边缘
+        body.fillColor = NSColor(calibratedRed: 0.98, green: 0.85, blue: 0.65, alpha: 1.0) // Morty 的肤色
+        body.strokeColor = NSColor(calibratedRed: 0.95, green: 0.8, blue: 0.6, alpha: 1.0) // 柔和的边缘
         body.lineWidth = 1.0
         
-        // 创建眼睛 (更大、更友好的眼睛)
-        let eyeRadius: CGFloat = 6.0 // 稍微大一点的眼睛
+        // 创建 Morty 风格的大眼睛
+        let eyeRadius: CGFloat = 8.0 // 更大的眼睛
         leftEye = SKShapeNode(circleOfRadius: eyeRadius)
         leftEye.fillColor = .white
-        leftEye.strokeColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.4, alpha: 1.0)
-        leftEye.lineWidth = 0.5
+        leftEye.strokeColor = NSColor.black
+        leftEye.lineWidth = 1.0
         leftEye.position = CGPoint(x: -10, y: 7) // 稍微上移
         
-        // 创建瞳孔 (更大、更可爱的瞳孔)
-        let leftPupil = SKShapeNode(circleOfRadius: eyeRadius * 0.65)
-        leftPupil.fillColor = NSColor(calibratedRed: 0.2, green: 0.2, blue: 0.3, alpha: 1.0) // 不那么黑的瞳孔
+        // 创建 Morty 风格的简单黑色瞳孔
+        let leftPupil = SKShapeNode(circleOfRadius: eyeRadius * 0.3)
+        leftPupil.fillColor = NSColor.black
         leftPupil.strokeColor = .clear
-        leftPupil.position = CGPoint(x: 0.5, y: 0) // 居中一点
+        leftPupil.position = CGPoint(x: 0, y: 0) // 居中
         leftEye.addChild(leftPupil)
-        
-        // 添加更大的高光点，增加可爱感
-        let leftHighlight = SKShapeNode(circleOfRadius: eyeRadius * 0.3)
-        leftHighlight.fillColor = .white
-        leftHighlight.strokeColor = .clear
-        leftHighlight.position = CGPoint(x: 1.5, y: 1.5)
-        leftPupil.addChild(leftHighlight)
-        
-        // 添加第二个小高光点
-        let leftSmallHighlight = SKShapeNode(circleOfRadius: eyeRadius * 0.15)
-        leftSmallHighlight.fillColor = .white
-        leftSmallHighlight.strokeColor = .clear
-        leftSmallHighlight.position = CGPoint(x: -1.0, y: -1.0)
-        leftPupil.addChild(leftSmallHighlight)
         
         rightEye = SKShapeNode(circleOfRadius: eyeRadius)
         rightEye.fillColor = .white
-        rightEye.strokeColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.4, alpha: 1.0)
-        rightEye.lineWidth = 0.5
+        rightEye.strokeColor = NSColor.black
+        rightEye.lineWidth = 1.0
         rightEye.position = CGPoint(x: 10, y: 7) // 稍微上移
         
-        // 创建瞳孔
-        let rightPupil = SKShapeNode(circleOfRadius: eyeRadius * 0.65)
-        rightPupil.fillColor = NSColor(calibratedRed: 0.2, green: 0.2, blue: 0.3, alpha: 1.0) // 不那么黑的瞳孔
+        // 创建 Morty 风格的简单黑色瞳孔
+        let rightPupil = SKShapeNode(circleOfRadius: eyeRadius * 0.3)
+        rightPupil.fillColor = NSColor.black
         rightPupil.strokeColor = .clear
-        rightPupil.position = CGPoint(x: -0.5, y: 0) // 居中一点
+        rightPupil.position = CGPoint(x: 0, y: 0) // 居中
         rightEye.addChild(rightPupil)
-        
-        // 添加更大的高光点
-        let rightHighlight = SKShapeNode(circleOfRadius: eyeRadius * 0.3)
-        rightHighlight.fillColor = .white
-        rightHighlight.strokeColor = .clear
-        rightHighlight.position = CGPoint(x: -1.5, y: 1.5)
-        rightPupil.addChild(rightHighlight)
-        
-        // 添加第二个小高光点
-        let rightSmallHighlight = SKShapeNode(circleOfRadius: eyeRadius * 0.15)
-        rightSmallHighlight.fillColor = .white
-        rightSmallHighlight.strokeColor = .clear
-        rightSmallHighlight.position = CGPoint(x: 1.0, y: -1.0)
-        rightPupil.addChild(rightSmallHighlight)
         
         // 创建嘴巴 (简单直线，后续可以改变形状表达情感)
         let mouthPath = CGMutablePath()
@@ -121,25 +93,25 @@ class Fluffel: SKNode {
         mouth.strokeColor = NSColor(calibratedRed: 0.4, green: 0.4, blue: 0.4, alpha: 1.0)
         mouth.lineWidth = 1.5
         
-        // 创建粉红色的脸颊，增添可爱度
-        leftCheek = SKShapeNode(circleOfRadius: 5.0) // 稍微大一点的脸颊
-        leftCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.6, blue: 0.7, alpha: 0.3) // 更淡的粉色
+        // 创建 Morty 风格的脸颊，更加淡化
+        leftCheek = SKShapeNode(circleOfRadius: 5.0)
+        leftCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.7, blue: 0.6, alpha: 0.2) // 更淡的橙色
         leftCheek.strokeColor = .clear
         leftCheek.position = CGPoint(x: -15, y: -3)
         
         rightCheek = SKShapeNode(circleOfRadius: 5.0)
-        rightCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.6, blue: 0.7, alpha: 0.3)
+        rightCheek.fillColor = NSColor(calibratedRed: 1.0, green: 0.7, blue: 0.6, alpha: 0.2) // 更淡的橙色
         rightCheek.strokeColor = .clear
         rightCheek.position = CGPoint(x: 15, y: -3)
         
-        // 添加可爱的小耳朵
+        // 添加 Morty 风格的耳朵
         leftEar = SKShapeNode(circleOfRadius: 8)
-        leftEar.fillColor = NSColor(calibratedRed: 1.0, green: 0.7, blue: 0.8, alpha: 1.0) // 略微明亮一点的颜色
+        leftEar.fillColor = NSColor(calibratedRed: 0.98, green: 0.85, blue: 0.65, alpha: 1.0) // 与肤色相同
         leftEar.strokeColor = .clear
         leftEar.position = CGPoint(x: -18, y: 18)
         
         rightEar = SKShapeNode(circleOfRadius: 8)
-        rightEar.fillColor = NSColor(calibratedRed: 1.0, green: 0.7, blue: 0.8, alpha: 1.0)
+        rightEar.fillColor = NSColor(calibratedRed: 0.98, green: 0.85, blue: 0.65, alpha: 1.0) // 与肤色相同
         rightEar.strokeColor = .clear
         rightEar.position = CGPoint(x: 18, y: 18)
         
