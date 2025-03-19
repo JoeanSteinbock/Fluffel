@@ -137,22 +137,55 @@ extension Fluffel: AVAudioPlayerDelegate {
         
         // 调用 FluffelScene 的音乐播放功能
         if let scene = self.parent?.scene as? FluffelScene {
+            // 播放前清除现有的播放器
+            Fluffel.musicPlayer = nil
+            Fluffel.completionHandler = completion // 再次确保回调被设置
+            
+            print("Calling scene.startPlayingMusic with URL: \(url)")
             scene.startPlayingMusic(from: url)
             
-            // 标记当前为正在播放状态
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                // 检查1秒后是否有播放器实例
+            // 延长检查时间到5秒，给音频有更多时间下载和加载
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
+                // 打印当前状态
+                print("Checking musicPlayer after 5 seconds: \(Fluffel.musicPlayer != nil ? "Exists" : "Nil")")
+                
+                // 检查5秒后是否有播放器实例
                 if Fluffel.musicPlayer == nil {
-                    // 如果1秒后还没有播放器实例，认为播放失败
+                    print("⚠️ Warning: musicPlayer is still nil after 5 seconds")
+                    // 如果5秒后还没有播放器实例，认为播放失败
                     // 确保在主线程上停止动画
                     DispatchQueue.main.async {
+                        print("Stopping music animation due to missing player")
                         self?.stopListeningToMusicAnimation()
                         Fluffel.completionHandler?(false)
                         Fluffel.completionHandler = nil
                     }
                 } else {
+                    print("Setting delegate for musicPlayer")
                     // 设置代理接收播放结束事件
-                    Fluffel.musicPlayer?.delegate = self
+                    if Fluffel.musicPlayer?.delegate == nil {
+                        Fluffel.musicPlayer?.delegate = self
+                        print("Delegate set to self")
+                    } else {
+                        print("Delegate already set to: \(String(describing: Fluffel.musicPlayer?.delegate))")
+                        
+                        // 强制重设代理以确保接收回调
+                        Fluffel.musicPlayer?.delegate = self
+                        print("Delegate forcibly reset to self")
+                    }
+                    
+                    // 打印播放状态
+                    if let player = Fluffel.musicPlayer {
+                        print("Current playback: playing=\(player.isPlaying), currentTime=\(player.currentTime), duration=\(player.duration)")
+                        
+                        // 如果播放器存在但没有播放，尝试重新开始播放
+                        if !player.isPlaying {
+                            print("Player exists but not playing, attempting to restart playback")
+                            player.currentTime = 0
+                            let playResult = player.play()
+                            print("Restart playback result: \(playResult ? "Success" : "Failed")")
+                        }
+                    }
                 }
             }
         } else {

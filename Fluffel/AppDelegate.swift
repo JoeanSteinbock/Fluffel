@@ -535,22 +535,193 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     /// 播放单个曲目
     func playTrack(_ track: Track) {
+        print("AppDelegate.playTrack called with track: \(track.title), url: \(track.url)")
+        
         executeAction { [weak self] in
-            guard let fluffel = self?.fluffelWindowController?.fluffel,
-                  let url = URL(string: track.url) else { 
-                print("无法播放曲目：无效的 URL")
+            guard let fluffel = self?.fluffelWindowController?.fluffel else {
+                print("⚠️ Error: Could not find Fluffel instance")
+                return
+            }
+            
+            guard let url = URL(string: track.url) else { 
+                print("⚠️ Error: Invalid URL for track: \(track.title) - \(track.url)")
+                
+                // 尝试URL编码处理
+                if let encodedString = track.url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+                   let encodedURL = URL(string: encodedString) {
+                    print("Successfully encoded URL: \(encodedURL)")
+                    self?.playAudioWithURL(encodedURL, trackTitle: track.title, fluffel: fluffel)
+                } else {
+                    fluffel.speak(text: "Sorry, I couldn't play the music. Invalid URL.", duration: 3.0)
+                }
                 return 
             }
             
-            fluffel.playMusicFromURL(url) { success in
-                if success {
-                    print("Track playback completed successfully: \(track.title)")
-                } else {
-                    print("Failed to play track: \(track.title)")
-                    fluffel.speak(text: "Sorry, I couldn't play the music", duration: 3.0)
+            self?.playAudioWithURL(url, trackTitle: track.title, fluffel: fluffel)
+        }
+    }
+    
+    /// 辅助方法：使用 URL 播放音频
+    private func playAudioWithURL(_ url: URL, trackTitle: String, fluffel: Fluffel) {
+        print("Attempting to play audio with URL: \(url)")
+        
+        // 检查 URL 是否包含音频文件扩展名
+        let validAudioExtensions = ["mp3", "wav", "m4a", "aac", "mp4"]
+        let hasValidExtension = validAudioExtensions.contains { url.pathExtension.lowercased() == $0 }
+        
+        if !hasValidExtension {
+            print("⚠️ Warning: URL does not have a recognized audio file extension: \(url)")
+            
+            // 尝试从URL末尾推断格式
+            let urlString = url.absoluteString
+            if urlString.contains(".mp3") || urlString.contains("audio_") {
+                print("URL appears to be an MP3 despite extension")
+            } else {
+                print("URL format cannot be determined reliably")
+            }
+        }
+        
+        // 添加下载超时和重试机制
+        if url.scheme == "http" || url.scheme == "https" {
+            // 为网络音频添加预下载逻辑
+            executeNetworkAudioPlayback(url: url, trackTitle: trackTitle, fluffel: fluffel)
+        } else {
+            // 本地音频直接播放
+            print("Attempting to play local audio file")
+            playAudioDirectly(url: url, trackTitle: trackTitle, fluffel: fluffel)
+        }
+    }
+    
+    /// 执行网络音频播放
+    private func executeNetworkAudioPlayback(url: URL, trackTitle: String, fluffel: Fluffel) {
+        print("Downloading network audio from: \(url)")
+        
+        // 创建一个缓存关键字
+        let cacheKey = url.lastPathComponent
+        
+        // 检查是否已有缓存
+        if let cachedFile = checkAudioCache(for: cacheKey) {
+            print("Found cached audio file: \(cachedFile.lastPathComponent)")
+            playAudioDirectly(url: cachedFile, trackTitle: trackTitle, fluffel: fluffel)
+            return
+        }
+        
+        // 开始下载任务
+        let downloadTask = URLSession.shared.downloadTask(with: url) { [weak self] (tempFileURL, response, error) in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Error downloading audio: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    fluffel.speak(text: "Sorry, I couldn't download the music", duration: 3.0)
+                }
+                return
+            }
+            
+            guard let tempFileURL = tempFileURL else {
+                print("Error: No temporary file URL provided")
+                return
+            }
+            
+            // 判断响应状态
+            if let httpResponse = response as? HTTPURLResponse {
+                print("Download completed with status code: \(httpResponse.statusCode)")
+                
+                if !(200...299).contains(httpResponse.statusCode) {
+                    print("HTTP error: \(httpResponse.statusCode)")
+                    return
+                }
+                
+                // 检查内容类型
+                if let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") {
+                    print("Content-Type: \(contentType)")
+                    if !contentType.contains("audio/") && !contentType.contains("application/octet-stream") {
+                        print("Warning: Content may not be audio, got type: \(contentType)")
+                    }
+                }
+            }
+            
+            // 尝试保存到缓存
+            if let cachedFile = self.saveToAudioCache(tempFile: tempFileURL, key: cacheKey) {
+                // 在主线程播放音频
+                DispatchQueue.main.async {
+                    self.playAudioDirectly(url: cachedFile, trackTitle: trackTitle, fluffel: fluffel)
+                }
+            } else {
+                // 如果缓存失败，直接从临时文件播放
+                DispatchQueue.main.async {
+                    self.playAudioDirectly(url: tempFileURL, trackTitle: trackTitle, fluffel: fluffel)
                 }
             }
         }
+        
+        downloadTask.resume()
+    }
+    
+    /// 直接播放音频文件
+    private func playAudioDirectly(url: URL, trackTitle: String, fluffel: Fluffel) {
+        print("Directly playing audio from: \(url)")
+        
+        // 尝试播放
+        fluffel.playMusicFromURL(url) { success in
+            if success {
+                print("✅ Track playback completed successfully: \(trackTitle)")
+            } else {
+                print("❌ Failed to play track: \(trackTitle)")
+                fluffel.speak(text: "Sorry, I couldn't play the music", duration: 3.0)
+            }
+        }
+    }
+    
+    /// 检查音频缓存
+    private func checkAudioCache(for key: String) -> URL? {
+        let cacheDirectory = getCacheDirectory()
+        let cachedFile = cacheDirectory.appendingPathComponent(key)
+        
+        // 检查文件是否存在
+        if FileManager.default.fileExists(atPath: cachedFile.path) {
+            return cachedFile
+        }
+        
+        return nil
+    }
+    
+    /// 保存到音频缓存
+    private func saveToAudioCache(tempFile: URL, key: String) -> URL? {
+        let cacheDirectory = getCacheDirectory()
+        let cachedFile = cacheDirectory.appendingPathComponent(key)
+        
+        do {
+            // 如果已存在，先删除
+            if FileManager.default.fileExists(atPath: cachedFile.path) {
+                try FileManager.default.removeItem(at: cachedFile)
+            }
+            
+            // 复制临时文件到缓存目录
+            try FileManager.default.copyItem(at: tempFile, to: cachedFile)
+            print("Audio cached to: \(cachedFile.path)")
+            return cachedFile
+        } catch {
+            print("Error caching audio file: \(error.localizedDescription)")
+            return nil
+        }
+    }
+    
+    /// 获取缓存目录
+    private func getCacheDirectory() -> URL {
+        let paths = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+        let cacheDirectory = paths[0].appendingPathComponent("FluffelAudioCache", isDirectory: true)
+        
+        // 确保目录存在
+        if !FileManager.default.fileExists(atPath: cacheDirectory.path) {
+            do {
+                try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+            } catch {
+                print("Error creating cache directory: \(error.localizedDescription)")
+            }
+        }
+        
+        return cacheDirectory
     }
     
     /// 播放随机曲目（从所有播放列表）

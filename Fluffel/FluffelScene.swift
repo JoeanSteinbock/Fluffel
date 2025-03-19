@@ -574,22 +574,137 @@ class FluffelScene: SKScene {
         
         // 停止现有音乐
         stopMusic()
-                    
-        // 创建音频播放器
+        
+        // 注意：macOS 不使用 AVAudioSession API，它是 iOS 专用的
+        // 在 macOS 上不需要设置音频会话，系统会自动处理音频
+        // 以下代码在 iOS 平台使用，在 macOS 上移除
+        /*
+        do {
+            // 获取音频会话实例
+            let session = AVAudioSession.sharedInstance()
+            
+            // 尝试设置为播放模式
+            try session.setCategory(.playback, mode: .default)
+            try session.setActive(true)
+            
+            print("Successfully configured audio session")
+        } catch {
+            print("Error setting up audio session: \(error.localizedDescription)")
+        }
+        */
+        
+        // 尝试先下载音频文件（如果是网络URL）
+        if url.scheme == "http" || url.scheme == "https" {
+            print("Downloading audio from network URL: \(url)")
+            
+            let task = URLSession.shared.dataTask(with: url) { [weak self] (data, response, error) in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    print("Error downloading audio file: \(error.localizedDescription)")
+                    return
+                }
+                
+                if let data = data, data.count > 0 {
+                    print("Successfully downloaded \(data.count) bytes of audio data")
+                    self.playAudioFromData(data)
+                } else {
+                    print("Error: Downloaded audio data is empty")
+                }
+            }
+            
+            task.resume()
+        } else {
+            // 本地文件路径，直接创建播放器
+            createAndPlayAudioPlayer(from: url)
+        }
+    }
+    
+    /// 从下载的数据播放音频
+    private func playAudioFromData(_ data: Data) {
+        do {
+            let audioPlayer = try AVAudioPlayer(data: data)
+            configureAndPlayAudioPlayer(audioPlayer)
+        } catch {
+            print("Failed to create audio player from downloaded data: \(error.localizedDescription)")
+            printDetailedAudioPlayerError(error)
+        }
+    }
+    
+    /// 创建并播放音频播放器
+    private func createAndPlayAudioPlayer(from url: URL) {
         do {
             let audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer.prepareToPlay()
-            audioPlayer.play()
-            
-            // 保存到 Fluffel 类的静态属性中
-            Fluffel.musicPlayer = audioPlayer
-            
-            print("Music playback started successfully")
-            
-            // 发送通知
-            NotificationCenter.default.post(name: .fluffelWillPlayMusic, object: self)
+            configureAndPlayAudioPlayer(audioPlayer)
         } catch {
-            print("Failed to play music from downloaded file: \(error)")
+            print("Failed to create audio player from URL: \(error.localizedDescription)")
+            printDetailedAudioPlayerError(error)
+        }
+    }
+    
+    /// 配置并播放音频播放器
+    private func configureAndPlayAudioPlayer(_ audioPlayer: AVAudioPlayer) {
+        print("Successfully created AVAudioPlayer instance")
+        
+        // 准备播放（预加载）
+        audioPlayer.prepareToPlay()
+        print("Audio player prepared to play")
+        
+        // 保存到 Fluffel 类的静态属性中
+        Fluffel.musicPlayer = audioPlayer
+        print("Set Fluffel.musicPlayer reference: \(Fluffel.musicPlayer != nil ? "Success" : "Failed")")
+        
+        // 设置音频播放器属性
+        audioPlayer.volume = 1.0
+        audioPlayer.numberOfLoops = 0 // 不循环
+        audioPlayer.enableRate = true
+        audioPlayer.rate = 1.0
+        
+        // 检查音频时长
+        let duration = audioPlayer.duration
+        print("Audio duration: \(duration) seconds")
+        
+        // 开始播放
+        let playResult = audioPlayer.play()
+        print("Audio playback started: \(playResult ? "Success" : "Failed")")
+        
+        if !playResult {
+            print("Failed to start playback - checking audio player state")
+            print("Is audio player valid: \(audioPlayer.isEqual(Fluffel.musicPlayer) ? "Yes" : "No")")
+            print("Audio player current time: \(audioPlayer.currentTime)")
+            print("Audio player duration: \(audioPlayer.duration)")
+            print("Audio player volume: \(audioPlayer.volume)")
+        } else {
+            // 播放成功，发送通知
+            NotificationCenter.default.post(name: .fluffelWillPlayMusic, object: self)
+        }
+    }
+    
+    /// 打印详细的音频播放器错误信息
+    private func printDetailedAudioPlayerError(_ error: Error) {
+        print("Audio Error Domain: \(error._domain)")
+        print("Audio Error Code: \(error._code)")
+        
+        if let osError = error as? OSStatus {
+            print("OSStatus Error: \(osError)")
+            
+            // 根据常见的错误代码提供更多信息
+            switch Int(osError) {
+            case -50:
+                print("Error: Parameter error - check file format")
+            case -43:
+                print("Error: File not found")
+            case -39:
+                print("Error: End of file")
+            case -208:
+                print("Error: File already exists")
+            case -38:
+                print("Error: File not open")
+            case 2003334207:
+                print("Error: Audio format not supported or corrupted file")
+            default:
+                print("Unknown audio error")
+            }
         }
     }
     

@@ -249,12 +249,34 @@ class FluffelPixabayService: NSObject {
             var audioURL: String
             if let audioValue = track["audio_url"] as? String {
                 audioURL = audioValue
+                print("Found audio_url for track \(id): \(audioURL)")
             } else if let sources = track["sources"] as? [String: Any], 
                       let src = sources["src"] as? String {
                 audioURL = src
+                print("Found sources.src for track \(id): \(audioURL)")
             } else {
                 print("Missing audio URL in track ID \(id)")
                 return nil  // 没有 URL 无法播放，直接跳过
+            }
+            
+            // 确保 URL 是安全合法的
+            if !audioURL.hasPrefix("http") {
+                print("URL doesn't have http prefix: \(audioURL)")
+                // 尝试添加前缀
+                if audioURL.hasPrefix("//") {
+                    audioURL = "https:" + audioURL
+                    print("Fixed URL with https prefix: \(audioURL)")
+                } else {
+                    // 尝试构建完整的 URL
+                    audioURL = "https://pixabay.com" + audioURL
+                    print("Attempted to fix URL: \(audioURL)")
+                }
+            }
+            
+            // 最后检查 URL 合法性
+            guard URL(string: audioURL) != nil else {
+                print("Failed to create valid URL from string: \(audioURL)")
+                return nil
             }
             
             return PixabayAudio(
@@ -271,6 +293,10 @@ class FluffelPixabayService: NSObject {
             completion(.failure(PixabayError.noData))
         } else {
             print("Successfully parsed \(audios.count) tracks")
+            // 打印每个音轨的信息
+            for (index, audio) in audios.enumerated() {
+                print("Track \(index+1): \(audio.title) by \(audio.user), duration: \(audio.duration)s, URL: \(audio.audioURL)")
+            }
             completion(.success(audios))
         }
     }
