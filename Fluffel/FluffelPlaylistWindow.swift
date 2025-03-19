@@ -20,7 +20,7 @@ class FluffelPlaylistWindow: NSWindow {
         )
         
         // 设置窗口属性
-        self.title = "\(category.rawValue) Music"
+        self.title = "\(category.rawValue) Playlists"
         self.center()
         self.isReleasedWhenClosed = false
         self.backgroundColor = NSColor.windowBackgroundColor
@@ -161,7 +161,7 @@ class FluffelPlaylistWindow: NSWindow {
         headerView.addSubview(titleLabel)
         
         // 创建统计信息标签
-        let statsLabel = NSTextField(labelWithString: "\(tracks.count) tracks · \(formattedDuration)")
+        let statsLabel = NSTextField(labelWithString: "\(tracks.count) playlists · \(formattedDuration)")
         statsLabel.translatesAutoresizingMaskIntoConstraints = false
         statsLabel.font = .systemFont(ofSize: 12)
         statsLabel.textColor = .secondaryLabelColor
@@ -309,11 +309,11 @@ class FluffelPlaylistWindow: NSWindow {
         // 创建曲目标题标签
         let titleLabel = NSTextField(labelWithString: track.title)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 14)
+        titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
         trackView.addSubview(titleLabel)
         
-        // 创建艺术家标签
-        let artistLabel = NSTextField(labelWithString: track.artist)
+        // 创建艺术家标签（在这里显示为"Pixabay播放列表"）
+        let artistLabel = NSTextField(labelWithString: "Pixabay Playlist")
         artistLabel.translatesAutoresizingMaskIntoConstraints = false
         artistLabel.font = .systemFont(ofSize: 12)
         artistLabel.textColor = .secondaryLabelColor
@@ -373,22 +373,184 @@ class FluffelPlaylistWindow: NSWindow {
     // MARK: - Actions
     
     @objc private func playAllTracks() {
-        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
-        if let firstTrack = tracks.first {
-            appDelegate?.playTrack(firstTrack)
+        let playlists = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        if let firstPlaylist = playlists.first {
+            // 调用单个播放列表的播放方法
+            fetchAndPlayPlaylist(id: firstPlaylist.id)
         }
     }
     
     @objc private func shufflePlaylist() {
-        if let track = FluffelPixabayPlaylists.shared.getRandomTrack(from: category) {
-            appDelegate?.playTrack(track)
+        let playlists = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        if let randomPlaylist = playlists.randomElement() {
+            // 获取随机播放列表并播放
+            fetchAndPlayPlaylist(id: randomPlaylist.id, shouldShuffle: true)
         }
     }
     
     @objc private func playTrack(_ sender: NSButton) {
         let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
-        if let track = tracks.first(where: { $0.id == String(sender.tag) }) {
-            appDelegate?.playTrack(track)
+        let playlistId = String(sender.tag)
+        if let track = tracks.first(where: { $0.id == playlistId }) {
+            // 开始获取播放列表内容
+            print("Fetching playlist content for ID: \(playlistId)")
+            
+            // 显示加载提示
+            let parentView = sender.superview
+            
+            // 保存原始图标
+            let originalImage = sender.image
+            
+            // 更改按钮图标为加载中
+            let loadingImage = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Loading")!
+            sender.image = loadingImage
+            
+            // 禁用按钮
+            sender.isEnabled = false
+            
+            // 添加旋转动画
+            let animation = CABasicAnimation(keyPath: "transform.rotation")
+            animation.fromValue = 0.0
+            animation.toValue = 2.0 * Double.pi
+            animation.duration = 1.0
+            animation.repeatCount = .infinity
+            sender.wantsLayer = true
+            sender.layer?.add(animation, forKey: "rotationAnimation")
+            
+            // 获取播放列表内容
+            FluffelPixabayService.shared.fetchPlaylistContent(playlistId: playlistId) { [weak self] result in
+                DispatchQueue.main.async {
+                    // 恢复UI状态
+                    sender.layer?.removeAnimation(forKey: "rotationAnimation")
+                    sender.image = originalImage
+                    sender.isEnabled = true
+                    
+                    switch result {
+                    case .success(let audios):
+                        if let firstAudio = audios.first {
+                            // 创建Track并播放
+                            let audioTrack = Track(
+                                id: String(firstAudio.id),
+                                title: firstAudio.title,
+                                artist: firstAudio.user,
+                                duration: firstAudio.duration,
+                                url: firstAudio.audioURL
+                            )
+                            self?.appDelegate?.playTrack(audioTrack)
+                            print("Playing audio: \(firstAudio.title)")
+                        } else {
+                            print("Playlist is empty")
+                            self?.showToast(message: "This playlist is empty", in: parentView)
+                        }
+                    case .failure(let error):
+                        print("Failed to fetch playlist content: \(error.localizedDescription)")
+                        self?.showToast(message: "Failed to load playlist", in: parentView)
+                    }
+                }
+            }
+        }
+    }
+    
+    // 显示临时提示消息
+    private func showToast(message: String, in parentView: NSView?) {
+        guard let parentView = parentView else { return }
+        
+        let toast = NSTextField(labelWithString: message)
+        toast.translatesAutoresizingMaskIntoConstraints = false
+        toast.alignment = .center
+        toast.backgroundColor = NSColor(white: 0.0, alpha: 0.7)
+        toast.textColor = .white
+        toast.font = .systemFont(ofSize: 12)
+        toast.isBezeled = false
+        toast.isEditable = false
+        toast.isSelectable = false
+        toast.wantsLayer = true
+        toast.layer?.cornerRadius = 8
+        
+        parentView.window?.contentView?.addSubview(toast)
+        
+        NSLayoutConstraint.activate([
+            toast.centerXAnchor.constraint(equalTo: parentView.window!.contentView!.centerXAnchor),
+            toast.bottomAnchor.constraint(equalTo: parentView.window!.contentView!.bottomAnchor, constant: -20),
+            toast.widthAnchor.constraint(lessThanOrEqualToConstant: 200),
+            toast.heightAnchor.constraint(greaterThanOrEqualToConstant: 30)
+        ])
+        
+        // 2秒后淡出消失
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.5
+                toast.animator().alphaValue = 0
+            }, completionHandler: {
+                toast.removeFromSuperview()
+            })
+        }
+    }
+    
+    // 新增方法：获取并播放播放列表
+    private func fetchAndPlayPlaylist(id: String, shouldShuffle: Bool = false) {
+        print("Fetching and playing playlist: \(id), shuffle: \(shouldShuffle)")
+        
+        // 显示加载提示
+        let toast = NSTextField(labelWithString: shouldShuffle ? "Loading random track..." : "Loading playlist...")
+        toast.translatesAutoresizingMaskIntoConstraints = false
+        toast.alignment = .center
+        toast.backgroundColor = NSColor(white: 0.0, alpha: 0.7)
+        toast.textColor = .white
+        toast.font = .systemFont(ofSize: 12)
+        toast.isBezeled = false
+        toast.isEditable = false
+        toast.isSelectable = false
+        toast.wantsLayer = true
+        toast.layer?.cornerRadius = 8
+        
+        self.contentView?.addSubview(toast)
+        
+        NSLayoutConstraint.activate([
+            toast.centerXAnchor.constraint(equalTo: self.contentView!.centerXAnchor),
+            toast.bottomAnchor.constraint(equalTo: self.contentView!.bottomAnchor, constant: -20),
+            toast.widthAnchor.constraint(lessThanOrEqualToConstant: 200),
+            toast.heightAnchor.constraint(greaterThanOrEqualToConstant: 30)
+        ])
+        
+        FluffelPixabayService.shared.fetchPlaylistContent(playlistId: id) { [weak self] result in
+            DispatchQueue.main.async {
+                // 移除提示
+                toast.removeFromSuperview()
+                
+                switch result {
+                case .success(let audios):
+                    guard !audios.isEmpty else {
+                        print("Playlist is empty")
+                        self?.showToast(message: "This playlist is empty", in: self?.contentView)
+                        return
+                    }
+                    
+                    // 选择要播放的音频
+                    let audioToPlay: PixabayAudio
+                    if shouldShuffle {
+                        audioToPlay = audios.randomElement()!
+                    } else {
+                        audioToPlay = audios.first!
+                    }
+                    
+                    // 创建Track并播放
+                    let audioTrack = Track(
+                        id: String(audioToPlay.id),
+                        title: audioToPlay.title,
+                        artist: audioToPlay.user,
+                        duration: audioToPlay.duration,
+                        url: audioToPlay.audioURL
+                    )
+                    self?.appDelegate?.playTrack(audioTrack)
+                    print("Playing audio: \(audioToPlay.title)")
+                    self?.showToast(message: "Now playing: \(audioToPlay.title)", in: self?.contentView)
+                    
+                case .failure(let error):
+                    print("Failed to fetch playlist content: \(error.localizedDescription)")
+                    self?.showToast(message: "Failed to load playlist", in: self?.contentView)
+                }
+            }
         }
     }
 } 

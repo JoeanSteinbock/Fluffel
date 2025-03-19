@@ -100,9 +100,11 @@ class FluffelPixabayService: NSObject {
     }
     
     /// 从 Pixabay 获取播放列表内容
-    private func fetchPlaylistContent(playlistId: String, completion: @escaping (Result<[PixabayAudio], Error>) -> Void) {
+    func fetchPlaylistContent(playlistId: String, completion: @escaping (Result<[PixabayAudio], Error>) -> Void) {
         // 使用任意前缀（这里用 'p'）+ playlistId
         let urlString = "\(baseURL)/playlists/p-\(playlistId)/"
+        print("Fetching playlist from URL: \(urlString)")
+        
         guard let url = URL(string: urlString) else {
             completion(.failure(PixabayError.invalidURL))
             return
@@ -110,6 +112,17 @@ class FluffelPixabayService: NSObject {
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Safari/605.1.15", forHTTPHeaderField: "User-Agent")
+        request.setValue("en-US,en;q=0.9", forHTTPHeaderField: "Accept-Language")
+        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("1", forHTTPHeaderField: "x-fetch-bootstrap")
+        request.setValue("same-origin", forHTTPHeaderField: "sec-fetch-site")
+        request.setValue("cors", forHTTPHeaderField: "sec-fetch-mode")
+        request.setValue("empty", forHTTPHeaderField: "sec-fetch-dest")
+        
+        // 打印请求信息以便调试
+        print("Request headers: \(request.allHTTPHeaderFields ?? [:])")
         
         // 发起请求
         let task = session.dataTask(with: request) { data, response, error in
@@ -134,39 +147,132 @@ class FluffelPixabayService: NSObject {
             }
             
             do {
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let page = json["page"] as? [String: Any],
-                   let playlist = page["playlist"] as? [String: Any],
-                   let tracks = playlist["tracks"] as? [[String: Any]] {
+                // 打印原始响应数据以便调试
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("Response preview: \(String(responseString.prefix(200)))...")
+                }
+                
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    print("JSON keys at root level: \(json.keys.joined(separator: ", "))")
                     
-                    let audios = tracks.compactMap { track -> PixabayAudio? in
-                        guard let id = track["id"] as? Int,
-                              let title = track["title"] as? String,
-                              let duration = track["duration"] as? Int,
-                              let user = track["username"] as? String,
-                              let audioURL = track["audio_url"] as? String else {
-                            return nil
+                    // 尝试从 page.playlist.tracks 路径获取
+                    if let page = json["page"] as? [String: Any] {
+                        print("JSON keys in page: \(page.keys.joined(separator: ", "))")
+                        
+                        // 路径1: page -> playlist -> tracks
+                        if let playlist = page["playlist"] as? [String: Any],
+                           let tracks = playlist["tracks"] as? [[String: Any]] {
+                            
+                            self.processTracks(tracks, completion: completion)
+                            return
                         }
                         
-                        return PixabayAudio(
-                            id: id,
-                            title: title,
-                            duration: duration,
-                            user: user,
-                            audioURL: audioURL
-                        )
+                        // 路径2: page -> tracks (直接在page下)
+                        if let tracks = page["tracks"] as? [[String: Any]] {
+                            self.processTracks(tracks, completion: completion)
+                            return
+                        }
+                        
+                        // 路径3: page -> results (用于搜索结果)
+                        if let results = page["results"] as? [[String: Any]] {
+                            self.processTracks(results, completion: completion)
+                            return
+                        }
                     }
                     
-                    completion(.success(audios))
+                    // 路径4: bootstrap -> playlist -> tracks
+                    if let bootstrap = json["bootstrap"] as? [String: Any],
+                       let playlist = bootstrap["playlist"] as? [String: Any],
+                       let tracks = playlist["tracks"] as? [[String: Any]] {
+                        
+                        self.processTracks(tracks, completion: completion)
+                        return
+                    }
+                    
+                    completion(.failure(PixabayError.htmlParsingError("Could not find tracks in the JSON structure")))
                 } else {
                     completion(.failure(PixabayError.htmlParsingError("Invalid JSON structure")))
                 }
             } catch {
+                print("JSON parsing error: \(error)")
                 completion(.failure(error))
             }
         }
         
         task.resume()
+    }
+    
+    // 处理曲目数据的辅助方法
+    private func processTracks(_ tracks: [[String: Any]], completion: @escaping (Result<[PixabayAudio], Error>) -> Void) {
+        let audios = tracks.compactMap { track -> PixabayAudio? in
+            // 尝试提取基本信息
+            guard let id = track["id"] as? Int else {
+                print("Missing ID in track: \(track)")
+                return nil
+            }
+            
+            // 提取标题（可能是 title 或 name 字段）
+            var title: String
+            if let titleValue = track["title"] as? String {
+                title = titleValue
+            } else if let nameValue = track["name"] as? String {
+                title = nameValue
+            } else {
+                print("Missing title in track ID \(id)")
+                title = "Unknown Title"
+            }
+            
+            // 提取时长
+            let duration: Int
+            if let durationValue = track["duration"] as? Int {
+                duration = durationValue
+            } else {
+                print("Missing duration in track ID \(id), using default")
+                duration = 0
+            }
+            
+            // 提取用户名
+            var user: String
+            if let userValue = track["username"] as? String {
+                user = userValue
+            } else if let userValue = track["user"] as? String {
+                user = userValue
+            } else if let userObject = track["user"] as? [String: Any], 
+                      let username = userObject["username"] as? String {
+                user = username
+            } else {
+                print("Missing username in track ID \(id)")
+                user = "Unknown Artist"
+            }
+            
+            // 提取音频 URL
+            var audioURL: String
+            if let audioValue = track["audio_url"] as? String {
+                audioURL = audioValue
+            } else if let sources = track["sources"] as? [String: Any], 
+                      let src = sources["src"] as? String {
+                audioURL = src
+            } else {
+                print("Missing audio URL in track ID \(id)")
+                return nil  // 没有 URL 无法播放，直接跳过
+            }
+            
+            return PixabayAudio(
+                id: id,
+                title: title,
+                duration: duration,
+                user: user,
+                audioURL: audioURL
+            )
+        }
+        
+        if audios.isEmpty {
+            print("No valid tracks found in the response")
+            completion(.failure(PixabayError.noData))
+        } else {
+            print("Successfully parsed \(audios.count) tracks")
+            completion(.success(audios))
+        }
     }
     
     /// 获取音频列表（优先从 Pixabay 获取，失败时使用预定义列表）
