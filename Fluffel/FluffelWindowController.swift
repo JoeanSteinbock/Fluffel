@@ -14,6 +14,11 @@ class FluffelWindowController: NSWindowController {
     
     // 储存原始窗口高度，用于说话结束后恢复
     private var originalWindowHeight: CGFloat = 0
+    private var originalWindowWidth: CGFloat = 0
+    private var isSpeakingInProgress: Bool = false
+    
+    // 当前活跃的气泡窗口
+    private var activeBubbleWindow: BubbleWindow?
     
     public var fluffel: Fluffel {
         return (window?.contentView as? SKView)?.scene?.childNode(withName: "fluffel") as! Fluffel
@@ -34,6 +39,13 @@ class FluffelWindowController: NSWindowController {
         
         // 初始化
         self.init(window: window)
+        
+        // 启用窗口调试边框（如果支持）
+        if let transparentWindow = window as? TransparentWindow {
+            // 确保调试边框始终启用，方便开发阶段观察
+            UserDefaults.standard.set(true, forKey: "FluffelShowDebugBorder")
+            transparentWindow.toggleDebugBorder()
+        }
         
         // 创建完全透明的 SpriteKit 视图
         let skView = SKView(frame: contentRect)
@@ -82,17 +94,17 @@ class FluffelWindowController: NSWindowController {
             object: nil
         )
         
-        // 添加说话相关的通知监听
+        // 添加气泡窗口相关的通知监听
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(fluffelWillSpeak(_:)),
+            selector: #selector(handleFluffelSpeech(_:)),
             name: NSNotification.Name("fluffelWillSpeak"),
             object: nil
         )
         
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(fluffelDidStopSpeaking(_:)),
+            selector: #selector(handleBubbleDismissed(_:)),
             name: NSNotification.Name("fluffelDidStopSpeaking"),
             object: nil
         )
@@ -130,13 +142,10 @@ class FluffelWindowController: NSWindowController {
         let windowFrame = window.frame
         
         // 计算新窗口的原点，使 Fluffel 保持在窗口中心
-        let sceneOriginInWindow = CGPoint(
-            x: fluffelPosition.x - (windowSize.width / 2),
-            y: fluffelPosition.y - (windowSize.height / 2)
-        )
-        
-        // 将场景中的坐标转换为窗口坐标
-        guard let contentView = window.contentView as? SKView else { return }
+        // 防止在说话状态中调整窗口大小，这会导致气泡错位
+        if isSpeakingInProgress {
+            return
+        }
         
         // 计算新窗口的坐标
         let newWindowOrigin = CGPoint(
@@ -210,62 +219,7 @@ class FluffelWindowController: NSWindowController {
         }
     }
     
-    @objc private func fluffelWillSpeak(_ notification: Notification) {
-        guard let window = self.window,
-              let userInfo = notification.userInfo,
-              let bubbleHeight = userInfo["bubbleHeight"] as? CGFloat else {
-            return
-        }
-        
-        // 保存当前窗口高度
-        originalWindowHeight = window.frame.height
-        
-        // 计算新的窗口高度，确保有足够空间显示气泡
-        let newWindowHeight = originalWindowHeight + bubbleHeight
-        
-        // 更新窗口高度，保持窗口的x坐标和宽度不变
-        var newFrame = window.frame
-        newFrame.origin.y -= bubbleHeight // 向下扩展窗口，这样Fluffel的位置保持不变
-        newFrame.size.height = newWindowHeight
-        
-        // 使用动画平滑过渡到新的窗口大小
-        NSAnimationContext.runAnimationGroup({ context in
-            context.duration = 0.3
-            window.animator().setFrame(newFrame, display: true)
-        }, completionHandler: nil)
-        
-        // 更新场景大小
-        if let fluffelScene = self.fluffelScene {
-            fluffelScene.size = CGSize(width: newFrame.width, height: newFrame.height)
-        }
-    }
-    
-    @objc private func fluffelDidStopSpeaking(_ notification: Notification) {
-        guard let window = self.window,
-              originalWindowHeight > 0 else {
-            return
-        }
-        
-        // 恢复原始窗口高度
-        var newFrame = window.frame
-        let currentHeight = newFrame.height
-        newFrame.origin.y += (currentHeight - originalWindowHeight) // 向上收缩窗口
-        newFrame.size.height = originalWindowHeight
-        
-        // 使用动画平滑过渡回原始大小
-        NSAnimationContext.runAnimationGroup({ context in
-            context.duration = 0.3
-            window.animator().setFrame(newFrame, display: true)
-        }, completionHandler: nil)
-        
-        // 更新场景大小
-        if let fluffelScene = self.fluffelScene {
-            fluffelScene.size = CGSize(width: newFrame.width, height: newFrame.height)
-        }
-        
-        // 重置原始高度
-        originalWindowHeight = 0
-    }
+    // 删除所有旧的对话气泡处理方法，已由新的机制替代
     
     func repositionWindow(to point: CGPoint, for spritePosition: CGPoint) {
         guard let window = window,
@@ -284,5 +238,133 @@ class FluffelWindowController: NSWindowController {
         window.setFrameOrigin(NSPoint(x: newWindowX, y: newWindowY))
         
         print("窗口已重定位到: \(newWindowX), \(newWindowY)")
+    }
+    
+    // MARK: - 初始化
+    
+    override func windowDidLoad() {
+        super.windowDidLoad()
+        
+        window?.title = "Fluffel"
+        
+        // 模拟窗口边框（调试用）
+        if let transparentWindow = window as? TransparentWindow {
+            // 总是显示调试边框（开发阶段）
+            UserDefaults.standard.set(true, forKey: "ShowDebugBorder")
+            transparentWindow.toggleDebugBorder()
+        }
+        
+        // 设置 Fluffel 视图 - 暂不实现详细内容
+        // setupFluffelView()
+        
+        // 设置键盘事件监听
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            self?.handleKeyEvent(event)
+            return event
+        }
+        
+        // 注册通知监听器
+        NotificationCenter.default.addObserver(
+            self, 
+            selector: #selector(fluffelMoved(_:)), 
+            name: NSNotification.Name("FluffelMoved"), 
+            object: nil
+        )
+        
+        // 添加气泡窗口相关通知监听器
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleFluffelSpeech(_:)),
+            name: NSNotification.Name("fluffelWillSpeak"),
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleBubbleDismissed(_:)),
+            name: NSNotification.Name("fluffelBubbleDismissed"),
+            object: nil
+        )
+    }
+    
+    // MARK: - 气泡窗口处理
+    
+    // 处理 Fluffel 说话请求
+    @objc func handleFluffelSpeech(_ notification: Notification) {
+        // 如果有活跃的气泡窗口，先关闭它
+        activeBubbleWindow?.dismiss()
+        activeBubbleWindow = nil
+        
+        // 获取说话文本和其他参数
+        guard let userInfo = notification.userInfo,
+              let text = userInfo["text"] as? String else {
+            return
+        }
+        
+        let fontSize = userInfo["fontSize"] as? CGFloat ?? 12
+        let duration = userInfo["duration"] as? TimeInterval ?? 3.0
+        
+        // 创建新的气泡窗口
+        let bubbleWindow = BubbleWindow(text: text, fontSize: fontSize, duration: duration)
+        
+        // 设置关联的 Fluffel 窗口
+        bubbleWindow.fluffelWindow = self.window
+        
+        // 将气泡窗口定位到 Fluffel 窗口上方
+        bubbleWindow.positionAboveFluffelWindow()
+        
+        // 显示气泡窗口
+        bubbleWindow.makeKeyAndOrderFront(nil)
+        
+        // 保存引用
+        activeBubbleWindow = bubbleWindow
+        
+        // 添加观察者，当 Fluffel 窗口移动时，气泡窗口也跟着移动
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateBubblePosition(_:)),
+            name: NSWindow.didMoveNotification,
+            object: self.window
+        )
+    }
+    
+    // 更新气泡位置以跟随 Fluffel 窗口
+    @objc func updateBubblePosition(_ notification: Notification) {
+        activeBubbleWindow?.positionAboveFluffelWindow()
+    }
+    
+    // 处理气泡消失通知
+    @objc func handleBubbleDismissed(_ notification: Notification) {
+        // 清除活跃的气泡窗口引用
+        activeBubbleWindow = nil
+        
+        // 移除窗口移动观察者
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSWindow.didMoveNotification,
+            object: self.window
+        )
+    }
+    
+    // 处理 Fluffel 移动通知
+    @objc func fluffelMoved(_ notification: Notification) {
+        // 当 Fluffel 移动时，如果有活跃的气泡窗口，更新其位置
+        activeBubbleWindow?.positionAboveFluffelWindow()
+    }
+    
+    // 处理键盘事件
+    private func handleKeyEvent(_ event: NSEvent) {
+        // 键盘事件处理逻辑
+        print("收到键盘事件: \(event.keyCode)")
+        
+        // 可以在这里添加键盘控制逻辑
+    }
+    
+    // 设置 Fluffel 视图
+    private func setupFluffelView() {
+        // Fluffel 视图设置逻辑
+        print("设置 Fluffel 视图")
+        
+        // 可以在这里添加视图设置逻辑
     }
 } 

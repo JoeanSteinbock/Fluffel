@@ -47,17 +47,24 @@ class FluffelScene: SKScene {
             // 让 Fluffel 微笑，看起来更友好
             fluffel.smile()
             
-            // 初次出现时说一句话
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.makeFluffelSpeak("你好！我是 Fluffel！")
-            }
-            
-            print("Fluffel 已添加到场景，位置: \(fluffel.position)")
-            
             // 添加一个短暂的延迟，然后让 Fluffel 眨眼，显得更加活泼
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 fluffel.happyBlink()
                 print("Fluffel 完成眨眼动画")
+            }
+            
+            print("Fluffel 已添加到场景，位置: \(fluffel.position)")
+            
+            // 为初次问候设置更长的延迟，确保窗口和Fluffel已完全准备好
+            // 这样可以避免在初始化动画过程中出现问题
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                // 发送一个窗口调整通知，确保Fluffel窗口有足够空间
+                NotificationCenter.default.post(name: .fluffelDidMove, object: self)
+                
+                // 再等待一小段时间，确保窗口调整完成
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.makeFluffelSpeak("你好！我是 Fluffel！")
+                }
             }
         } else {
             print("错误: 无法创建 Fluffel")
@@ -260,19 +267,15 @@ class FluffelScene: SKScene {
     
     // 在这里添加鼠标点击处理
     override func mouseDown(with event: NSEvent) {
-        super.mouseDown(with: event)
-        
-        // 如果已经在说话中，忽略此次点击
-        if isSpeakingInProgress {
-            print("Fluffel正在说话，忽略重复点击")
-            return
-        }
-        
-        // 将鼠标位置转换到场景坐标系
         let location = event.location(in: self)
         
-        // 检测是否点击了 Fluffel
         if let fluffel = fluffel, fluffel.contains(location) {
+            // 使用场景的isSpeakingInProgress标志而不是局部标志
+            // 如果正在说话中，不要再触发新的说话
+            if isSpeakingInProgress {
+                return
+            }
+            
             // 设置标志，防止重复触发
             isSpeakingInProgress = true
             

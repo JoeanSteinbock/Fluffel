@@ -2,25 +2,82 @@ import Cocoa
 import SpriteKit  // 用于类型识别
 
 class TransparentWindow: NSWindow {
+    // 是否显示调试边框
+    private var showDebugBorder: Bool = false
+    
     override init(contentRect: NSRect, styleMask style: NSWindow.StyleMask, backing backingStoreType: NSWindow.BackingStoreType, defer flag: Bool) {
-        super.init(contentRect: contentRect, styleMask: .borderless, backing: backingStoreType, defer: flag)
+        super.init(contentRect: contentRect, styleMask: style, backing: backingStoreType, defer: flag)
         
-        // 基本透明设置
-        self.backgroundColor = .clear
-        self.isOpaque = false
-        self.hasShadow = false
+        // 设置窗口特性
+        isOpaque = false
+        backgroundColor = .clear
+        hasShadow = false
+        level = .floating // 使窗口始终保持在最前面
+        ignoresMouseEvents = false
+        isMovableByWindowBackground = true
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary] // 允许在所有工作区显示
         
-        // 窗口位置和行为设置
-        self.level = .floating
-        self.titlebarAppearsTransparent = true
-        self.titleVisibility = .hidden
-        self.isMovableByWindowBackground = true
+        // 允许窗口在全屏模式下工作
+        collectionBehavior.insert(.fullScreenAuxiliary)
         
-        // 重要：确保窗口可以移动到任何位置，包括屏幕顶部和菜单栏
-        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        // 设置窗口可以接收键盘事件，使其可以成为主窗口
+        acceptsMouseMovedEvents = true
         
-        // 允许鼠标事件，我们将在 sendEvent 中过滤
-        self.ignoresMouseEvents = false
+        // 读取调试边框设置
+        checkDebugSettings()
+        
+        // 应用边框设置
+        applyBorderSettings()
+    }
+    
+    // 检查是否应该显示调试边框
+    private func checkDebugSettings() {
+        // 从用户默认设置中读取，如果不存在则默认为false
+        if let showBorder = UserDefaults.standard.object(forKey: "FluffelShowDebugBorder") as? Bool {
+            showDebugBorder = showBorder
+        } else {
+            // 临时设置为true，方便调试
+            showDebugBorder = true
+        }
+    }
+    
+    // 应用边框设置
+    private func applyBorderSettings() {
+        if showDebugBorder {
+            // 添加边框，便于调试
+            contentView?.wantsLayer = true
+            contentView?.layer?.borderWidth = 1.0
+            contentView?.layer?.borderColor = NSColor.red.cgColor
+        } else {
+            // 不显示边框
+            contentView?.layer?.borderWidth = 0.0
+        }
+    }
+    
+    // 切换边框显示状态
+    func toggleDebugBorder() {
+        showDebugBorder = !showDebugBorder
+        applyBorderSettings()
+        UserDefaults.standard.set(showDebugBorder, forKey: "FluffelShowDebugBorder")
+    }
+    
+    // 覆盖此方法以允许通过点击背景来移动窗口
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 1 {
+            self.performDrag(with: event)
+        } else {
+            super.mouseDown(with: event)
+        }
+    }
+    
+    // 覆盖canBecomeKey以允许窗口接收键盘事件
+    override var canBecomeKey: Bool {
+        return true
+    }
+    
+    // 覆盖canBecomeMain以允许窗口成为主窗口
+    override var canBecomeMain: Bool {
+        return true
     }
     
     // 改进点击穿透逻辑，处理更大窗口下的事件

@@ -12,134 +12,35 @@ extension Fluffel {
     ///   - fontSize: 文本大小 (默认 12)
     ///   - completion: 说话完成后的回调 (可选)
     func speak(text: String, duration: TimeInterval = 3.0, fontSize: CGFloat = 12, completion: (() -> Void)? = nil) {
-        // 移除可能存在的旧气泡
+        // 移除可能存在的旧气泡通知
         removeSpeechBubble()
         
-        // 创建气泡节点
-        let bubble = createSpeechBubble(withText: text, fontSize: fontSize)
+        // 发送说话通知，由 FluffelWindowController 处理创建气泡窗口
+        let userInfo: [String: Any] = [
+            "text": text,
+            "duration": duration,
+            "fontSize": fontSize
+        ]
         
-        // 计算气泡的边界，用于扩大窗口
-        let bubbleFrame = bubble.calculateAccumulatedFrame()
-        
-        // 发送通知，让窗口控制器知道需要更多空间用于气泡
         NotificationCenter.default.post(
-            name: NSNotification.Name("fluffelWillSpeak"), 
+            name: NSNotification.Name("fluffelWillSpeak"),
             object: self,
-            userInfo: ["bubbleHeight": bubbleFrame.height + 10]
+            userInfo: userInfo
         )
         
-        // 添加气泡到Fluffel
-        addChild(bubble)
-        
-        // 淡入动画
-        bubble.alpha = 0
-        let fadeIn = SKAction.fadeIn(withDuration: 0.3)
-        
-        // 保持显示
-        let wait = SKAction.wait(forDuration: duration)
-        
-        // 淡出动画
-        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
-        
-        // 移除气泡
-        let remove = SKAction.run { [weak self] in
-            bubble.removeFromParent()
-            
-            // 发送通知，让窗口控制器知道气泡已被移除
-            NotificationCenter.default.post(name: NSNotification.Name("fluffelDidStopSpeaking"), object: self)
-            
-            // 执行完成回调
-            completion?()
-        }
-        
-        // 添加一些小动画，让气泡看起来更活跃
-        let bobUp = SKAction.moveBy(x: 0, y: 2, duration: 0.3)
-        let bobDown = SKAction.moveBy(x: 0, y: -2, duration: 0.3)
-        let bobSequence = SKAction.sequence([bobUp, bobDown])
-        let bobRepeat = SKAction.repeat(bobSequence, count: Int(duration / 0.6) + 1)
-        
-        // 执行淡入、显示、淡出的序列
-        let sequence = SKAction.sequence([fadeIn, wait, fadeOut, remove])
-        bubble.run(sequence, withKey: "speechAction")
-        bubble.run(bobRepeat, withKey: "bobAction")
-        
-        // 添加一些表情变化，使 Fluffel 看起来像在说话
+        // 添加表情变化，使 Fluffel 看起来像在说话
         animateTalkingExpression(duration: duration)
-    }
-    
-    /// 创建一个带有文本的气泡
-    private func createSpeechBubble(withText text: String, fontSize: CGFloat) -> SKNode {
-        // 创建容器节点
-        let container = SKNode()
-        container.name = "speechBubble"
-        container.zPosition = 10
         
-        // 计算文本大小
-        let label = SKLabelNode(text: text)
-        label.fontName = "Helvetica"
-        label.fontSize = fontSize
-        label.fontColor = NSColor.black
-        
-        // 测量文本大小，以便适当调整气泡大小
-        let textWidth = text.size(withAttributes: [.font: NSFont.systemFont(ofSize: fontSize)]).width
-        let bubbleWidth = max(textWidth + 20, 50)
-        let bubbleHeight = fontSize + 16
-        
-        // 创建气泡背景
-        let bubblePath = CGMutablePath()
-        let bubbleRect = CGRect(x: -bubbleWidth/2, y: -bubbleHeight/2 - 2, width: bubbleWidth, height: bubbleHeight)
-        bubblePath.addRoundedRect(in: bubbleRect, cornerWidth: 10, cornerHeight: 10)
-        
-        // 添加指向 Fluffel 的小尖角
-        bubblePath.move(to: CGPoint(x: -5, y: -bubbleHeight/2))
-        bubblePath.addLine(to: CGPoint(x: 0, y: -bubbleHeight/2 - 10))
-        bubblePath.addLine(to: CGPoint(x: 5, y: -bubbleHeight/2))
-        
-        let bubble = SKShapeNode(path: bubblePath)
-        bubble.fillColor = NSColor.white
-        bubble.strokeColor = NSColor.gray
-        bubble.lineWidth = 1.0
-        
-        // 定位气泡在 Fluffel 上方
-        container.position = CGPoint(x: 0, y: 40)
-        
-        // 定位和添加文本
-        label.position = CGPoint(x: 0, y: -2)
-        label.verticalAlignmentMode = .center
-        label.horizontalAlignmentMode = .center
-        
-        // 组装气泡
-        container.addChild(bubble)
-        container.addChild(label)
-        
-        return container
+        // 设置定时器，在说话结束后执行完成回调
+        if let completion = completion {
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.6) {
+                completion()
+            }
+        }
     }
     
     /// 移除当前的对话气泡
     func removeSpeechBubble() {
-        // 查找并移除名为 "speechBubble" 的子节点
-        var didRemoveBubble = false
-        
-        // 移除所有与说话气泡相关的节点
-        for node in children {
-            if let _ = node as? SKShapeNode,
-               node.name?.contains("speechBubble") ?? false {
-                node.run(SKAction.sequence([
-                    SKAction.fadeOut(withDuration: 0.3),
-                    SKAction.removeFromParent()
-                ]))
-                didRemoveBubble = true
-            } else if node.name == "speechBubble" {
-                node.removeFromParent()
-                didRemoveBubble = true
-            }
-        }
-        
-        // 如果确实移除了气泡，发送通知让窗口控制器知道气泡已被移除
-        if didRemoveBubble {
-            NotificationCenter.default.post(name: NSNotification.Name("fluffelDidStopSpeaking"), object: self)
-        }
-        
         // 停止说话动画
         removeAction(forKey: "talkingAction")
         
