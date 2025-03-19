@@ -39,6 +39,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     fluffel.saveAppearanceAsIcon()
                 }
             }
+            // Cmd+R 重置 Fluffel 到中心
+            if event.modifierFlags.contains(.command) && event.keyCode == 15 { // R 键
+                if let scene = self?.fluffelWindowController?.fluffelScene {
+                    scene.resetFluffelToCenter()
+                }
+            }
             return event
         }
     }
@@ -58,9 +64,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let appMenu = NSMenu()
         appMenuItem.submenu = appMenu
         
-        appMenu.addItem(withTitle: "关于 Fluffel", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(withTitle: "About Fluffel", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "退出", action: #selector(quitApp(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit", action: #selector(quitApp(_:)), keyEquivalent: "q")
         
         // Fluffel 菜单
         let fluffelMenuItem = NSMenuItem(title: "Fluffel", action: nil, keyEquivalent: "")
@@ -69,10 +75,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let fluffelMenu = NSMenu(title: "Fluffel")
         fluffelMenuItem.submenu = fluffelMenu
         
-        fluffelMenu.addItem(withTitle: "问候", action: #selector(speakGreeting), keyEquivalent: "g")
-        fluffelMenu.addItem(withTitle: "讲笑话", action: #selector(tellJoke), keyEquivalent: "j")
-        fluffelMenu.addItem(withTitle: "分享事实", action: #selector(shareFact), keyEquivalent: "f")
-        fluffelMenu.addItem(withTitle: "进行对话", action: #selector(startConversation), keyEquivalent: "c")
+        fluffelMenu.addItem(withTitle: "Reset to Center", action: #selector(resetFluffelToCenter), keyEquivalent: "r")
+        fluffelMenu.addItem(NSMenuItem.separator())
+        fluffelMenu.addItem(withTitle: "Greeting", action: #selector(speakGreeting), keyEquivalent: "g")
+        fluffelMenu.addItem(withTitle: "Joke", action: #selector(tellJoke), keyEquivalent: "j")
+        fluffelMenu.addItem(withTitle: "Share Fact", action: #selector(shareFact), keyEquivalent: "f")
+        fluffelMenu.addItem(withTitle: "Conversation", action: #selector(startConversation), keyEquivalent: "c")
         
         NSApp.mainMenu = mainMenu
     }
@@ -92,6 +100,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc func startConversation(_ sender: Any) {
         speakingDemo?.performConversation()
+    }
+    
+    // 新增重置 Fluffel 到中心的方法
+    @objc func resetFluffelToCenter(_ sender: Any) {
+        if let scene = fluffelWindowController?.fluffelScene {
+            scene.resetFluffelToCenter()
+        }
     }
     
     // 添加一个菜单项以退出应用

@@ -308,6 +308,9 @@ class FluffelScene: SKScene {
         // 增加移动距离，使移动更明显
         let moveDistance: CGFloat = 8.0
         
+        // 临时保存当前位置，以便在越界时恢复
+        let originalPosition = fluffel.position
+        
         // 根据方向移动 Fluffel
         switch direction {
         case .left:
@@ -322,10 +325,23 @@ class FluffelScene: SKScene {
             fluffel.position.y -= moveDistance
         }
         
+        // 检查边界，确保Fluffel不会移出屏幕
+        let fluffelSize = fluffel.size
+        let padding: CGFloat = 10.0  // 边缘安全距离
+        
+        // 检查是否超出场景边界
+        if fluffel.position.x < fluffelSize.width/2 + padding || 
+           fluffel.position.x > size.width - fluffelSize.width/2 - padding ||
+           fluffel.position.y < fluffelSize.height/2 + padding || 
+           fluffel.position.y > size.height - fluffelSize.height/2 - padding {
+            // 如果超出边界，恢复到原始位置
+            fluffel.position = originalPosition
+            print("Fluffel 到达屏幕边界，无法再移动")
+        }
+        
         // 重置无聊计时器，因为有移动发生
         lastActivityTime = CACurrentMediaTime()
         
-        // 移除边界检查，允许 Fluffel 自由移动
         // 移动后发送通知，以便窗口控制器可以跟随 Fluffel 移动
         NotificationCenter.default.post(name: .fluffelDidMove, object: self)
     }
@@ -428,5 +444,54 @@ class FluffelScene: SKScene {
         
         // 让 Fluffel 说话
         fluffel.speak(text: speechText, duration: duration)
+    }
+    
+    // 将 Fluffel 重置到第一屏中心
+    func resetFluffelToCenter() {
+        guard let fluffel = fluffel else { return }
+        
+        // 停止任何当前动画或状态
+        if fluffel.state != .idle {
+            fluffel.setState(.idle)
+        }
+        
+        // 确保不在边缘上
+        if fluffel.isOnEdge {
+            fluffel.leaveEdge()
+            isFollowingEdge = false
+        }
+        
+        // 创建移动到中心的动画
+        let centerPoint = CGPoint(x: size.width / 2, y: size.height / 2)
+        let moveAction = SKAction.move(to: centerPoint, duration: 0.5)
+        let scaleAction = SKAction.scale(to: 1.0, duration: 0.3)
+        let rotateAction = SKAction.rotate(toAngle: 0, duration: 0.3)
+        
+        // 组合动画
+        let groupAction = SKAction.group([moveAction, scaleAction, rotateAction])
+        
+        // 添加一个小小的弹跳效果
+        let bounceUp = SKAction.moveBy(x: 0, y: 10, duration: 0.1)
+        let bounceDown = SKAction.moveBy(x: 0, y: -10, duration: 0.1)
+        let bounceAction = SKAction.sequence([bounceUp, bounceDown])
+        
+        // 让 Fluffel 执行动画序列
+        fluffel.run(SKAction.sequence([groupAction, bounceAction]))
+        
+        // 让 Fluffel 说话，表明它已经回到中心
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            self.makeFluffelSpeak("我回来啦！")
+        }
+        
+        // 重置朝向为右侧
+        fluffel.xScale = abs(fluffel.xScale)
+        
+        // 更新最后活动时间
+        lastActivityTime = CACurrentMediaTime()
+        
+        // 发送移动通知
+        NotificationCenter.default.post(name: .fluffelDidMove, object: self)
+        
+        print("Fluffel 已重置到屏幕中心")
     }
 } 
