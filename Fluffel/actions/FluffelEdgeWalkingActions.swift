@@ -4,21 +4,9 @@ import SpriteKit
 extension Fluffel {
     
     // 开始沿边缘行走的动画
-    func startEdgeWalkingAnimation(edge: FluffelScene.SceneEdge, direction: MovementDirection) {
-        if state == .edgeWalking { return }
-        
-        // 移除任何显示的对话气泡
-        removeSpeechBubble()
-        
-        state = .edgeWalking
-        smile()
-        
-        // 设置 Fluffel 的位置和旋转，以匹配边缘方向
-        adjustPositionForEdge(edge: edge, direction: direction)
-        
-        // 创建行走动画
-        let walkAction = createWalkingAnimation()
-        run(SKAction.repeatForever(walkAction), withKey: "edgeWalkingAction")
+    func startEdgeWalkingAnimation() {
+        // 边缘行走功能已移除
+        print("边缘行走功能已移除")
     }
     
     // 停止沿着边缘行走的动画
