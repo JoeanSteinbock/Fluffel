@@ -36,148 +36,44 @@ class FluffelPixabayService: NSObject {
     }
     
     private func loadPredefinedPlaylists() {
-        // 预定义的播放列表数据
-        let playlistsData = """
-        [
-            {
-                "id": 24274664,
-                "title": "Dance Party",
-                "description": "A selection of tracks by the Pixabay community to set the mood for your next dance party.",
-                "duration": 3139,
-                "audioCount": 19,
-                "publicUrl": "/playlists/dance-party-24274664/"
-            },
-            {
-                "id": 23032217,
-                "title": "Zen Meditation",
-                "description": "This is the place to find peace. Take a deep breath, close your eyes and immerse yourself...",
-                "duration": 19388,
-                "audioCount": 30,
-                "publicUrl": "/playlists/zen-meditation-23032217/"
-            },
-            {
-                "id": 22139477,
-                "title": "Cosmos",
-                "description": "This is what space feels like... Dive deep into our selected cosmic tracks and touch the stars.",
-                "duration": 11360,
-                "audioCount": 49,
-                "publicUrl": "/playlists/cosmos-22139477/"
-            },
-            {
-                "id": 17503730,
-                "title": "Chill Beats",
-                "description": "Chill Beats playlist: Smooth, mellow and laid-back rhythms. Perfect for cooking, relaxing, de-stressing.",
-                "duration": 4334,
-                "audioCount": 25,
-                "publicUrl": "/playlists/chill-beats-17503730/"
-            },
-            {
-                "id": 20707654,
-                "title": "Nature Sleep Sounds",
-                "description": "Soothe your senses with the sounds of whispering winds, rustling leaves, and rain for a tranquil sleep.",
-                "duration": 13970,
-                "audioCount": 35,
-                "publicUrl": "/playlists/nature-sleep-sounds-20707654/"
-            },
-            {
-                "id": 17501847,
-                "title": "Get Focused",
-                "description": "A stimulating mix to get your brain into the right flow. Conquer your workload with our tunnel vision tracks.",
-                "duration": 9606,
-                "audioCount": 35,
-                "publicUrl": "/playlists/get-focused-17501847/"
-            },
-            {
-                "id": 17503543,
-                "title": "LoFi Chillout",
-                "description": "Relax & unwind with our Lofi Chillout playlist. Perfect beats for working, relaxing, or chilling out.",
-                "duration": 3980,
-                "audioCount": 27,
-                "publicUrl": "/playlists/lofi-chillout-17503543/"
-            },
-            {
-                "id": 17501840,
-                "title": "LoFi Study",
-                "description": "Boost focus with our Lofi Study playlist. Smooth, calming beats to enhance concentration and productivity.",
-                "duration": 4375,
-                "audioCount": 24,
-                "publicUrl": "/playlists/lofi-study-17501840/"
-            },
-            {
-                "id": 17501839,
-                "title": "Ambient Sleep",
-                "description": "Dream peacefully with our soothing and calming melodies featuring ambient tunes for a quality sleep.",
-                "duration": 12696,
-                "audioCount": 24,
-                "publicUrl": "/playlists/ambient-sleep-17501839/"
-            },
-            {
-                "id": 22334466,
-                "title": "Yoga Session",
-                "description": "Selected tracks for balancing mind and body. This is the perfect playlist for your peaceful and relaxing yoga session.",
-                "duration": 9576,
-                "audioCount": 23,
-                "publicUrl": "/playlists/yoga-session-22334466/"
-            },
-            {
-                "id": 22335330,
-                "title": "Running",
-                "description": "Your daily dose of motivation. Get up, run better and run faster with Pixabay top tracks!",
-                "duration": 3192,
-                "audioCount": 29,
-                "publicUrl": "/playlists/running-22335330/"
-            },
-            {
-                "id": 17503542,
-                "title": "Gym Workout",
-                "description": "Pump up your workout with full of high-energy tracks to boost motivation and performance.",
-                "duration": 3089,
-                "audioCount": 22,
-                "publicUrl": "/playlists/gym-workout-17503542/"
-            }
-        ]
-        """
+        print("Loading predefined playlists from playlists.json")
         
-        // 解析 JSON 数据
-        if let data = playlistsData.data(using: .utf8),
-           let allPlaylists = try? JSONDecoder().decode([PlaylistData].self, from: data) {
+        // 获取 playlists.json 文件路径
+        guard let url = Bundle.main.url(forResource: "playlists", withExtension: "json") else {
+            print("Error: Could not find playlists.json in bundle")
+            return
+        }
+        
+        do {
+            // 读取文件内容
+            let data = try Data(contentsOf: url)
+            let allPlaylists = try JSONDecoder().decode([PlaylistData].self, from: data)
             
             // 将播放列表按类别分类
             categorizeAndStorePlaylists(allPlaylists)
+            
+        } catch {
+            print("Error loading playlists.json: \(error)")
         }
     }
     
     private func categorizeAndStorePlaylists(_ allPlaylists: [PlaylistData]) {
-        // 按类别过滤播放列表
-        let relaxPlaylists = allPlaylists.filter { playlist in
-            let title = playlist.title.lowercased()
-            return title.contains("chill") || title.contains("ambient") || 
-                   title.contains("zen") || title.contains("sleep") ||
-                   title.contains("yoga")
-        }
+        // 清空现有播放列表
+        playlists.removeAll()
         
-        let workoutPlaylists = allPlaylists.filter { playlist in
-            let title = playlist.title.lowercased()
-            return title.contains("gym") || title.contains("running") ||
-                   title.contains("workout")
+        // 遍历所有播放列表，根据其类别进行分类
+        for playlist in allPlaylists {
+            let audio = createAudioFromPlaylist(playlist)
+            
+            // 将播放列表添加到每个类别中
+            for category in playlist.categories ?? [] {
+                let categoryKey = category.lowercased()
+                if playlists[categoryKey] == nil {
+                    playlists[categoryKey] = []
+                }
+                playlists[categoryKey]?.append(audio)
+            }
         }
-        
-        let focusPlaylists = allPlaylists.filter { playlist in
-            let title = playlist.title.lowercased()
-            return title.contains("study") || title.contains("focus") ||
-                   title.contains("cosmos")
-        }
-        
-        let partyPlaylists = allPlaylists.filter { playlist in
-            let title = playlist.title.lowercased()
-            return title.contains("party") || title.contains("dance")
-        }
-        
-        // 为每个类别创建音频列表
-        playlists["relax"] = relaxPlaylists.map { createAudioFromPlaylist($0) }
-        playlists["workout"] = workoutPlaylists.map { createAudioFromPlaylist($0) }
-        playlists["focus"] = focusPlaylists.map { createAudioFromPlaylist($0) }
-        playlists["party"] = partyPlaylists.map { createAudioFromPlaylist($0) }
         
         // 打印加载的播放列表信息
         for (category, items) in playlists {
@@ -267,6 +163,13 @@ class FluffelPixabayService: NSObject {
     
     /// 获取音频列表（优先从 Pixabay 获取，失败时使用预定义列表）
     func fetchAudioList(category: String, completion: @escaping (Result<[PixabayAudio], Error>) -> Void) {
+        // 首先尝试从预定义播放列表中获取
+        if let categoryPlaylists = playlists[category.lowercased()] {
+            completion(.success(categoryPlaylists))
+            return
+        }
+        
+        // 如果预定义列表中没有，则尝试从 Pixabay 获取
         // 根据类别获取对应的播放列表 ID
         let playlistId: String
         switch category.lowercased() {
@@ -279,29 +182,12 @@ class FluffelPixabayService: NSObject {
         case "workout":
             playlistId = "22335330" // Running
         default:
-            // 如果没有匹配的播放列表，使用预定义的
-            if let categoryPlaylists = playlists[category.lowercased()] {
-                completion(.success(categoryPlaylists))
-            } else {
-                completion(.failure(PixabayError.noData))
-            }
+            completion(.failure(PixabayError.noData))
             return
         }
         
         // 获取播放列表内容
-        fetchPlaylistContent(playlistId: playlistId) { result in
-            switch result {
-            case .success(let audios):
-                completion(.success(audios))
-            case .failure(_):
-                // 如果获取失败，使用预定义播放列表
-                if let categoryPlaylists = self.playlists[category.lowercased()] {
-                    completion(.success(categoryPlaylists))
-                } else {
-                    completion(.failure(PixabayError.noData))
-                }
-            }
-        }
+        fetchPlaylistContent(playlistId: playlistId, completion: completion)
     }
     
     /// 获取播放列表
@@ -345,6 +231,9 @@ struct PlaylistData: Codable {
     let duration: Int
     let audioCount: Int
     let publicUrl: String
+    let categories: [String]?
+    let bgImageSrc: String?
+    let isFeatured: Bool?
 }
 
 /// 用于音频数据的模型
