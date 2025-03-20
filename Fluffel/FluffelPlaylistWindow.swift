@@ -1,16 +1,209 @@
 import Cocoa
 
+/// 自定义背景视图，用于绘制主题相关的背景元素
+class ThemeBackgroundView: NSView {
+    var category: FluffelPixabayPlaylists.PlaylistCategory
+    private var themeColor: NSColor
+    private var animationTimer: Timer?
+    private var phase: CGFloat = 0
+    
+    init(frame: NSRect, category: FluffelPixabayPlaylists.PlaylistCategory) {
+        self.category = category
+        self.themeColor = category.color.withAlphaComponent(0.15)
+        super.init(frame: frame)
+        self.wantsLayer = true
+        self.layer?.cornerRadius = 0
+        startAnimation()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func startAnimation() {
+        // 创建一个定时器，以平滑地更新背景动画
+        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            self.phase += 0.01
+            if self.phase > CGFloat.pi * 2 {
+                self.phase = 0
+            }
+            self.needsDisplay = true
+        }
+    }
+    
+    deinit {
+        animationTimer?.invalidate()
+    }
+    
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        
+        // 清除背景
+        context.clear(dirtyRect)
+        
+        switch category {
+        case .relax:
+            drawRelaxBackground(in: dirtyRect, context: context)
+        case .focus:
+            drawFocusBackground(in: dirtyRect, context: context)
+        case .workout:
+            drawWorkoutBackground(in: dirtyRect, context: context)
+        case .party:
+            drawPartyBackground(in: dirtyRect, context: context)
+        }
+    }
+    
+    // 为"放松"主题绘制平滑的波浪
+    private func drawRelaxBackground(in rect: CGRect, context: CGContext) {
+        let color1 = category.color.withAlphaComponent(0.1)
+        let color2 = category.color.withAlphaComponent(0.05)
+        
+        // 绘制多层波浪
+        drawWaves(in: rect, context: context, color: color1, amplitude: 40, period: rect.width / 2, yOffset: rect.height / 3, phaseOffset: 0)
+        drawWaves(in: rect, context: context, color: color2, amplitude: 30, period: rect.width / 3, yOffset: rect.height / 2, phaseOffset: CGFloat.pi / 2)
+    }
+    
+    // 为"专注"主题绘制同心圆和螺旋
+    private func drawFocusBackground(in rect: CGRect, context: CGContext) {
+        let color1 = category.color.withAlphaComponent(0.1)
+        let color2 = category.color.withAlphaComponent(0.05)
+        
+        // 绘制同心圆
+        let centerX = rect.width / 2
+        let centerY = rect.height / 2
+        
+        for i in stride(from: 0, to: 10, by: 1) {
+            let radius = 50.0 + Double(i) * 60.0
+            let alpha = 0.1 - Double(i) * 0.01
+            
+            context.setStrokeColor(category.color.withAlphaComponent(CGFloat(alpha)).cgColor)
+            context.setLineWidth(1.0)
+            context.addArc(center: CGPoint(x: centerX, y: centerY), 
+                           radius: CGFloat(radius), 
+                           startAngle: 0, 
+                           endAngle: CGFloat.pi * 2, 
+                           clockwise: false)
+            context.strokePath()
+        }
+        
+        // 绘制一些点线，模拟星空效果
+        context.setFillColor(color1.cgColor)
+        for _ in 0..<50 {
+            let x = CGFloat.random(in: 0...rect.width)
+            let y = CGFloat.random(in: 0...rect.height)
+            let size = CGFloat.random(in: 1...3)
+            
+            context.fillEllipse(in: CGRect(x: x, y: y, width: size, height: size))
+        }
+    }
+    
+    // 为"锻炼"主题绘制活力线条
+    private func drawWorkoutBackground(in rect: CGRect, context: CGContext) {
+        let color1 = category.color.withAlphaComponent(0.1)
+        
+        // 绘制动态脉搏线
+        context.setStrokeColor(color1.cgColor)
+        context.setLineWidth(2.0)
+        
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: 0, y: rect.height / 2))
+        
+        let segmentWidth: CGFloat = 20
+        let segmentCount = Int(rect.width / segmentWidth) + 1
+        
+        for i in 0..<segmentCount {
+            let x = CGFloat(i) * segmentWidth
+            let pulseHeight = sin(CGFloat(i) * 0.5 + phase) * 20
+            
+            // 在某些点上添加心跳效果
+            if i % 10 == 0 {
+                path.addLine(to: CGPoint(x: x, y: rect.height / 2 - 40))
+                path.addLine(to: CGPoint(x: x + 5, y: rect.height / 2 + 40))
+                path.addLine(to: CGPoint(x: x + 10, y: rect.height / 2))
+            } else {
+                path.addLine(to: CGPoint(x: x, y: rect.height / 2 + pulseHeight))
+            }
+        }
+        
+        context.addPath(path)
+        context.strokePath()
+        
+        // 添加一些横向线条
+        for i in stride(from: 0, to: rect.height, by: 50) {
+            context.move(to: CGPoint(x: 0, y: i))
+            context.addLine(to: CGPoint(x: rect.width, y: i))
+        }
+        
+        context.setStrokeColor(color1.withAlphaComponent(0.3).cgColor)
+        context.setLineWidth(0.5)
+        context.strokePath()
+    }
+    
+    // 为"派对"主题绘制彩色气泡和动态效果
+    private func drawPartyBackground(in rect: CGRect, context: CGContext) {
+        // 绘制彩色气泡
+        let bubbleColors = [
+            NSColor.systemPink.withAlphaComponent(0.1),
+            NSColor.systemBlue.withAlphaComponent(0.1),
+            NSColor.systemGreen.withAlphaComponent(0.1),
+            NSColor.systemYellow.withAlphaComponent(0.1),
+            NSColor.systemPurple.withAlphaComponent(0.1)
+        ]
+        
+        // 基于phase生成不同的气泡位置
+        for i in 0..<30 {
+            let randomIndex = Int.random(in: 0..<bubbleColors.count)
+            let color = bubbleColors[randomIndex]
+            
+            let x = sin(CGFloat(i) * 0.7 + phase) * rect.width/2 + rect.width/2
+            let y = cos(CGFloat(i) * 0.5 + phase) * rect.height/2 + rect.height/2
+            let size = CGFloat.random(in: 10...50)
+            
+            context.setFillColor(color.cgColor)
+            context.fillEllipse(in: CGRect(x: x - size/2, y: y - size/2, width: size, height: size))
+        }
+    }
+    
+    // 通用的波浪绘制方法
+    private func drawWaves(in rect: CGRect, context: CGContext, color: NSColor, amplitude: CGFloat, period: CGFloat, yOffset: CGFloat, phaseOffset: CGFloat) {
+        context.setFillColor(color.cgColor)
+        
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: 0, y: 0))
+        
+        let step: CGFloat = 5
+        for x in stride(from: CGFloat(0), to: rect.width, by: step) {
+            let relativePhase = phase + phaseOffset
+            let y = amplitude * sin((x / period) * CGFloat.pi * 2 + relativePhase) + yOffset
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        
+        // 完成波浪路径
+        path.addLine(to: CGPoint(x: rect.width, y: 0))
+        path.closeSubpath()
+        
+        context.addPath(path)
+        context.fillPath()
+    }
+}
+
 class FluffelPlaylistWindow: NSWindow {
     // 播放列表视图
     private var playlistView: NSView!
     private var category: FluffelPixabayPlaylists.PlaylistCategory
     internal weak var appDelegate: AppDelegate?
     
-    // 网格布局常量
-    private let gridItemWidth: CGFloat = 180
-    private let gridItemHeight: CGFloat = 180
-    private let gridSpacing: CGFloat = 20
-    private let edgeInsets: CGFloat = 24
+    // 网格布局常量 - 调整为更优雅的比例
+    private let gridItemWidth: CGFloat = 220  // 增大卡片宽度
+    private let gridItemHeight: CGFloat = 160 // 使卡片成为更美观的长方形
+    private let gridSpacing: CGFloat = 24     // 增加间距使布局更宽敞
+    private let edgeInsets: CGFloat = 32      // 增加边缘间距
+    
+    // 背景视图
+    private var backgroundView: ThemeBackgroundView!
     
     init(category: FluffelPixabayPlaylists.PlaylistCategory, delegate: AppDelegate) {
         print("Initializing playlist window for category: \(category.rawValue)")
@@ -19,28 +212,90 @@ class FluffelPlaylistWindow: NSWindow {
         
         // 创建更大的窗口
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 700),
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 700),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         
         // 设置窗口属性
-        self.title = "\(category.rawValue) Playlists"
+        self.title = "\(category.icon) \(category.rawValue) Playlists"
         self.center()
         self.isReleasedWhenClosed = false
-        self.backgroundColor = NSColor.windowBackgroundColor
+        
+        // 设置窗口背景为白色，背景元素会叠加在上面
+        self.backgroundColor = .windowBackgroundColor
         
         // 设置最小尺寸
-        self.minSize = NSSize(width: 500, height: 500)
+        self.minSize = NSSize(width: 650, height: 500)
         
         // 设置窗口置顶
         self.level = .floating
+        
+        // 自定义标题栏样式
+        stylizeTitlebar()
         
         // 创建内容视图
         setupContentView()
         
         print("Playlist window initialized")
+    }
+    
+    // 添加标题栏样式方法
+    private func stylizeTitlebar() {
+        // 确保窗口有标题栏
+        guard let titlebar = self.standardWindowButton(.closeButton)?.superview?.superview else {
+            return
+        }
+        
+        // 为标题栏添加观察者，以便在窗口大小调整时重新配置样式
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidResize),
+            name: NSWindow.didResizeNotification,
+            object: self
+        )
+        
+        // 为窗口的标题文本添加颜色（标题栏上的文本）
+        if let titleView = titlebar.subviews.first(where: { $0 is NSTextField }) as? NSTextField {
+            titleView.textColor = category.color
+            titleView.font = .systemFont(ofSize: 14, weight: .semibold)
+        }
+        
+        // 为关闭、最小化和缩放按钮添加主题色调
+        if let closeButton = self.standardWindowButton(.closeButton),
+           let minimizeButton = self.standardWindowButton(.miniaturizeButton),
+           let zoomButton = self.standardWindowButton(.zoomButton) {
+            
+            // 简单地增强按钮的视觉样式
+            for button in [closeButton, minimizeButton, zoomButton] {
+                if let buttonCell = button.cell as? NSButtonCell {
+                    buttonCell.highlightsBy = .contentsCellMask
+                }
+            }
+        }
+    }
+    
+    // 处理窗口大小调整
+    @objc private func windowDidResize(_ notification: Notification) {
+        // 更新背景视图布局
+        backgroundView?.needsDisplay = true
+        
+        // 重新计算滚动视图布局等
+        if let scrollView = self.contentView?.subviews.first(where: { $0 is NSScrollView }) as? NSScrollView,
+           let documentView = scrollView.documentView,
+           let containerWidth = contentView?.frame.width {
+            
+            // 更新容器视图宽度约束
+            for constraint in documentView.constraints where constraint.firstAttribute == .width {
+                constraint.constant = containerWidth
+            }
+        }
+    }
+    
+    deinit {
+        // 移除通知观察者
+        NotificationCenter.default.removeObserver(self)
     }
     
     private func setupContentView() {
@@ -50,10 +305,26 @@ class FluffelPlaylistWindow: NSWindow {
         playlistView = NSView(frame: contentView?.bounds ?? .zero)
         playlistView.wantsLayer = true
         
+        // 创建主题背景视图
+        backgroundView = ThemeBackgroundView(frame: playlistView.bounds, category: category)
+        backgroundView.autoresizingMask = [.width, .height]
+        playlistView.addSubview(backgroundView)
+        
+        // 添加磨砂效果背景（使内容更清晰）
+        let visualEffectView = NSVisualEffectView(frame: playlistView.bounds)
+        visualEffectView.autoresizingMask = [.width, .height]
+        visualEffectView.blendingMode = .behindWindow
+        visualEffectView.material = .sheet
+        visualEffectView.state = .active
+        visualEffectView.wantsLayer = true
+        playlistView.addSubview(visualEffectView)
+        
         // 创建滚动视图
         let scrollView = NSScrollView(frame: playlistView.bounds)
         scrollView.hasVerticalScroller = true
         scrollView.autoresizingMask = [.width, .height]
+        scrollView.backgroundColor = .clear
+        scrollView.drawsBackground = false
         
         // 创建播放列表容器
         let containerView = NSView()
@@ -70,12 +341,14 @@ class FluffelPlaylistWindow: NSWindow {
             // 显示加载指示器
             let loadingText = NSTextField(labelWithString: "Loading playlists...")
             loadingText.translatesAutoresizingMaskIntoConstraints = false
+            loadingText.font = .systemFont(ofSize: 18, weight: .medium)
+            loadingText.textColor = .labelColor
             containerView.addSubview(loadingText)
             
             // 添加加载动画
             let spinner = NSProgressIndicator()
             spinner.style = .spinning
-            spinner.controlSize = .regular
+            spinner.controlSize = .large
             spinner.isIndeterminate = true
             spinner.translatesAutoresizingMaskIntoConstraints = false
             containerView.addSubview(spinner)
@@ -83,12 +356,12 @@ class FluffelPlaylistWindow: NSWindow {
             
             NSLayoutConstraint.activate([
                 loadingText.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-                loadingText.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -30),
+                loadingText.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -40),
                 
                 spinner.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-                spinner.topAnchor.constraint(equalTo: loadingText.bottomAnchor, constant: 16),
-                spinner.widthAnchor.constraint(equalToConstant: 32),
-                spinner.heightAnchor.constraint(equalToConstant: 32)
+                spinner.topAnchor.constraint(equalTo: loadingText.bottomAnchor, constant: 24),
+                spinner.widthAnchor.constraint(equalToConstant: 42),
+                spinner.heightAnchor.constraint(equalToConstant: 42)
             ])
             
             // 开始加载播放列表
@@ -135,10 +408,16 @@ class FluffelPlaylistWindow: NSWindow {
         let separator = createSeparator()
         containerView.addSubview(separator)
         
-        // 计算网格布局参数
-        let availableWidth = 600 - (edgeInsets * 2) // 窗口宽度减去两侧边距
-        let itemsPerRow = Int(availableWidth / (gridItemWidth + gridSpacing))
-        let actualSpacing = (availableWidth - (CGFloat(itemsPerRow) * gridItemWidth)) / CGFloat(itemsPerRow - 1)
+        // 计算网格布局参数 - 使用更灵活的计算方法
+        let frameWidth = (contentView?.frame.width ?? 800)
+        let availableWidth = frameWidth - (edgeInsets * 2)
+        
+        // 根据可用宽度计算每行可容纳的最大项数
+        let maxItemsPerRow = max(2, Int(availableWidth / (gridItemWidth + gridSpacing)))
+        
+        // 根据窗口实际宽度调整间距
+        let actualItemsPerRow = maxItemsPerRow
+        let actualHorizontalSpacing = (availableWidth - (CGFloat(actualItemsPerRow) * gridItemWidth)) / CGFloat(max(1, actualItemsPerRow - 1))
         
         // 创建网格容器视图
         let gridContainer = NSView()
@@ -149,12 +428,18 @@ class FluffelPlaylistWindow: NSWindow {
         var currentRow = 0
         var currentColumn = 0
         
+        // 添加动画延迟因子
+        let animationBaseDelay = 0.05
+        
         for (index, track) in tracks.enumerated() {
             let itemView = createPlaylistItemView(track: track, index: index)
             gridContainer.addSubview(itemView)
             
+            // 设置初始透明度为0，以便后续添加动画
+            itemView.alphaValue = 0
+            
             // 计算位置
-            let xPosition = CGFloat(currentColumn) * (gridItemWidth + actualSpacing)
+            let xPosition = CGFloat(currentColumn) * (gridItemWidth + actualHorizontalSpacing)
             let yPosition = CGFloat(currentRow) * (gridItemHeight + gridSpacing)
             
             // 设置约束
@@ -165,17 +450,38 @@ class FluffelPlaylistWindow: NSWindow {
                 itemView.topAnchor.constraint(equalTo: gridContainer.topAnchor, constant: yPosition)
             ])
             
+            // 添加显示动画（延迟依赖于项目的索引）
+            let staggerDelay = TimeInterval(index) * animationBaseDelay
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.3
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                context.allowsImplicitAnimation = true
+                
+                // 延迟执行动画
+                DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
+                    itemView.animator().alphaValue = 1.0
+                    
+                    // 添加轻微的弹簧效果
+                    let scaleAnimation = CASpringAnimation(keyPath: "transform.scale")
+                    scaleAnimation.fromValue = 0.95
+                    scaleAnimation.toValue = 1.0
+                    scaleAnimation.duration = 0.4
+                    scaleAnimation.damping = 12.0
+                    itemView.layer?.add(scaleAnimation, forKey: "scale")
+                }
+            })
+            
             // 更新行列位置
             currentColumn += 1
-            if currentColumn >= itemsPerRow {
+            if currentColumn >= actualItemsPerRow {
                 currentColumn = 0
                 currentRow += 1
             }
         }
         
         // 计算网格容器高度
-        let rowCount = (tracks.count + itemsPerRow - 1) / itemsPerRow
-        let gridHeight = CGFloat(rowCount) * gridItemHeight + CGFloat(rowCount - 1) * gridSpacing
+        let rowCount = (tracks.count + actualItemsPerRow - 1) / actualItemsPerRow
+        let gridHeight = CGFloat(rowCount) * gridItemHeight + CGFloat(max(0, rowCount - 1)) * gridSpacing
         
         // 设置容器视图约束
         NSLayoutConstraint.activate([
@@ -184,50 +490,72 @@ class FluffelPlaylistWindow: NSWindow {
             headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
             
             separator.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
-            separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+            separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
             
             gridContainer.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 24),
             gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
             gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
             gridContainer.heightAnchor.constraint(equalToConstant: gridHeight),
-            gridContainer.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -24)
+            gridContainer.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -24),
+            
+            // 设置容器宽度约束
+            containerView.widthAnchor.constraint(equalToConstant: frameWidth)
         ])
     }
     
+    // 创建分类标题视图
     private func createHeaderView(category: FluffelPixabayPlaylists.PlaylistCategory) -> NSView {
         let headerView = NSView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
         
         // 获取播放列表数据
         let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        
+        // 计算总时长
         let totalDuration = tracks.reduce(0) { $0 + $1.duration }
+        
+        // 格式化时长
         let formattedDuration = { () -> String in
             let minutes = totalDuration / 60
             let seconds = totalDuration % 60
             return String(format: "%d:%02d", minutes, seconds)
         }()
         
-        // 创建类别图标标签
+        // 创建类别图标标签 - 增加背景效果
+        let iconContainer = NSView()
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.wantsLayer = true
+        iconContainer.layer?.cornerRadius = 30
+        iconContainer.layer?.backgroundColor = category.color.withAlphaComponent(0.15).cgColor
+        headerView.addSubview(iconContainer)
+        
         let iconLabel = NSTextField(labelWithString: category.icon)
         iconLabel.translatesAutoresizingMaskIntoConstraints = false
-        iconLabel.font = .systemFont(ofSize: 28)
+        iconLabel.font = .systemFont(ofSize: 30)
+        iconLabel.textColor = category.color
         iconLabel.alignment = .center
         iconLabel.backgroundColor = .clear
         iconLabel.isBezeled = false
         iconLabel.isEditable = false
         iconLabel.isSelectable = false
-        headerView.addSubview(iconLabel)
+        iconContainer.addSubview(iconLabel)
+        
+        // 居中图标
+        NSLayoutConstraint.activate([
+            iconLabel.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
+            iconLabel.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor)
+        ])
         
         // 创建标题容器
         let titleContainer = NSView()
         titleContainer.translatesAutoresizingMaskIntoConstraints = false
         headerView.addSubview(titleContainer)
         
-        // 创建标题标签
+        // 创建标题标签 - 使用更大的字体
         let titleLabel = NSTextField(labelWithString: category.rawValue)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
+        titleLabel.font = .systemFont(ofSize: 32, weight: .bold)
         titleLabel.textColor = category.color
         titleContainer.addSubview(titleLabel)
         
@@ -235,7 +563,7 @@ class FluffelPlaylistWindow: NSWindow {
         let statsView = NSStackView()
         statsView.translatesAutoresizingMaskIntoConstraints = false
         statsView.orientation = .horizontal
-        statsView.spacing = 2
+        statsView.spacing = 6
         titleContainer.addSubview(statsView)
         
         // 添加播放列表数量图标和标签
@@ -246,7 +574,7 @@ class FluffelPlaylistWindow: NSWindow {
         
         let playlistCountLabel = NSTextField(labelWithString: "\(tracks.count) playlists")
         playlistCountLabel.translatesAutoresizingMaskIntoConstraints = false
-        playlistCountLabel.font = .systemFont(ofSize: 12)
+        playlistCountLabel.font = .systemFont(ofSize: 13)
         playlistCountLabel.textColor = .secondaryLabelColor
         
         // 添加时长图标和标签
@@ -257,35 +585,48 @@ class FluffelPlaylistWindow: NSWindow {
         
         let durationLabel = NSTextField(labelWithString: formattedDuration)
         durationLabel.translatesAutoresizingMaskIntoConstraints = false
-        durationLabel.font = .systemFont(ofSize: 12)
+        durationLabel.font = .systemFont(ofSize: 13)
         durationLabel.textColor = .secondaryLabelColor
+        
+        // 添加分隔符
+        let separator = NSTextField(labelWithString: "•")
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        separator.font = .systemFont(ofSize: 13)
+        separator.textColor = .secondaryLabelColor
+        separator.backgroundColor = .clear
+        separator.isBezeled = false
+        separator.isEditable = false
+        separator.isSelectable = false
         
         // 添加所有组件到统计视图
         statsView.addArrangedSubview(playlistIcon)
         statsView.addArrangedSubview(playlistCountLabel)
-        statsView.addArrangedSubview(NSTextField(labelWithString: "•")) // 分隔符
+        statsView.addArrangedSubview(separator)
         statsView.addArrangedSubview(durationIcon)
         statsView.addArrangedSubview(durationLabel)
         
-        // 创建描述标签
+        // 创建描述标签 - 使用更好的字体风格
         let descLabel = NSTextField(wrappingLabelWithString: getPlaylistDescription(for: category))
         descLabel.translatesAutoresizingMaskIntoConstraints = false
-        descLabel.font = .systemFont(ofSize: 12)
+        descLabel.font = .systemFont(ofSize: 14)
         descLabel.textColor = .secondaryLabelColor
+        descLabel.preferredMaxLayoutWidth = 500
         headerView.addSubview(descLabel)
         
         // 创建按钮容器
         let buttonContainer = NSStackView()
         buttonContainer.translatesAutoresizingMaskIntoConstraints = false
         buttonContainer.orientation = .horizontal
-        buttonContainer.spacing = 12
+        buttonContainer.spacing = 16
         headerView.addSubview(buttonContainer)
         
-        // 创建播放全部按钮（带图标）
+        // 创建更美观的播放全部按钮
         let playAllButton = NSButton()
         playAllButton.translatesAutoresizingMaskIntoConstraints = false
         playAllButton.title = "Play All"
+        playAllButton.font = .systemFont(ofSize: 14, weight: .medium)
         playAllButton.bezelStyle = .rounded
+        playAllButton.bezelColor = category.color.withAlphaComponent(0.1)
         playAllButton.contentTintColor = category.color
         playAllButton.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "Play")
         playAllButton.imagePosition = .imageLeading
@@ -293,11 +634,13 @@ class FluffelPlaylistWindow: NSWindow {
         playAllButton.action = #selector(playAllTracks)
         buttonContainer.addArrangedSubview(playAllButton)
         
-        // 创建随机播放按钮（带图标）
+        // 创建更美观的随机播放按钮
         let shuffleButton = NSButton()
         shuffleButton.translatesAutoresizingMaskIntoConstraints = false
         shuffleButton.title = "Shuffle"
+        shuffleButton.font = .systemFont(ofSize: 14, weight: .medium)
         shuffleButton.bezelStyle = .rounded
+        shuffleButton.bezelColor = category.color.withAlphaComponent(0.1)
         shuffleButton.contentTintColor = category.color
         shuffleButton.image = NSImage(systemSymbolName: "shuffle", accessibilityDescription: "Shuffle")
         shuffleButton.imagePosition = .imageLeading
@@ -305,14 +648,14 @@ class FluffelPlaylistWindow: NSWindow {
         shuffleButton.action = #selector(shufflePlaylist)
         buttonContainer.addArrangedSubview(shuffleButton)
         
-        // 设置约束
+        // 设置约束 - 调整布局以增加空间
         NSLayoutConstraint.activate([
-            iconLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-            iconLabel.topAnchor.constraint(equalTo: headerView.topAnchor),
-            iconLabel.widthAnchor.constraint(equalToConstant: 60),
-            iconLabel.heightAnchor.constraint(equalToConstant: 60),
+            iconContainer.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            iconContainer.topAnchor.constraint(equalTo: headerView.topAnchor),
+            iconContainer.widthAnchor.constraint(equalToConstant: 60),
+            iconContainer.heightAnchor.constraint(equalToConstant: 60),
             
-            titleContainer.leadingAnchor.constraint(equalTo: iconLabel.trailingAnchor, constant: 16),
+            titleContainer.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 20),
             titleContainer.topAnchor.constraint(equalTo: headerView.topAnchor),
             titleContainer.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
             
@@ -320,25 +663,34 @@ class FluffelPlaylistWindow: NSWindow {
             titleLabel.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
             titleLabel.trailingAnchor.constraint(equalTo: titleContainer.trailingAnchor),
             
-            statsView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            statsView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
             statsView.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
             
-            descLabel.topAnchor.constraint(equalTo: statsView.bottomAnchor, constant: 12),
+            descLabel.topAnchor.constraint(equalTo: statsView.bottomAnchor, constant: 16),
             descLabel.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
             descLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
             
-            buttonContainer.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 16),
+            buttonContainer.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 20),
             buttonContainer.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
             
-            headerView.bottomAnchor.constraint(equalTo: buttonContainer.bottomAnchor, constant: 8)
+            headerView.bottomAnchor.constraint(equalTo: buttonContainer.bottomAnchor, constant: 12)
         ])
+        
+        // 设置按钮大小
+        for button in buttonContainer.arrangedSubviews {
+            if let button = button as? NSButton {
+                NSLayoutConstraint.activate([
+                    button.heightAnchor.constraint(equalToConstant: 32)
+                ])
+            }
+        }
         
         // 设置每个图标的尺寸约束
         for view in statsView.arrangedSubviews {
             if let imageView = view as? NSImageView {
                 NSLayoutConstraint.activate([
-                    imageView.widthAnchor.constraint(equalToConstant: 14),
-                    imageView.heightAnchor.constraint(equalToConstant: 14)
+                    imageView.widthAnchor.constraint(equalToConstant: 16),
+                    imageView.heightAnchor.constraint(equalToConstant: 16)
                 ])
             }
         }
@@ -373,13 +725,64 @@ class FluffelPlaylistWindow: NSWindow {
         let separator = NSView()
         separator.translatesAutoresizingMaskIntoConstraints = false
         separator.wantsLayer = true
-        separator.layer?.backgroundColor = NSColor.separatorColor.cgColor
         
+        // 创建渐变分隔线
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+        
+        // 使用分类颜色作为渐变的一部分
+        let clearColor = NSColor.clear.cgColor
+        let separatorColor = category.color.withAlphaComponent(0.5).cgColor
+        let defaultSeparatorColor = NSColor.separatorColor.withAlphaComponent(0.5).cgColor
+        
+        gradientLayer.colors = [
+            clearColor,
+            defaultSeparatorColor,
+            separatorColor,
+            defaultSeparatorColor,
+            clearColor
+        ]
+        
+        gradientLayer.locations = [0.0, 0.2, 0.5, 0.8, 1.0]
+        
+        separator.layer?.addSublayer(gradientLayer)
+        
+        // 分隔线高度
         NSLayoutConstraint.activate([
             separator.heightAnchor.constraint(equalToConstant: 1)
         ])
         
-        return separator
+        // 在布局更新时更新渐变层的frame
+        // 使用自定义类扩展来实现布局更新
+        class SeparatorView: NSView {
+            var gradientLayer: CAGradientLayer?
+            
+            override func layout() {
+                super.layout()
+                // 更新渐变层的尺寸
+                if let gradientLayer = gradientLayer {
+                    gradientLayer.frame = self.bounds
+                }
+            }
+        }
+        
+        // 创建一个自定义的SeparatorView
+        let finalSeparator = SeparatorView()
+        finalSeparator.gradientLayer = gradientLayer
+        finalSeparator.translatesAutoresizingMaskIntoConstraints = false
+        finalSeparator.wantsLayer = true
+        finalSeparator.layer?.addSublayer(gradientLayer)
+        
+        // 设置自定义视图的高度约束
+        NSLayoutConstraint.activate([
+            finalSeparator.heightAnchor.constraint(equalToConstant: 1)
+        ])
+        
+        // 初始化渐变层的尺寸
+        gradientLayer.frame = finalSeparator.bounds
+        
+        return finalSeparator
     }
     
     // 创建播放列表项视图（图片卡片）
@@ -387,16 +790,51 @@ class FluffelPlaylistWindow: NSWindow {
         let itemView = NSView()
         itemView.translatesAutoresizingMaskIntoConstraints = false
         itemView.wantsLayer = true
-        itemView.layer?.cornerRadius = 8
+        itemView.layer?.cornerRadius = 12
         itemView.layer?.masksToBounds = true
         
-        // 创建背景图片视图
+        // 添加阴影容器视图
+        let shadowContainer = NSView()
+        shadowContainer.translatesAutoresizingMaskIntoConstraints = false
+        shadowContainer.wantsLayer = true
+        shadowContainer.layer?.cornerRadius = 12
+        shadowContainer.layer?.shadowColor = NSColor.black.cgColor
+        shadowContainer.layer?.shadowOpacity = 0.2
+        shadowContainer.layer?.shadowOffset = CGSize(width: 0, height: 2)
+        shadowContainer.layer?.shadowRadius = 8
+        shadowContainer.addSubview(itemView)
+        
+        // 确保阴影容器和卡片保持相同大小
+        NSLayoutConstraint.activate([
+            itemView.topAnchor.constraint(equalTo: shadowContainer.topAnchor),
+            itemView.leadingAnchor.constraint(equalTo: shadowContainer.leadingAnchor),
+            itemView.trailingAnchor.constraint(equalTo: shadowContainer.trailingAnchor),
+            itemView.bottomAnchor.constraint(equalTo: shadowContainer.bottomAnchor)
+        ])
+        
+        // 添加卡片背景色（渐变）
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.frame = CGRect(x: 0, y: 0, width: gridItemWidth, height: gridItemHeight)
+        gradientLayer.cornerRadius = 12
+        
+        // 根据分类设置渐变色
+        let color1 = category.color.withAlphaComponent(0.1).cgColor
+        let color2 = category.color.withAlphaComponent(0.05).cgColor
+        gradientLayer.colors = [color1, color2]
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
+        
+        itemView.wantsLayer = true
+        itemView.layer?.addSublayer(gradientLayer)
+        
+        // 创建背景图片视图（带有更平滑的圆角）
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.wantsLayer = true
-        imageView.layer?.cornerRadius = 8
+        imageView.layer?.cornerRadius = 12
         imageView.layer?.masksToBounds = true
         imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.alphaValue = 0.85  // 使图片稍微透明一些，增加视觉效果
         
         // 异步加载图片
         if let bgImageUrl = getPlaylistItemImage(for: track, fallbackCategory: category) {
@@ -405,6 +843,14 @@ class FluffelPlaylistWindow: NSWindow {
                    let image = NSImage(data: imageData) {
                     DispatchQueue.main.async {
                         imageView.image = image
+                        
+                        // 添加渐入动画
+                        imageView.alphaValue = 0
+                        NSAnimationContext.runAnimationGroup { context in
+                            context.duration = 0.4
+                            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                            imageView.animator().alphaValue = 0.85
+                        }
                     }
                 } else {
                     // 如果加载失败，使用默认图片
@@ -418,27 +864,59 @@ class FluffelPlaylistWindow: NSWindow {
             imageView.image = NSImage(named: "NSApplicationIcon")
         }
         
-        // 创建半透明遮罩，使文字更清晰
+        // 创建渐变遮罩，使文字更清晰（从下到上的黑色渐变）
+        let overlayLayer = CAGradientLayer()
+        overlayLayer.frame = CGRect(x: 0, y: 0, width: gridItemWidth, height: gridItemHeight)
+        overlayLayer.colors = [
+            NSColor.black.withAlphaComponent(0.7).cgColor,
+            NSColor.black.withAlphaComponent(0.2).cgColor,
+            NSColor.clear.cgColor
+        ]
+        overlayLayer.locations = [0.0, 0.6, 1.0]
+        overlayLayer.startPoint = CGPoint(x: 0.5, y: 0.0)
+        overlayLayer.endPoint = CGPoint(x: 0.5, y: 1.0)
+        overlayLayer.cornerRadius = 12
+        
         let overlayView = NSView()
         overlayView.translatesAutoresizingMaskIntoConstraints = false
         overlayView.wantsLayer = true
-        overlayView.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.5).cgColor
+        overlayView.layer?.addSublayer(overlayLayer)
         
-        // 创建标题标签
+        // 创建标题标签 (使用自定义样式以增强可读性)
         let titleLabel = NSTextField(labelWithString: track.title)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = NSFont.systemFont(ofSize: 14, weight: .bold)
+        titleLabel.font = NSFont.systemFont(ofSize: 16, weight: .semibold)
         titleLabel.textColor = .white
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.maximumNumberOfLines = 2
         titleLabel.backgroundColor = .clear
+        titleLabel.wantsLayer = true
         
-        // 创建时长标签
+        // 创建时长标签 (改进样式，添加图标)
+        let durationStack = NSStackView()
+        durationStack.translatesAutoresizingMaskIntoConstraints = false
+        durationStack.orientation = .horizontal
+        durationStack.spacing = 4
+        
+        let clockIcon = NSImageView()
+        clockIcon.translatesAutoresizingMaskIntoConstraints = false
+        clockIcon.image = NSImage(systemSymbolName: "clock", accessibilityDescription: "Duration")
+        clockIcon.contentTintColor = .white
+        
         let durationLabel = NSTextField(labelWithString: track.formattedDuration)
         durationLabel.translatesAutoresizingMaskIntoConstraints = false
         durationLabel.font = NSFont.systemFont(ofSize: 12)
         durationLabel.textColor = .white
         durationLabel.backgroundColor = .clear
+        
+        durationStack.addArrangedSubview(clockIcon)
+        durationStack.addArrangedSubview(durationLabel)
+        
+        // 设置图标尺寸
+        NSLayoutConstraint.activate([
+            clockIcon.widthAnchor.constraint(equalToConstant: 12),
+            clockIcon.heightAnchor.constraint(equalToConstant: 12)
+        ])
         
         // 创建播放按钮（初始透明度为0，鼠标悬停时显示）
         let playButton = NSButton(image: NSImage(systemSymbolName: "play.circle.fill", accessibilityDescription: "Play")!, target: self, action: #selector(playPlaylist(_:)))
@@ -449,43 +927,46 @@ class FluffelPlaylistWindow: NSWindow {
         playButton.tag = Int(track.id) ?? 0
         playButton.alphaValue = 0
         
+        // 设置播放按钮大小
+        NSLayoutConstraint.activate([
+            playButton.widthAnchor.constraint(equalToConstant: 42),
+            playButton.heightAnchor.constraint(equalToConstant: 42)
+        ])
+        
         // 添加子视图
         itemView.addSubview(imageView)
         itemView.addSubview(overlayView)
         itemView.addSubview(titleLabel)
-        itemView.addSubview(durationLabel)
+        itemView.addSubview(durationStack)
         itemView.addSubview(playButton)
         
         // 设置约束
         NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: itemView.topAnchor),
             imageView.leadingAnchor.constraint(equalTo: itemView.leadingAnchor),
             imageView.trailingAnchor.constraint(equalTo: itemView.trailingAnchor),
-            imageView.topAnchor.constraint(equalTo: itemView.topAnchor),
             imageView.bottomAnchor.constraint(equalTo: itemView.bottomAnchor),
             
+            overlayView.topAnchor.constraint(equalTo: itemView.topAnchor),
             overlayView.leadingAnchor.constraint(equalTo: itemView.leadingAnchor),
             overlayView.trailingAnchor.constraint(equalTo: itemView.trailingAnchor),
             overlayView.bottomAnchor.constraint(equalTo: itemView.bottomAnchor),
-            overlayView.heightAnchor.constraint(equalToConstant: 64),
             
-            titleLabel.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: itemView.trailingAnchor, constant: -8),
-            titleLabel.bottomAnchor.constraint(equalTo: durationLabel.topAnchor, constant: -4),
+            titleLabel.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: 12),
+            titleLabel.trailingAnchor.constraint(equalTo: itemView.trailingAnchor, constant: -12),
+            titleLabel.bottomAnchor.constraint(equalTo: durationStack.topAnchor, constant: -4),
             
-            durationLabel.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: 8),
-            durationLabel.trailingAnchor.constraint(equalTo: itemView.trailingAnchor, constant: -8),
-            durationLabel.bottomAnchor.constraint(equalTo: itemView.bottomAnchor, constant: -8),
+            durationStack.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: 12),
+            durationStack.bottomAnchor.constraint(equalTo: itemView.bottomAnchor, constant: -12),
             
             playButton.centerXAnchor.constraint(equalTo: itemView.centerXAnchor),
-            playButton.centerYAnchor.constraint(equalTo: itemView.centerYAnchor),
-            playButton.widthAnchor.constraint(equalToConstant: 48),
-            playButton.heightAnchor.constraint(equalToConstant: 48)
+            playButton.centerYAnchor.constraint(equalTo: itemView.centerYAnchor)
         ])
         
-        // 添加悬停效果
+        // 设置悬停效果
         setupHoverEffects(for: itemView, playButton: playButton)
         
-        return itemView
+        return shadowContainer
     }
     
     // 获取播放列表项图片 URL
@@ -534,13 +1015,35 @@ class FluffelPlaylistWindow: NSWindow {
             return
         }
         
-        // 显示播放按钮
+        // 显示播放按钮及应用悬停效果
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
+            context.duration = 0.3
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            
+            // 按钮淡入
             playButton.animator().alphaValue = 1.0
             
-            // 添加高亮效果
-            view.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.1).cgColor
+            // 添加放大和阴影效果
+            view.wantsLayer = true
+            
+            // 使卡片轻微放大
+            let scaleTransform = CATransform3DMakeScale(1.03, 1.03, 1.0)
+            view.layer?.transform = scaleTransform
+            
+            // 增强阴影效果
+            if let shadowLayer = view.layer?.sublayers?.first(where: { $0 is CAGradientLayer }) {
+                shadowLayer.opacity = 0.8
+            }
+            
+            // 如果是阴影容器（外层视图），增强阴影效果
+            if view.superview?.layer?.shadowOpacity != nil {
+                view.superview?.layer?.shadowOpacity = 0.4
+                view.superview?.layer?.shadowRadius = 12
+            }
+            
+            // 应用高亮效果（在卡片边缘添加微妙的发光效果）
+            view.layer?.borderWidth = 1.5
+            view.layer?.borderColor = category.color.withAlphaComponent(0.6).cgColor
         }
     }
     
@@ -553,13 +1056,30 @@ class FluffelPlaylistWindow: NSWindow {
             return
         }
         
-        // 隐藏播放按钮
+        // 隐藏播放按钮并恢复默认效果
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
+            context.duration = 0.3
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            
+            // 按钮淡出
             playButton.animator().alphaValue = 0.0
             
-            // 移除高亮效果
-            view.layer?.backgroundColor = NSColor.clear.cgColor
+            // 恢复原始缩放
+            view.layer?.transform = CATransform3DIdentity
+            
+            // 恢复默认阴影效果
+            if let shadowLayer = view.layer?.sublayers?.first(where: { $0 is CAGradientLayer }) {
+                shadowLayer.opacity = 0.4
+            }
+            
+            // 如果是阴影容器（外层视图），恢复默认阴影
+            if view.superview?.layer?.shadowOpacity != nil {
+                view.superview?.layer?.shadowOpacity = 0.2
+                view.superview?.layer?.shadowRadius = 8
+            }
+            
+            // 移除边框高亮
+            view.layer?.borderWidth = 0
         }
     }
     
