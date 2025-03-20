@@ -210,10 +210,10 @@ class FluffelPlaylistWindow: NSWindow {
         self.category = category
         self.appDelegate = delegate
         
-        // 创建更大的窗口
+        // 创建固定大小的窗口 (不可调整大小)
         super.init(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 700),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable], // 移除.resizable选项
             backing: .buffered,
             defer: false
         )
@@ -225,9 +225,6 @@ class FluffelPlaylistWindow: NSWindow {
         
         // 设置窗口背景为白色，背景元素会叠加在上面
         self.backgroundColor = .windowBackgroundColor
-        
-        // 设置最小尺寸
-        self.minSize = NSSize(width: 650, height: 500)
         
         // 设置窗口置顶
         self.level = .floating
@@ -620,31 +617,12 @@ class FluffelPlaylistWindow: NSWindow {
         buttonContainer.spacing = 16
         headerView.addSubview(buttonContainer)
         
-        // 创建更美观的播放全部按钮
-        let playAllButton = NSButton()
-        playAllButton.translatesAutoresizingMaskIntoConstraints = false
-        playAllButton.title = "Play All"
-        playAllButton.font = .systemFont(ofSize: 14, weight: .medium)
-        playAllButton.bezelStyle = .rounded
-        playAllButton.bezelColor = category.color.withAlphaComponent(0.1)
-        playAllButton.contentTintColor = category.color
-        playAllButton.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "Play")
-        playAllButton.imagePosition = .imageLeading
-        playAllButton.target = self
+        // 使用新方法创建按钮
+        let playAllButton = createStyledButton(title: "Play All", icon: "play.fill", action: #selector(playAllTracks))
         playAllButton.action = #selector(playAllTracks)
         buttonContainer.addArrangedSubview(playAllButton)
         
-        // 创建更美观的随机播放按钮
-        let shuffleButton = NSButton()
-        shuffleButton.translatesAutoresizingMaskIntoConstraints = false
-        shuffleButton.title = "Shuffle"
-        shuffleButton.font = .systemFont(ofSize: 14, weight: .medium)
-        shuffleButton.bezelStyle = .rounded
-        shuffleButton.bezelColor = category.color.withAlphaComponent(0.1)
-        shuffleButton.contentTintColor = category.color
-        shuffleButton.image = NSImage(systemSymbolName: "shuffle", accessibilityDescription: "Shuffle")
-        shuffleButton.imagePosition = .imageLeading
-        shuffleButton.target = self
+        let shuffleButton = createStyledButton(title: "Shuffle", icon: "shuffle", action: #selector(shufflePlaylist))
         shuffleButton.action = #selector(shufflePlaylist)
         buttonContainer.addArrangedSubview(shuffleButton)
         
@@ -785,7 +763,35 @@ class FluffelPlaylistWindow: NSWindow {
         return finalSeparator
     }
     
-    // 创建播放列表项视图（图片卡片）
+    // 创建更美观的按钮并添加悬停效果
+    private func createStyledButton(title: String, icon: String, action: Selector) -> NSButton {
+        let button = NSButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.title = title
+        button.font = .systemFont(ofSize: 14, weight: .medium)
+        button.bezelStyle = .rounded
+        button.bezelColor = category.color.withAlphaComponent(0.1)
+        button.contentTintColor = category.color
+        button.image = NSImage(systemSymbolName: icon, accessibilityDescription: title)
+        button.imagePosition = .imageLeading
+        button.target = self
+        
+        // 添加悬停时颜色变化效果
+        button.wantsLayer = true
+        
+        // 添加鼠标进入/退出监听
+        let trackingArea = NSTrackingArea(
+            rect: button.bounds, 
+            options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect],
+            owner: self,
+            userInfo: ["button": button]
+        )
+        button.addTrackingArea(trackingArea)
+        
+        return button
+    }
+    
+    // 修改创建播放列表项视图方法，实现图片'cover'效果
     private func createPlaylistItemView(track: Track, index: Int) -> NSView {
         let itemView = NSView()
         itemView.translatesAutoresizingMaskIntoConstraints = false
@@ -827,14 +833,41 @@ class FluffelPlaylistWindow: NSWindow {
         itemView.wantsLayer = true
         itemView.layer?.addSublayer(gradientLayer)
         
-        // 创建背景图片视图（带有更平滑的圆角）
+        // 创建背景图片容器视图 - 用于实现cover效果
+        let imageContainer = NSView()
+        imageContainer.translatesAutoresizingMaskIntoConstraints = false
+        imageContainer.wantsLayer = true
+        imageContainer.layer?.cornerRadius = 12
+        imageContainer.layer?.masksToBounds = true
+        itemView.addSubview(imageContainer)
+        
+        // 创建背景图片视图
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.wantsLayer = true
-        imageView.layer?.cornerRadius = 12
+        
+        // 设置cover模式
+        imageView.imageScaling = .scaleAxesIndependently  // 允许独立缩放
+        imageView.imageAlignment = .alignCenter           // 居中对齐
+        
+        // 使用layer属性实现真正的cover效果
+        imageView.layer?.contentsGravity = .resizeAspectFill
         imageView.layer?.masksToBounds = true
-        imageView.imageScaling = .scaleProportionallyUpOrDown
-        imageView.alphaValue = 0.85  // 使图片稍微透明一些，增加视觉效果
+        
+        imageContainer.addSubview(imageView)
+        
+        // 确保图片视图填满容器
+        NSLayoutConstraint.activate([
+            imageContainer.topAnchor.constraint(equalTo: itemView.topAnchor),
+            imageContainer.leadingAnchor.constraint(equalTo: itemView.leadingAnchor),
+            imageContainer.trailingAnchor.constraint(equalTo: itemView.trailingAnchor),
+            imageContainer.bottomAnchor.constraint(equalTo: itemView.bottomAnchor),
+            
+            imageView.topAnchor.constraint(equalTo: imageContainer.topAnchor),
+            imageView.leadingAnchor.constraint(equalTo: imageContainer.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: imageContainer.trailingAnchor),
+            imageView.bottomAnchor.constraint(equalTo: imageContainer.bottomAnchor)
+        ])
         
         // 异步加载图片
         if let bgImageUrl = getPlaylistItemImage(for: track, fallbackCategory: category) {
@@ -849,7 +882,7 @@ class FluffelPlaylistWindow: NSWindow {
                         NSAnimationContext.runAnimationGroup { context in
                             context.duration = 0.4
                             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                            imageView.animator().alphaValue = 0.85
+                            imageView.animator().alphaValue = 1.0  // 使用完全不透明
                         }
                     }
                 } else {
@@ -934,7 +967,6 @@ class FluffelPlaylistWindow: NSWindow {
         ])
         
         // 添加子视图
-        itemView.addSubview(imageView)
         itemView.addSubview(overlayView)
         itemView.addSubview(titleLabel)
         itemView.addSubview(durationStack)
@@ -942,11 +974,6 @@ class FluffelPlaylistWindow: NSWindow {
         
         // 设置约束
         NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(equalTo: itemView.topAnchor),
-            imageView.leadingAnchor.constraint(equalTo: itemView.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: itemView.trailingAnchor),
-            imageView.bottomAnchor.constraint(equalTo: itemView.bottomAnchor),
-            
             overlayView.topAnchor.constraint(equalTo: itemView.topAnchor),
             overlayView.leadingAnchor.constraint(equalTo: itemView.leadingAnchor),
             overlayView.trailingAnchor.constraint(equalTo: itemView.trailingAnchor),
@@ -1006,80 +1033,109 @@ class FluffelPlaylistWindow: NSWindow {
         view.addTrackingArea(trackingArea)
     }
     
-    // 处理鼠标进入事件
+    // 添加鼠标悬停处理方法
     override func mouseEntered(with event: NSEvent) {
-        guard let userInfo = event.trackingArea?.userInfo,
-              let view = userInfo["view"] as? NSView,
-              let playButton = userInfo["playButton"] as? NSButton else {
+        if let userInfo = event.trackingArea?.userInfo {
+            // 处理播放列表项卡片
+            if let view = userInfo["view"] as? NSView,
+               let playButton = userInfo["playButton"] as? NSButton {
+                // 显示播放按钮及应用悬停效果
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.3
+                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                    
+                    // 按钮淡入
+                    playButton.animator().alphaValue = 1.0
+                    
+                    // 添加放大和阴影效果
+                    view.wantsLayer = true
+                    
+                    // 使卡片轻微放大
+                    let scaleTransform = CATransform3DMakeScale(1.03, 1.03, 1.0)
+                    view.layer?.transform = scaleTransform
+                    
+                    // 增强阴影效果
+                    if let shadowLayer = view.layer?.sublayers?.first(where: { $0 is CAGradientLayer }) {
+                        shadowLayer.opacity = 0.8
+                    }
+                    
+                    // 如果是阴影容器（外层视图），增强阴影效果
+                    if view.superview?.layer?.shadowOpacity != nil {
+                        view.superview?.layer?.shadowOpacity = 0.4
+                        view.superview?.layer?.shadowRadius = 12
+                    }
+                    
+                    // 应用高亮效果（在卡片边缘添加微妙的发光效果）
+                    view.layer?.borderWidth = 1.5
+                    view.layer?.borderColor = category.color.withAlphaComponent(0.6).cgColor
+                }
+            }
+            // 处理按钮悬停
+            else if let button = userInfo["button"] as? NSButton {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.2
+                    // 增强背景色和阴影
+                    button.bezelColor = category.color.withAlphaComponent(0.2)
+                    button.contentTintColor = category.color.blended(withFraction: 0.2, of: .white) ?? category.color
+                    
+                    if button.layer?.shadowOpacity == nil {
+                        button.layer?.shadowOpacity = 0.3
+                        button.layer?.shadowOffset = CGSize(width: 0, height: 1)
+                        button.layer?.shadowRadius = 3
+                        button.layer?.masksToBounds = false
+                    }
+                }
+            }
+        } else {
             super.mouseEntered(with: event)
-            return
-        }
-        
-        // 显示播放按钮及应用悬停效果
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.3
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            
-            // 按钮淡入
-            playButton.animator().alphaValue = 1.0
-            
-            // 添加放大和阴影效果
-            view.wantsLayer = true
-            
-            // 使卡片轻微放大
-            let scaleTransform = CATransform3DMakeScale(1.03, 1.03, 1.0)
-            view.layer?.transform = scaleTransform
-            
-            // 增强阴影效果
-            if let shadowLayer = view.layer?.sublayers?.first(where: { $0 is CAGradientLayer }) {
-                shadowLayer.opacity = 0.8
-            }
-            
-            // 如果是阴影容器（外层视图），增强阴影效果
-            if view.superview?.layer?.shadowOpacity != nil {
-                view.superview?.layer?.shadowOpacity = 0.4
-                view.superview?.layer?.shadowRadius = 12
-            }
-            
-            // 应用高亮效果（在卡片边缘添加微妙的发光效果）
-            view.layer?.borderWidth = 1.5
-            view.layer?.borderColor = category.color.withAlphaComponent(0.6).cgColor
         }
     }
     
-    // 处理鼠标离开事件
     override func mouseExited(with event: NSEvent) {
-        guard let userInfo = event.trackingArea?.userInfo,
-              let view = userInfo["view"] as? NSView,
-              let playButton = userInfo["playButton"] as? NSButton else {
+        if let userInfo = event.trackingArea?.userInfo {
+            // 处理播放列表项卡片
+            if let view = userInfo["view"] as? NSView,
+               let playButton = userInfo["playButton"] as? NSButton {
+                // 隐藏播放按钮并恢复默认效果
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.3
+                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                    
+                    // 按钮淡出
+                    playButton.animator().alphaValue = 0.0
+                    
+                    // 恢复原始缩放
+                    view.layer?.transform = CATransform3DIdentity
+                    
+                    // 恢复默认阴影效果
+                    if let shadowLayer = view.layer?.sublayers?.first(where: { $0 is CAGradientLayer }) {
+                        shadowLayer.opacity = 0.4
+                    }
+                    
+                    // 如果是阴影容器（外层视图），恢复默认阴影
+                    if view.superview?.layer?.shadowOpacity != nil {
+                        view.superview?.layer?.shadowOpacity = 0.2
+                        view.superview?.layer?.shadowRadius = 8
+                    }
+                    
+                    // 移除边框高亮
+                    view.layer?.borderWidth = 0
+                }
+            }
+            // 处理按钮离开
+            else if let button = userInfo["button"] as? NSButton {
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.2
+                    // 恢复原始背景色
+                    button.bezelColor = category.color.withAlphaComponent(0.1)
+                    button.contentTintColor = category.color
+                    
+                    // 移除阴影
+                    button.layer?.shadowOpacity = 0
+                }
+            }
+        } else {
             super.mouseExited(with: event)
-            return
-        }
-        
-        // 隐藏播放按钮并恢复默认效果
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.3
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            
-            // 按钮淡出
-            playButton.animator().alphaValue = 0.0
-            
-            // 恢复原始缩放
-            view.layer?.transform = CATransform3DIdentity
-            
-            // 恢复默认阴影效果
-            if let shadowLayer = view.layer?.sublayers?.first(where: { $0 is CAGradientLayer }) {
-                shadowLayer.opacity = 0.4
-            }
-            
-            // 如果是阴影容器（外层视图），恢复默认阴影
-            if view.superview?.layer?.shadowOpacity != nil {
-                view.superview?.layer?.shadowOpacity = 0.2
-                view.superview?.layer?.shadowRadius = 8
-            }
-            
-            // 移除边框高亮
-            view.layer?.borderWidth = 0
         }
     }
     
