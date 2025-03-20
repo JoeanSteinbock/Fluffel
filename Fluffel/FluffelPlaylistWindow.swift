@@ -13,6 +13,9 @@ class ThemeBackgroundView: NSView {
         super.init(frame: frame)
         self.wantsLayer = true
         self.layer?.cornerRadius = 0
+        self.window?.styleMask.insert(.titled)
+        self.window?.isOpaque = false
+        self.window?.backgroundColor = .clear
         startAnimation()
     }
     
@@ -314,10 +317,11 @@ class FluffelPlaylistWindow: NSWindow {
         // 添加磨砂效果背景（使内容更清晰）
         let visualEffectView = NSVisualEffectView(frame: playlistView.bounds)
         visualEffectView.autoresizingMask = [.width, .height]
-        visualEffectView.blendingMode = .behindWindow
-        visualEffectView.material = .sheet
-        visualEffectView.state = .active
+        visualEffectView.blendingMode = .behindWindow  // Blur content behind the window
+        visualEffectView.material = .sheet             // Light frosted glass effect
+        visualEffectView.state = .active               // Ensure the effect is active
         visualEffectView.wantsLayer = true
+        visualEffectView.alphaValue = 0.3             // Make it slightly transparent
         playlistView.addSubview(visualEffectView)
         
         // 创建滚动视图
