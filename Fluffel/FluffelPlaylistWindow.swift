@@ -1,202 +1,5 @@
 import Cocoa
 
-/// 自定义背景视图，用于绘制主题相关的背景元素
-class ThemeBackgroundView: NSView {
-    var category: FluffelPixabayPlaylists.PlaylistCategory
-    private var themeColor: NSColor
-    private var animationTimer: Timer?
-    private var phase: CGFloat = 0
-    
-    init(frame: NSRect, category: FluffelPixabayPlaylists.PlaylistCategory) {
-        self.category = category
-        self.themeColor = category.color.withAlphaComponent(0.15)
-        super.init(frame: frame)
-        self.wantsLayer = true
-        self.layer?.cornerRadius = 0
-        self.window?.styleMask.insert(.titled)
-        self.window?.isOpaque = false
-        self.window?.backgroundColor = .clear
-        startAnimation()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func startAnimation() {
-        // 创建一个定时器，以平滑地更新背景动画
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            self.phase += 0.01
-            if self.phase > CGFloat.pi * 2 {
-                self.phase = 0
-            }
-            self.needsDisplay = true
-        }
-    }
-    
-    deinit {
-        animationTimer?.invalidate()
-    }
-    
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-        
-        // 清除背景
-        context.clear(dirtyRect)
-        
-        let categoryName = category.rawValue.lowercased()
-        
-        if categoryName == "relax" {
-            drawRelaxBackground(in: dirtyRect, context: context)
-        } else if categoryName == "focus" {
-            drawFocusBackground(in: dirtyRect, context: context)
-        } else if categoryName == "workout" {
-            drawWorkoutBackground(in: dirtyRect, context: context)
-        } else if categoryName == "party" {
-            drawPartyBackground(in: dirtyRect, context: context)
-        } else {
-            // Default case - draw a simple background
-            drawRelaxBackground(in: dirtyRect, context: context)
-        }
-    }
-    
-    // 为"放松"主题绘制平滑的波浪
-    private func drawRelaxBackground(in rect: CGRect, context: CGContext) {
-        let color1 = category.color.withAlphaComponent(0.1)
-        let color2 = category.color.withAlphaComponent(0.05)
-        
-        // 绘制多层波浪
-        drawWaves(in: rect, context: context, color: color1, amplitude: 40, period: rect.width / 2, yOffset: rect.height / 3, phaseOffset: 0)
-        drawWaves(in: rect, context: context, color: color2, amplitude: 30, period: rect.width / 3, yOffset: rect.height / 2, phaseOffset: CGFloat.pi / 2)
-    }
-    
-    // 为"专注"主题绘制同心圆和螺旋
-    private func drawFocusBackground(in rect: CGRect, context: CGContext) {
-        let color1 = category.color.withAlphaComponent(0.1)
-        let color2 = category.color.withAlphaComponent(0.05)
-        
-        // 绘制同心圆
-        let centerX = rect.width / 2
-        let centerY = rect.height / 2
-        
-        for i in stride(from: 0, to: 10, by: 1) {
-            let radius = 50.0 + Double(i) * 60.0
-            let alpha = 0.1 - Double(i) * 0.01
-            
-            context.setStrokeColor(category.color.withAlphaComponent(CGFloat(alpha)).cgColor)
-            context.setLineWidth(1.0)
-            context.addArc(center: CGPoint(x: centerX, y: centerY), 
-                           radius: CGFloat(radius), 
-                           startAngle: 0, 
-                           endAngle: CGFloat.pi * 2, 
-                           clockwise: false)
-            context.strokePath()
-        }
-        
-        // 绘制一些点线，模拟星空效果
-        context.setFillColor(color1.cgColor)
-        for _ in 0..<50 {
-            let x = CGFloat.random(in: 0...rect.width)
-            let y = CGFloat.random(in: 0...rect.height)
-            let size = CGFloat.random(in: 1...3)
-            
-            context.fillEllipse(in: CGRect(x: x, y: y, width: size, height: size))
-        }
-    }
-    
-    // 为"锻炼"主题绘制活力线条
-    private func drawWorkoutBackground(in rect: CGRect, context: CGContext) {
-        let color1 = category.color.withAlphaComponent(0.1)
-        
-        // 绘制动态脉搏线
-        context.setStrokeColor(color1.cgColor)
-        context.setLineWidth(2.0)
-        
-        let path = CGMutablePath()
-        path.move(to: CGPoint(x: 0, y: rect.height / 2))
-        
-        let segmentWidth: CGFloat = 20
-        let segmentCount = Int(rect.width / segmentWidth) + 1
-        
-        for i in 0..<segmentCount {
-            let x = CGFloat(i) * segmentWidth
-            let pulseHeight = sin(CGFloat(i) * 0.5 + phase) * 20
-            
-            // 在某些点上添加心跳效果
-            if i % 10 == 0 {
-                path.addLine(to: CGPoint(x: x, y: rect.height / 2 - 40))
-                path.addLine(to: CGPoint(x: x + 5, y: rect.height / 2 + 40))
-                path.addLine(to: CGPoint(x: x + 10, y: rect.height / 2))
-            } else {
-                path.addLine(to: CGPoint(x: x, y: rect.height / 2 + pulseHeight))
-            }
-        }
-        
-        context.addPath(path)
-        context.strokePath()
-        
-        // 添加一些横向线条
-        for i in stride(from: 0, to: rect.height, by: 50) {
-            context.move(to: CGPoint(x: 0, y: i))
-            context.addLine(to: CGPoint(x: rect.width, y: i))
-        }
-        
-        context.setStrokeColor(color1.withAlphaComponent(0.3).cgColor)
-        context.setLineWidth(0.5)
-        context.strokePath()
-    }
-    
-    // 为"派对"主题绘制彩色气泡和动态效果
-    private func drawPartyBackground(in rect: CGRect, context: CGContext) {
-        // 绘制彩色气泡
-        let bubbleColors = [
-            NSColor.systemPink.withAlphaComponent(0.1),
-            NSColor.systemBlue.withAlphaComponent(0.1),
-            NSColor.systemGreen.withAlphaComponent(0.1),
-            NSColor.systemYellow.withAlphaComponent(0.1),
-            NSColor.systemPurple.withAlphaComponent(0.1)
-        ]
-        
-        // 基于phase生成不同的气泡位置
-        for i in 0..<30 {
-            let randomIndex = Int.random(in: 0..<bubbleColors.count)
-            let color = bubbleColors[randomIndex]
-            
-            let x = sin(CGFloat(i) * 0.7 + phase) * rect.width/2 + rect.width/2
-            let y = cos(CGFloat(i) * 0.5 + phase) * rect.height/2 + rect.height/2
-            let size = CGFloat.random(in: 10...50)
-            
-            context.setFillColor(color.cgColor)
-            context.fillEllipse(in: CGRect(x: x - size/2, y: y - size/2, width: size, height: size))
-        }
-    }
-    
-    // 通用的波浪绘制方法
-    private func drawWaves(in rect: CGRect, context: CGContext, color: NSColor, amplitude: CGFloat, period: CGFloat, yOffset: CGFloat, phaseOffset: CGFloat) {
-        context.setFillColor(color.cgColor)
-        
-        let path = CGMutablePath()
-        path.move(to: CGPoint(x: 0, y: 0))
-        
-        let step: CGFloat = 5
-        for x in stride(from: CGFloat(0), to: rect.width, by: step) {
-            let relativePhase = phase + phaseOffset
-            let y = amplitude * sin((x / period) * CGFloat.pi * 2 + relativePhase) + yOffset
-            path.addLine(to: CGPoint(x: x, y: y))
-        }
-        
-        // 完成波浪路径
-        path.addLine(to: CGPoint(x: rect.width, y: 0))
-        path.closeSubpath()
-        
-        context.addPath(path)
-        context.fillPath()
-    }
-}
-
 class FluffelPlaylistWindow: NSWindow {
     // 播放列表视图
     private var playlistView: NSView!
@@ -243,6 +46,124 @@ class FluffelPlaylistWindow: NSWindow {
         setupContentView()
         
         print("Playlist window initialized")
+    }
+    
+    private func setupContentView() {
+        print("Setting up content view")
+        
+        // Create main view
+        playlistView = NSView(frame: contentView?.bounds ?? .zero)
+        playlistView.wantsLayer = true
+        
+        // Create theme background view
+        backgroundView = ThemeBackgroundView(frame: playlistView.bounds, category: category)
+        backgroundView.autoresizingMask = [.width, .height]
+        playlistView.addSubview(backgroundView)
+        
+        // Add frosted glass effect background
+        let visualEffectView = NSVisualEffectView(frame: playlistView.bounds)
+        visualEffectView.autoresizingMask = [.width, .height]
+        visualEffectView.blendingMode = .behindWindow
+        visualEffectView.material = .sheet
+        visualEffectView.state = .active
+        visualEffectView.wantsLayer = true
+        visualEffectView.alphaValue = 0.3
+        playlistView.addSubview(visualEffectView)
+        
+        // Create scroll view
+        let scrollView = NSScrollView(frame: playlistView.bounds)
+        scrollView.hasVerticalScroller = true
+        scrollView.autoresizingMask = [.width, .height]
+        scrollView.backgroundColor = .clear
+        scrollView.drawsBackground = false
+        
+        // Create playlist container
+        let containerView = NSView()
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Get playlists
+        print("Fetching tracks for category: \(category.rawValue)")
+        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        print("Retrieved \(tracks.count) tracks")
+        
+        // If no tracks, show loading state
+        if tracks.isEmpty {
+            print("No tracks found, showing loading state")
+            // Show loading indicator
+            let loadingText = NSTextField(labelWithString: "Loading playlists...")
+            loadingText.translatesAutoresizingMaskIntoConstraints = false
+            loadingText.font = .systemFont(ofSize: 18, weight: .medium)
+            loadingText.textColor = .labelColor
+            containerView.addSubview(loadingText)
+            
+            let spinner = NSProgressIndicator()
+            spinner.style = .spinning
+            spinner.controlSize = .large
+            spinner.isIndeterminate = true
+            spinner.translatesAutoresizingMaskIntoConstraints = false
+            containerView.addSubview(spinner)
+            spinner.startAnimation(nil)
+            
+            NSLayoutConstraint.activate([
+                loadingText.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+                loadingText.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -40),
+                
+                spinner.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+                spinner.topAnchor.constraint(equalTo: loadingText.bottomAnchor, constant: 24),
+                spinner.widthAnchor.constraint(equalToConstant: 42),
+                spinner.heightAnchor.constraint(equalToConstant: 42)
+            ])
+            
+            // Start loading playlists
+            FluffelPixabayPlaylists.shared.loadPlaylists { [weak self] success in
+                print("Playlists load completed with success: \(success)")
+                DispatchQueue.main.async {
+                    if success {
+                        // Remove loading indicators
+                        loadingText.removeFromSuperview()
+                        spinner.removeFromSuperview()
+                        // Refresh the content view with the loaded data
+                        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: self?.category ?? .relax)
+                        if tracks.isEmpty {
+                            print("Tracks still empty after loading, showing empty state")
+                            self?.setupUIWithTracks([], in: containerView)
+                        } else {
+                            self?.setupUIWithTracks(tracks, in: containerView)
+                        }
+                    } else {
+                        // Show error state if loading fails
+                        loadingText.stringValue = "Failed to load playlists"
+                        spinner.stopAnimation(nil)
+                        spinner.removeFromSuperview()
+                        // Still show the empty state view
+                        self?.setupUIWithTracks([], in: containerView)
+                    }
+                }
+            }
+        } else {
+            print("Setting up UI with \(tracks.count) tracks")
+            setupUIWithTracks(tracks, in: containerView)
+        }
+        
+        // Set document view
+        scrollView.documentView = containerView
+        
+        // Add scroll view to main view
+        playlistView.addSubview(scrollView)
+        scrollView.frame = playlistView.bounds
+        
+        // Ensure the containerView's height is at least as tall as the scrollView's visible area
+        if let clipView = scrollView.contentView.superview {
+            NSLayoutConstraint.activate([
+                containerView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+                containerView.heightAnchor.constraint(greaterThanOrEqualTo: clipView.heightAnchor)
+            ])
+        }
+        
+        // Set content view
+        contentView = playlistView
+        
+        print("Content view setup completed")
     }
     
     // 添加标题栏样式方法
@@ -302,96 +223,142 @@ class FluffelPlaylistWindow: NSWindow {
         NotificationCenter.default.removeObserver(self)
     }
     
-    private func setupContentView() {
-        print("Setting up content view")
+    private func setupUIWithTracks(_ tracks: [Track], in containerView: NSView) {
+        print("Setting up UI with tracks: \(tracks.count)")
         
-        // 创建主视图
-        playlistView = NSView(frame: contentView?.bounds ?? .zero)
-        playlistView.wantsLayer = true
+        // Create playlist header
+        let headerView = createHeaderView(category: category)
+        containerView.addSubview(headerView)
         
-        // 创建主题背景视图
-        backgroundView = ThemeBackgroundView(frame: playlistView.bounds, category: category)
-        backgroundView.autoresizingMask = [.width, .height]
-        playlistView.addSubview(backgroundView)
+        // Add separator
+        let separator = createSeparator()
+        containerView.addSubview(separator)
         
-        // 添加磨砂效果背景（使内容更清晰）
-        let visualEffectView = NSVisualEffectView(frame: playlistView.bounds)
-        visualEffectView.autoresizingMask = [.width, .height]
-        visualEffectView.blendingMode = .behindWindow  // Blur content behind the window
-        visualEffectView.material = .sheet             // Light frosted glass effect
-        visualEffectView.state = .active               // Ensure the effect is active
-        visualEffectView.wantsLayer = true
-        visualEffectView.alphaValue = 0.3             // Make it slightly transparent
-        playlistView.addSubview(visualEffectView)
+        // Calculate grid layout parameters
+        let frameWidth = (contentView?.frame.width ?? 800)
+        let availableWidth = frameWidth - (edgeInsets * 2)
         
-        // 创建滚动视图
-        let scrollView = NSScrollView(frame: playlistView.bounds)
-        scrollView.hasVerticalScroller = true
-        scrollView.autoresizingMask = [.width, .height]
-        scrollView.backgroundColor = .clear
-        scrollView.drawsBackground = false
+        // Calculate the number of items per row
+        let maxItemsPerRow = max(2, Int(availableWidth / (gridItemWidth + gridSpacing)))
+        let actualItemsPerRow = maxItemsPerRow
+        let actualHorizontalSpacing = (availableWidth - (CGFloat(actualItemsPerRow) * gridItemWidth)) / CGFloat(max(1, actualItemsPerRow - 1))
         
-        // 创建播放列表容器
-        let containerView = NSView()
-        containerView.translatesAutoresizingMaskIntoConstraints = false
+        // Create grid container view
+        let gridContainer = NSView()
+        gridContainer.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(gridContainer)
         
-        // 获取播放列表
-        print("Fetching tracks for category: \(category.rawValue)")
-        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
-        print("Retrieved \(tracks.count) tracks")
-        
-        // 如果没有曲目，显示加载中状态
+        // Check if there is enough data
         if tracks.isEmpty {
-            print("No tracks found, loading playlists")
-            // 显示加载指示器
-            let loadingText = NSTextField(labelWithString: "Loading playlists...")
-            loadingText.translatesAutoresizingMaskIntoConstraints = false
-            loadingText.font = .systemFont(ofSize: 18, weight: .medium)
-            loadingText.textColor = .labelColor
-            containerView.addSubview(loadingText)
+            print("Tracks are empty, showing empty state view")
+            // Create "no data" placeholder view
+            let emptyStateView = createEmptyStateView()
+            gridContainer.addSubview(emptyStateView)
             
-            // 添加加载动画
-            let spinner = NSProgressIndicator()
-            spinner.style = .spinning
-            spinner.controlSize = .large
-            spinner.isIndeterminate = true
-            spinner.translatesAutoresizingMaskIntoConstraints = false
-            containerView.addSubview(spinner)
-            spinner.startAnimation(nil)
-            
+            // Align emptyStateView to the top of gridContainer
             NSLayoutConstraint.activate([
-                loadingText.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-                loadingText.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -40),
-                
-                spinner.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-                spinner.topAnchor.constraint(equalTo: loadingText.bottomAnchor, constant: 24),
-                spinner.widthAnchor.constraint(equalToConstant: 42),
-                spinner.heightAnchor.constraint(equalToConstant: 42)
+                emptyStateView.topAnchor.constraint(equalTo: gridContainer.topAnchor, constant: 20),
+                emptyStateView.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor),
+                emptyStateView.trailingAnchor.constraint(equalTo: gridContainer.trailingAnchor),
+                emptyStateView.bottomAnchor.constraint(equalTo: gridContainer.bottomAnchor, constant: -20)
             ])
             
-            // 开始加载播放列表
-            FluffelPixabayPlaylists.shared.loadPlaylists { [weak self] success in
-                print("Playlists load completed with success: \(success)")
-                DispatchQueue.main.async {
-                    self?.refreshContentView()
-                }
-            }
-        } else {
-            print("Setting up UI with \(tracks.count) tracks")
-            setupUIWithTracks(tracks, in: containerView)
+            // Set container view constraints
+            NSLayoutConstraint.activate([
+                headerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+                headerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+                headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
+                
+                separator.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
+                separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+                separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
+                
+                gridContainer.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 24),
+                gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+                gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
+                
+                containerView.widthAnchor.constraint(equalToConstant: frameWidth)
+            ])
+            
+            return
         }
         
-        // 设置文档视图
-        scrollView.documentView = containerView
+        // If there is data, add playlist items to the grid
+        var currentRow = 0
+        var currentColumn = 0
         
-        // 添加滚动视图到主视图
-        playlistView.addSubview(scrollView)
-        scrollView.frame = playlistView.bounds
+        // Add animation delay factor
+        let animationBaseDelay = 0.05
         
-        // 设置内容视图
-        contentView = playlistView
+        for (index, track) in tracks.enumerated() {
+            let itemView = createPlaylistItemView(track: track, index: index)
+            gridContainer.addSubview(itemView)
+            
+            // Set initial opacity for animation
+            itemView.alphaValue = 0
+            
+            // Calculate position
+            let xPosition = CGFloat(currentColumn) * (gridItemWidth + actualHorizontalSpacing)
+            let yPosition = CGFloat(currentRow) * (gridItemHeight + gridSpacing)
+            
+            // Set constraints
+            NSLayoutConstraint.activate([
+                itemView.widthAnchor.constraint(equalToConstant: gridItemWidth),
+                itemView.heightAnchor.constraint(equalToConstant: gridItemHeight),
+                itemView.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor, constant: xPosition),
+                itemView.topAnchor.constraint(equalTo: gridContainer.topAnchor, constant: yPosition)
+            ])
+            
+            // Add animation
+            let staggerDelay = TimeInterval(index) * animationBaseDelay
+            NSAnimationContext.runAnimationGroup({ context in
+                context.duration = 0.3
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                context.allowsImplicitAnimation = true
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
+                    itemView.animator().alphaValue = 1.0
+                    
+                    let scaleAnimation = CASpringAnimation(keyPath: "transform.scale")
+                    scaleAnimation.fromValue = 0.95
+                    scaleAnimation.toValue = 1.0
+                    scaleAnimation.duration = 0.4
+                    scaleAnimation.damping = 12.0
+                    itemView.layer?.add(scaleAnimation, forKey: "scale")
+                }
+            })
+            
+            // Update row and column positions
+            currentColumn += 1
+            if currentColumn >= actualItemsPerRow {
+                currentColumn = 0
+                currentRow += 1
+            }
+        }
         
-        print("Content view setup completed")
+        // Calculate grid container height with a minimum height
+        let rowCount = (tracks.count + actualItemsPerRow - 1) / actualItemsPerRow
+        let calculatedGridHeight = CGFloat(rowCount) * gridItemHeight + CGFloat(max(0, rowCount - 1)) * gridSpacing
+        let minimumGridHeight: CGFloat = 300 // Optional: Add a minimum height for better spacing
+        let gridHeight = max(calculatedGridHeight, minimumGridHeight)
+        
+        // Set container view constraints
+        NSLayoutConstraint.activate([
+            headerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
+            headerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+            headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
+            
+            separator.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
+            separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+            separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
+            
+            gridContainer.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 24),
+            gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+            gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
+            gridContainer.heightAnchor.constraint(equalToConstant: gridHeight),
+            
+            containerView.widthAnchor.constraint(equalToConstant: frameWidth)
+        ])
     }
     
     // 添加刷新方法
@@ -438,150 +405,6 @@ class FluffelPlaylistWindow: NSWindow {
         }
     }
     
-    private func setupUIWithTracks(_ tracks: [Track], in containerView: NSView) {
-        // 创建播放列表标题
-        let headerView = createHeaderView(category: category)
-        containerView.addSubview(headerView)
-        
-        // 添加分隔线
-        let separator = createSeparator()
-        containerView.addSubview(separator)
-        
-        // 计算网格布局参数 - 使用更灵活的计算方法
-        let frameWidth = (contentView?.frame.width ?? 800)
-        let availableWidth = frameWidth - (edgeInsets * 2)
-        
-        // 根据可用宽度计算每行可容纳的最大项数
-        let maxItemsPerRow = max(2, Int(availableWidth / (gridItemWidth + gridSpacing)))
-        
-        // 根据窗口实际宽度调整间距
-        let actualItemsPerRow = maxItemsPerRow
-        let actualHorizontalSpacing = (availableWidth - (CGFloat(actualItemsPerRow) * gridItemWidth)) / CGFloat(max(1, actualItemsPerRow - 1))
-        
-        // 创建网格容器视图
-        let gridContainer = NSView()
-        gridContainer.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(gridContainer)
-        
-        // 检查是否有足够的数据
-        if tracks.isEmpty {
-            // 创建"没有数据"占位符视图
-            let emptyStateView = createEmptyStateView()
-            gridContainer.addSubview(emptyStateView)
-            
-            // 修改约束，使空状态视图靠上对齐而不是居中
-            NSLayoutConstraint.activate([
-                emptyStateView.topAnchor.constraint(equalTo: gridContainer.topAnchor, constant: 20), // 靠上对齐，添加适当间距
-                emptyStateView.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor),
-                emptyStateView.trailingAnchor.constraint(equalTo: gridContainer.trailingAnchor),
-                emptyStateView.heightAnchor.constraint(equalToConstant: 200)
-            ])
-            
-            // 设置网格容器高度
-            let gridHeight: CGFloat = 240 // 调整高度以适应内容
-            
-            // 设置容器视图约束
-            NSLayoutConstraint.activate([
-                headerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-                headerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
-                headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
-                
-                separator.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
-                separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
-                separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
-                
-                gridContainer.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 24),
-                gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
-                gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
-                gridContainer.heightAnchor.constraint(equalToConstant: gridHeight),
-                gridContainer.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -24),
-                
-                // 设置容器宽度约束
-                containerView.widthAnchor.constraint(equalToConstant: frameWidth)
-            ])
-            
-            return
-        }
-        
-        // 有数据时添加播放列表项到网格
-        var currentRow = 0
-        var currentColumn = 0
-        
-        // 添加动画延迟因子
-        let animationBaseDelay = 0.05
-        
-        for (index, track) in tracks.enumerated() {
-            let itemView = createPlaylistItemView(track: track, index: index)
-            gridContainer.addSubview(itemView)
-            
-            // 设置初始透明度为0，以便后续添加动画
-            itemView.alphaValue = 0
-            
-            // 计算位置
-            let xPosition = CGFloat(currentColumn) * (gridItemWidth + actualHorizontalSpacing)
-            let yPosition = CGFloat(currentRow) * (gridItemHeight + gridSpacing)
-            
-            // 设置约束
-            NSLayoutConstraint.activate([
-                itemView.widthAnchor.constraint(equalToConstant: gridItemWidth),
-                itemView.heightAnchor.constraint(equalToConstant: gridItemHeight),
-                itemView.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor, constant: xPosition),
-                itemView.topAnchor.constraint(equalTo: gridContainer.topAnchor, constant: yPosition)
-            ])
-            
-            // 添加显示动画（延迟依赖于项目的索引）
-            let staggerDelay = TimeInterval(index) * animationBaseDelay
-            NSAnimationContext.runAnimationGroup({ context in
-                context.duration = 0.3
-                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-                context.allowsImplicitAnimation = true
-                
-                // 延迟执行动画
-                DispatchQueue.main.asyncAfter(deadline: .now() + staggerDelay) {
-                    itemView.animator().alphaValue = 1.0
-                    
-                    // 添加轻微的弹簧效果
-                    let scaleAnimation = CASpringAnimation(keyPath: "transform.scale")
-                    scaleAnimation.fromValue = 0.95
-                    scaleAnimation.toValue = 1.0
-                    scaleAnimation.duration = 0.4
-                    scaleAnimation.damping = 12.0
-                    itemView.layer?.add(scaleAnimation, forKey: "scale")
-                }
-            })
-            
-            // 更新行列位置
-            currentColumn += 1
-            if currentColumn >= actualItemsPerRow {
-                currentColumn = 0
-                currentRow += 1
-            }
-        }
-        
-        // 计算网格容器高度
-        let rowCount = (tracks.count + actualItemsPerRow - 1) / actualItemsPerRow
-        let gridHeight = CGFloat(rowCount) * gridItemHeight + CGFloat(max(0, rowCount - 1)) * gridSpacing
-        
-        // 设置容器视图约束
-        NSLayoutConstraint.activate([
-            headerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            headerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
-            headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
-            
-            separator.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
-            separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
-            separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
-            
-            gridContainer.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 24),
-            gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
-            gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
-            gridContainer.heightAnchor.constraint(equalToConstant: gridHeight),
-            gridContainer.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -24),
-            
-            // 设置容器宽度约束
-            containerView.widthAnchor.constraint(equalToConstant: frameWidth)
-        ])
-    }
     
     // 创建分类标题视图
     private func createHeaderView(category: FluffelPixabayPlaylists.PlaylistCategory) -> NSView {
@@ -1459,12 +1282,12 @@ class FluffelPlaylistWindow: NSWindow {
         }
     }
     
-    // 创建空数据状态视图
     private func createEmptyStateView() -> NSView {
+        print("Creating empty state view")
         let emptyView = NSView()
         emptyView.translatesAutoresizingMaskIntoConstraints = false
         
-        // 创建图标
+        // Create icon
         let icon = NSImageView()
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.image = NSImage(systemSymbolName: "music.note.list", accessibilityDescription: "No music")
@@ -1472,34 +1295,34 @@ class FluffelPlaylistWindow: NSWindow {
         icon.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         icon.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         
-        // 创建标题
+        // Create title
         let title = NSTextField(labelWithString: "No playlists available")
         title.translatesAutoresizingMaskIntoConstraints = false
         title.font = .systemFont(ofSize: 18, weight: .medium)
         title.textColor = .labelColor
         title.alignment = .center
         
-        // 创建描述
+        // Create description
         let description = NSTextField(labelWithString: "Try refreshing the page or check back later")
         description.translatesAutoresizingMaskIntoConstraints = false
         description.font = .systemFont(ofSize: 14)
         description.textColor = .secondaryLabelColor
         description.alignment = .center
         
-        // 创建刷新按钮
+        // Create refresh button
         let refreshButton = NSButton(title: "Refresh", target: self, action: #selector(refreshContentView))
         refreshButton.translatesAutoresizingMaskIntoConstraints = false
         refreshButton.bezelStyle = .rounded
         refreshButton.font = .systemFont(ofSize: 13)
         refreshButton.contentTintColor = category.color
         
-        // 添加到容器
+        // Add to container
         emptyView.addSubview(icon)
         emptyView.addSubview(title)
         emptyView.addSubview(description)
         emptyView.addSubview(refreshButton)
         
-        // 设置约束
+        // Set constraints
         NSLayoutConstraint.activate([
             icon.centerXAnchor.constraint(equalTo: emptyView.centerXAnchor),
             icon.topAnchor.constraint(equalTo: emptyView.topAnchor, constant: 20),
@@ -1517,7 +1340,9 @@ class FluffelPlaylistWindow: NSWindow {
             description.trailingAnchor.constraint(lessThanOrEqualTo: emptyView.trailingAnchor, constant: -20),
             
             refreshButton.centerXAnchor.constraint(equalTo: emptyView.centerXAnchor),
-            refreshButton.topAnchor.constraint(equalTo: description.bottomAnchor, constant: 20)
+            refreshButton.topAnchor.constraint(equalTo: description.bottomAnchor, constant: 20),
+            // Ensure the refreshButton is tied to the bottom of the emptyView to give it height
+            refreshButton.bottomAnchor.constraint(equalTo: emptyView.bottomAnchor, constant: -20)
         ])
         
         return emptyView
