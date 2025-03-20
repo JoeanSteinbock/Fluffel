@@ -20,9 +20,17 @@ class FluffelPlaylistWindow: NSWindow {
         self.category = category
         self.appDelegate = delegate
         
+        // 获取播放列表数据以确定窗口高度
+        let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
+        
+        // 计算合适的窗口高度 - 当项目少于3个（只有一行）时使用较小的高度
+        let itemsPerRow = max(2, Int(736 / (gridItemWidth + gridSpacing)))
+        let rowCount = (tracks.count + itemsPerRow - 1) / itemsPerRow
+        let windowHeight: CGFloat = rowCount <= 1 ? 450 : 700 // 少于3个项目时使用较小的高度
+        
         // 创建固定大小的窗口 (不可调整大小)
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 700),
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: windowHeight),
             styleMask: [.titled, .closable, .miniaturizable], // 移除.resizable选项
             backing: .buffered,
             defer: false
@@ -153,12 +161,18 @@ class FluffelPlaylistWindow: NSWindow {
         scrollView.frame = playlistView.bounds
         
         // Ensure the containerView's height is at least as tall as the scrollView's visible area
+        // and can expand to fit all content
         if let clipView = scrollView.contentView.superview {
             NSLayoutConstraint.activate([
                 containerView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
                 containerView.heightAnchor.constraint(greaterThanOrEqualTo: clipView.heightAnchor)
             ])
         }
+        
+        // Make sure scrollView has proper settings
+        scrollView.hasVerticalScroller = true
+        scrollView.verticalScrollElasticity = .allowed
+        scrollView.autohidesScrollers = false
         
         // Set content view
         contentView = playlistView
@@ -339,7 +353,9 @@ class FluffelPlaylistWindow: NSWindow {
         // Calculate grid container height with a minimum height
         let rowCount = (tracks.count + actualItemsPerRow - 1) / actualItemsPerRow
         let calculatedGridHeight = CGFloat(rowCount) * gridItemHeight + CGFloat(max(0, rowCount - 1)) * gridSpacing
-        let minimumGridHeight: CGFloat = 300 // Optional: Add a minimum height for better spacing
+        
+        // Adjust minimum height based on number of items
+        let minimumGridHeight: CGFloat = rowCount <= 1 ? 200 : 300 // Use smaller height for single row
         let gridHeight = max(calculatedGridHeight, minimumGridHeight)
         
         // Set container view constraints
@@ -356,6 +372,9 @@ class FluffelPlaylistWindow: NSWindow {
             gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
             gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
             gridContainer.heightAnchor.constraint(equalToConstant: gridHeight),
+            
+            // Add bottom constraint to ensure all content is included in scrollable area
+            gridContainer.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -edgeInsets),
             
             containerView.widthAnchor.constraint(equalToConstant: frameWidth)
         ])
