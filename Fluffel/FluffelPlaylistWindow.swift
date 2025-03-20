@@ -461,15 +461,16 @@ class FluffelPlaylistWindow: NSWindow {
             let emptyStateView = createEmptyStateView()
             gridContainer.addSubview(emptyStateView)
             
+            // 修改约束，使空状态视图靠上对齐而不是居中
             NSLayoutConstraint.activate([
-                emptyStateView.centerXAnchor.constraint(equalTo: gridContainer.centerXAnchor),
-                emptyStateView.centerYAnchor.constraint(equalTo: gridContainer.centerYAnchor),
-                emptyStateView.widthAnchor.constraint(equalTo: gridContainer.widthAnchor),
+                emptyStateView.topAnchor.constraint(equalTo: gridContainer.topAnchor, constant: 20), // 靠上对齐，添加适当间距
+                emptyStateView.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor),
+                emptyStateView.trailingAnchor.constraint(equalTo: gridContainer.trailingAnchor),
                 emptyStateView.heightAnchor.constraint(equalToConstant: 200)
             ])
             
             // 设置网格容器高度
-            let gridHeight: CGFloat = 200
+            let gridHeight: CGFloat = 240 // 调整高度以适应内容
             
             // 设置容器视图约束
             NSLayoutConstraint.activate([
@@ -485,7 +486,7 @@ class FluffelPlaylistWindow: NSWindow {
                 gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
                 gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
                 gridContainer.heightAnchor.constraint(equalToConstant: gridHeight),
-                gridContainer.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -24),
+                gridContainer.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -24),
                 
                 // 设置容器宽度约束
                 containerView.widthAnchor.constraint(equalToConstant: frameWidth)
@@ -567,7 +568,7 @@ class FluffelPlaylistWindow: NSWindow {
             gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
             gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
             gridContainer.heightAnchor.constraint(equalToConstant: gridHeight),
-            gridContainer.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -24),
+            gridContainer.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor, constant: -24),
             
             // 设置容器宽度约束
             containerView.widthAnchor.constraint(equalToConstant: frameWidth)
@@ -691,11 +692,11 @@ class FluffelPlaylistWindow: NSWindow {
         headerView.addSubview(buttonContainer)
         
         // 使用新方法创建按钮
-        let playAllButton = createStyledButton(title: "Play All", icon: "play.fill", action: #selector(playAllTracks))
+        let playAllButton = createStyledButton(title: "Play All", icon: "play.fill", action: #selector(playAllTracks), isPrimary: true)
         playAllButton.action = #selector(playAllTracks)
         buttonContainer.addArrangedSubview(playAllButton)
         
-        let shuffleButton = createStyledButton(title: "Shuffle", icon: "shuffle", action: #selector(shufflePlaylist))
+        let shuffleButton = createStyledButton(title: "Shuffle", icon: "shuffle", action: #selector(shufflePlaylist), isPrimary: false)
         shuffleButton.action = #selector(shufflePlaylist)
         buttonContainer.addArrangedSubview(shuffleButton)
         
@@ -837,14 +838,23 @@ class FluffelPlaylistWindow: NSWindow {
     }
     
     // 创建更美观的按钮并添加悬停效果
-    private func createStyledButton(title: String, icon: String, action: Selector) -> NSButton {
+    private func createStyledButton(title: String, icon: String, action: Selector, isPrimary: Bool = true) -> NSButton {
         let button = NSButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.title = title
         button.font = .systemFont(ofSize: 14, weight: .medium)
         button.bezelStyle = .rounded
-        button.bezelColor = category.color.withAlphaComponent(0.1)
-        button.contentTintColor = category.color
+        
+        if isPrimary {
+            // 主要按钮使用主题色
+            button.bezelColor = category.color.withAlphaComponent(0.1)
+            button.contentTintColor = category.color
+        } else {
+            // 次要按钮使用灰色
+            button.bezelColor = NSColor.controlColor.withAlphaComponent(0.1)
+            button.contentTintColor = .secondaryLabelColor
+        }
+        
         button.image = NSImage(systemSymbolName: icon, accessibilityDescription: title)
         button.imagePosition = .imageLeading
         button.target = self
@@ -852,12 +862,15 @@ class FluffelPlaylistWindow: NSWindow {
         // 添加悬停时颜色变化效果
         button.wantsLayer = true
         
+        // 添加用户信息，表明按钮是否为主要按钮
+        let userInfo: [String: Any] = ["button": button, "isPrimary": isPrimary]
+        
         // 添加鼠标进入/退出监听
         let trackingArea = NSTrackingArea(
             rect: button.bounds, 
             options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect],
             owner: self,
-            userInfo: ["button": button]
+            userInfo: userInfo
         )
         button.addTrackingArea(trackingArea)
         
@@ -1020,10 +1033,11 @@ class FluffelPlaylistWindow: NSWindow {
         playButton.tag = Int(track.id) ?? 0
         playButton.alphaValue = 0
         
-        // 设置播放按钮大小
+        // 设置播放按钮大小 - 使用较小的初始尺寸
+        let buttonSize: CGFloat = 42
         NSLayoutConstraint.activate([
-            playButton.widthAnchor.constraint(equalToConstant: 42),
-            playButton.heightAnchor.constraint(equalToConstant: 42)
+            playButton.widthAnchor.constraint(equalToConstant: buttonSize),
+            playButton.heightAnchor.constraint(equalToConstant: buttonSize)
         ])
         
         // 添加子视图
@@ -1106,6 +1120,14 @@ class FluffelPlaylistWindow: NSWindow {
                     // 按钮淡入
                     playButton.animator().alphaValue = 1.0
                     
+                    // 按钮放大3倍
+                    playButton.frame = NSRect(
+                        x: playButton.frame.origin.x - playButton.frame.width,
+                        y: playButton.frame.origin.y - playButton.frame.height,
+                        width: playButton.frame.width * 3,
+                        height: playButton.frame.height * 3
+                    )
+                    
                     // 添加放大和阴影效果
                     view.wantsLayer = true
                     
@@ -1133,9 +1155,19 @@ class FluffelPlaylistWindow: NSWindow {
             else if let button = userInfo["button"] as? NSButton {
                 NSAnimationContext.runAnimationGroup { context in
                     context.duration = 0.2
-                    // 增强背景色和阴影
-                    button.bezelColor = category.color.withAlphaComponent(0.2)
-                    button.contentTintColor = category.color.blended(withFraction: 0.2, of: .white) ?? category.color
+                    
+                    // 根据按钮类型改变悬停效果
+                    let isPrimary = userInfo["isPrimary"] as? Bool ?? true
+                    
+                    if isPrimary {
+                        // 主要按钮效果
+                        button.bezelColor = category.color.withAlphaComponent(0.2)
+                        button.contentTintColor = category.color.blended(withFraction: 0.2, of: .white) ?? category.color
+                    } else {
+                        // 次要按钮效果
+                        button.bezelColor = NSColor.controlColor.withAlphaComponent(0.2)
+                        button.contentTintColor = NSColor.secondaryLabelColor.blended(withFraction: 0.2, of: .white) ?? .secondaryLabelColor
+                    }
                     
                     if button.layer?.shadowOpacity == nil {
                         button.layer?.shadowOpacity = 0.3
@@ -1163,6 +1195,14 @@ class FluffelPlaylistWindow: NSWindow {
                     // 按钮淡出
                     playButton.animator().alphaValue = 0.0
                     
+                    // 还原按钮大小
+                    playButton.frame = NSRect(
+                        x: playButton.frame.origin.x + playButton.frame.width/3,
+                        y: playButton.frame.origin.y + playButton.frame.height/3,
+                        width: playButton.frame.width/3,
+                        height: playButton.frame.height/3
+                    )
+                    
                     // 恢复原始缩放
                     view.layer?.transform = CATransform3DIdentity
                     
@@ -1185,9 +1225,19 @@ class FluffelPlaylistWindow: NSWindow {
             else if let button = userInfo["button"] as? NSButton {
                 NSAnimationContext.runAnimationGroup { context in
                     context.duration = 0.2
-                    // 恢复原始背景色
-                    button.bezelColor = category.color.withAlphaComponent(0.1)
-                    button.contentTintColor = category.color
+                    
+                    // 根据按钮类型恢复原始样式
+                    let isPrimary = userInfo["isPrimary"] as? Bool ?? true
+                    
+                    if isPrimary {
+                        // 恢复主要按钮样式
+                        button.bezelColor = category.color.withAlphaComponent(0.1)
+                        button.contentTintColor = category.color
+                    } else {
+                        // 恢复次要按钮样式
+                        button.bezelColor = NSColor.controlColor.withAlphaComponent(0.1)
+                        button.contentTintColor = .secondaryLabelColor
+                    }
                     
                     // 移除阴影
                     button.layer?.shadowOpacity = 0
