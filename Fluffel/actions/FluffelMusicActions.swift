@@ -235,6 +235,9 @@ extension Fluffel: AVAudioPlayerDelegate {
             // 停止动画
             self?.stopListeningToMusicAnimation()
             
+            // 通知播放完成
+            NotificationCenter.default.post(name: .fluffelDidFinishPlayingMusic, object: nil)
+            
             // 调用完成回调
             Fluffel.completionHandler?(flag)
             Fluffel.completionHandler = nil

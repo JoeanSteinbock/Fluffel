@@ -9,6 +9,7 @@ import AVFoundation
 // 添加一个通知名称，用于通知窗口 Fluffel 已移动
 extension Notification.Name {
     static let fluffelDebugInfo = Notification.Name("fluffelDebugInfo") // 添加调试信息通知
+    static let fluffelDidFinishPlayingMusic = Notification.Name("fluffelDidFinishPlayingMusic") // 添加音乐播放完成通知
 }
 
 class FluffelScene: SKScene {

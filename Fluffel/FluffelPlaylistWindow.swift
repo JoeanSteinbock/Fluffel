@@ -6,14 +6,20 @@ class FluffelPlaylistWindow: NSWindow {
     private var category: FluffelPixabayPlaylists.PlaylistCategory
     internal weak var appDelegate: AppDelegate?
     
+    // 网格布局常量
+    private let gridItemWidth: CGFloat = 180
+    private let gridItemHeight: CGFloat = 180
+    private let gridSpacing: CGFloat = 20
+    private let edgeInsets: CGFloat = 24
+    
     init(category: FluffelPixabayPlaylists.PlaylistCategory, delegate: AppDelegate) {
         print("Initializing playlist window for category: \(category.rawValue)")
         self.category = category
         self.appDelegate = delegate
         
-        // 创建窗口
+        // 创建更大的窗口
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 300, height: 400),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 700),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
@@ -26,7 +32,10 @@ class FluffelPlaylistWindow: NSWindow {
         self.backgroundColor = NSColor.windowBackgroundColor
         
         // 设置最小尺寸
-        self.minSize = NSSize(width: 300, height: 400)
+        self.minSize = NSSize(width: 500, height: 500)
+        
+        // 设置窗口置顶
+        self.level = .floating
         
         // 创建内容视图
         setupContentView()
@@ -63,9 +72,23 @@ class FluffelPlaylistWindow: NSWindow {
             loadingText.translatesAutoresizingMaskIntoConstraints = false
             containerView.addSubview(loadingText)
             
+            // 添加加载动画
+            let spinner = NSProgressIndicator()
+            spinner.style = .spinning
+            spinner.controlSize = .regular
+            spinner.isIndeterminate = true
+            spinner.translatesAutoresizingMaskIntoConstraints = false
+            containerView.addSubview(spinner)
+            spinner.startAnimation(nil)
+            
             NSLayoutConstraint.activate([
                 loadingText.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-                loadingText.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
+                loadingText.centerYAnchor.constraint(equalTo: containerView.centerYAnchor, constant: -30),
+                
+                spinner.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+                spinner.topAnchor.constraint(equalTo: loadingText.bottomAnchor, constant: 16),
+                spinner.widthAnchor.constraint(equalToConstant: 32),
+                spinner.heightAnchor.constraint(equalToConstant: 32)
             ])
             
             // 开始加载播放列表
@@ -85,6 +108,7 @@ class FluffelPlaylistWindow: NSWindow {
         
         // 添加滚动视图到主视图
         playlistView.addSubview(scrollView)
+        scrollView.frame = playlistView.bounds
         
         // 设置内容视图
         contentView = playlistView
@@ -111,33 +135,63 @@ class FluffelPlaylistWindow: NSWindow {
         let separator = createSeparator()
         containerView.addSubview(separator)
         
-        // 添加曲目列表
-        var lastView: NSView = separator
+        // 计算网格布局参数
+        let availableWidth = 600 - (edgeInsets * 2) // 窗口宽度减去两侧边距
+        let itemsPerRow = Int(availableWidth / (gridItemWidth + gridSpacing))
+        let actualSpacing = (availableWidth - (CGFloat(itemsPerRow) * gridItemWidth)) / CGFloat(itemsPerRow - 1)
+        
+        // 创建网格容器视图
+        let gridContainer = NSView()
+        gridContainer.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(gridContainer)
+        
+        // 添加播放列表项到网格
+        var currentRow = 0
+        var currentColumn = 0
+        
         for (index, track) in tracks.enumerated() {
-            let trackView = createTrackView(track: track, isLast: index == tracks.count - 1)
-            containerView.addSubview(trackView)
+            let itemView = createPlaylistItemView(track: track, index: index)
+            gridContainer.addSubview(itemView)
+            
+            // 计算位置
+            let xPosition = CGFloat(currentColumn) * (gridItemWidth + actualSpacing)
+            let yPosition = CGFloat(currentRow) * (gridItemHeight + gridSpacing)
             
             // 设置约束
             NSLayoutConstraint.activate([
-                trackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                trackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                trackView.topAnchor.constraint(equalTo: lastView.bottomAnchor, constant: 8)
+                itemView.widthAnchor.constraint(equalToConstant: gridItemWidth),
+                itemView.heightAnchor.constraint(equalToConstant: gridItemHeight),
+                itemView.leadingAnchor.constraint(equalTo: gridContainer.leadingAnchor, constant: xPosition),
+                itemView.topAnchor.constraint(equalTo: gridContainer.topAnchor, constant: yPosition)
             ])
             
-            lastView = trackView
+            // 更新行列位置
+            currentColumn += 1
+            if currentColumn >= itemsPerRow {
+                currentColumn = 0
+                currentRow += 1
+            }
         }
+        
+        // 计算网格容器高度
+        let rowCount = (tracks.count + itemsPerRow - 1) / itemsPerRow
+        let gridHeight = CGFloat(rowCount) * gridItemHeight + CGFloat(rowCount - 1) * gridSpacing
         
         // 设置容器视图约束
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            headerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            headerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+            headerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
             
             separator.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
             separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             
-            lastView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -16)
+            gridContainer.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 24),
+            gridContainer.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: edgeInsets),
+            gridContainer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -edgeInsets),
+            gridContainer.heightAnchor.constraint(equalToConstant: gridHeight),
+            gridContainer.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -24)
         ])
     }
     
@@ -154,18 +208,64 @@ class FluffelPlaylistWindow: NSWindow {
             return String(format: "%d:%02d", minutes, seconds)
         }()
         
+        // 创建类别图标标签
+        let iconLabel = NSTextField(labelWithString: category.icon)
+        iconLabel.translatesAutoresizingMaskIntoConstraints = false
+        iconLabel.font = .systemFont(ofSize: 28)
+        iconLabel.alignment = .center
+        iconLabel.backgroundColor = .clear
+        iconLabel.isBezeled = false
+        iconLabel.isEditable = false
+        iconLabel.isSelectable = false
+        headerView.addSubview(iconLabel)
+        
+        // 创建标题容器
+        let titleContainer = NSView()
+        titleContainer.translatesAutoresizingMaskIntoConstraints = false
+        headerView.addSubview(titleContainer)
+        
         // 创建标题标签
         let titleLabel = NSTextField(labelWithString: category.rawValue)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
-        headerView.addSubview(titleLabel)
+        titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
+        titleLabel.textColor = category.color
+        titleContainer.addSubview(titleLabel)
         
-        // 创建统计信息标签
-        let statsLabel = NSTextField(labelWithString: "\(tracks.count) playlists · \(formattedDuration)")
-        statsLabel.translatesAutoresizingMaskIntoConstraints = false
-        statsLabel.font = .systemFont(ofSize: 12)
-        statsLabel.textColor = .secondaryLabelColor
-        headerView.addSubview(statsLabel)
+        // 创建统计信息标签，添加图标
+        let statsView = NSStackView()
+        statsView.translatesAutoresizingMaskIntoConstraints = false
+        statsView.orientation = .horizontal
+        statsView.spacing = 2
+        titleContainer.addSubview(statsView)
+        
+        // 添加播放列表数量图标和标签
+        let playlistIcon = NSImageView()
+        playlistIcon.translatesAutoresizingMaskIntoConstraints = false
+        playlistIcon.image = NSImage(systemSymbolName: "music.note.list", accessibilityDescription: "Playlists")
+        playlistIcon.contentTintColor = .secondaryLabelColor
+        
+        let playlistCountLabel = NSTextField(labelWithString: "\(tracks.count) playlists")
+        playlistCountLabel.translatesAutoresizingMaskIntoConstraints = false
+        playlistCountLabel.font = .systemFont(ofSize: 12)
+        playlistCountLabel.textColor = .secondaryLabelColor
+        
+        // 添加时长图标和标签
+        let durationIcon = NSImageView()
+        durationIcon.translatesAutoresizingMaskIntoConstraints = false
+        durationIcon.image = NSImage(systemSymbolName: "clock", accessibilityDescription: "Duration")
+        durationIcon.contentTintColor = .secondaryLabelColor
+        
+        let durationLabel = NSTextField(labelWithString: formattedDuration)
+        durationLabel.translatesAutoresizingMaskIntoConstraints = false
+        durationLabel.font = .systemFont(ofSize: 12)
+        durationLabel.textColor = .secondaryLabelColor
+        
+        // 添加所有组件到统计视图
+        statsView.addArrangedSubview(playlistIcon)
+        statsView.addArrangedSubview(playlistCountLabel)
+        statsView.addArrangedSubview(NSTextField(labelWithString: "•")) // 分隔符
+        statsView.addArrangedSubview(durationIcon)
+        statsView.addArrangedSubview(durationLabel)
         
         // 创建描述标签
         let descLabel = NSTextField(wrappingLabelWithString: getPlaylistDescription(for: category))
@@ -174,93 +274,73 @@ class FluffelPlaylistWindow: NSWindow {
         descLabel.textColor = .secondaryLabelColor
         headerView.addSubview(descLabel)
         
-        // 创建播放全部按钮
-        let playAllButton = NSButton(title: "Play All", target: self, action: #selector(playAllTracks))
+        // 创建按钮容器
+        let buttonContainer = NSStackView()
+        buttonContainer.translatesAutoresizingMaskIntoConstraints = false
+        buttonContainer.orientation = .horizontal
+        buttonContainer.spacing = 12
+        headerView.addSubview(buttonContainer)
+        
+        // 创建播放全部按钮（带图标）
+        let playAllButton = NSButton()
         playAllButton.translatesAutoresizingMaskIntoConstraints = false
+        playAllButton.title = "Play All"
         playAllButton.bezelStyle = .rounded
         playAllButton.contentTintColor = category.color
-        headerView.addSubview(playAllButton)
+        playAllButton.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "Play")
+        playAllButton.imagePosition = .imageLeading
+        playAllButton.target = self
+        playAllButton.action = #selector(playAllTracks)
+        buttonContainer.addArrangedSubview(playAllButton)
         
-        // 创建随机播放按钮
-        let shuffleButton = NSButton(title: "Shuffle", target: self, action: #selector(shufflePlaylist))
+        // 创建随机播放按钮（带图标）
+        let shuffleButton = NSButton()
         shuffleButton.translatesAutoresizingMaskIntoConstraints = false
+        shuffleButton.title = "Shuffle"
         shuffleButton.bezelStyle = .rounded
         shuffleButton.contentTintColor = category.color
-        headerView.addSubview(shuffleButton)
+        shuffleButton.image = NSImage(systemSymbolName: "shuffle", accessibilityDescription: "Shuffle")
+        shuffleButton.imagePosition = .imageLeading
+        shuffleButton.target = self
+        shuffleButton.action = #selector(shufflePlaylist)
+        buttonContainer.addArrangedSubview(shuffleButton)
         
-        // 如果有背景图片，添加背景图片视图
-        if let bgImageUrl = getPlaylistBackgroundImage(for: category) {
-            let imageView = NSImageView()
-            imageView.translatesAutoresizingMaskIntoConstraints = false
+        // 设置约束
+        NSLayoutConstraint.activate([
+            iconLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            iconLabel.topAnchor.constraint(equalTo: headerView.topAnchor),
+            iconLabel.widthAnchor.constraint(equalToConstant: 60),
+            iconLabel.heightAnchor.constraint(equalToConstant: 60),
             
-            // 异步加载图片
-            DispatchQueue.global().async {
-                if let imageData = try? Data(contentsOf: bgImageUrl),
-                   let image = NSImage(data: imageData) {
-                    DispatchQueue.main.async {
-                        imageView.image = image
-                        imageView.wantsLayer = true
-                        imageView.layer?.cornerRadius = 8
-                        imageView.layer?.masksToBounds = true
-                    }
-                }
+            titleContainer.leadingAnchor.constraint(equalTo: iconLabel.trailingAnchor, constant: 16),
+            titleContainer.topAnchor.constraint(equalTo: headerView.topAnchor),
+            titleContainer.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            
+            titleLabel.topAnchor.constraint(equalTo: titleContainer.topAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
+            titleLabel.trailingAnchor.constraint(equalTo: titleContainer.trailingAnchor),
+            
+            statsView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            statsView.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
+            
+            descLabel.topAnchor.constraint(equalTo: statsView.bottomAnchor, constant: 12),
+            descLabel.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
+            descLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            
+            buttonContainer.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 16),
+            buttonContainer.leadingAnchor.constraint(equalTo: titleContainer.leadingAnchor),
+            
+            headerView.bottomAnchor.constraint(equalTo: buttonContainer.bottomAnchor, constant: 8)
+        ])
+        
+        // 设置每个图标的尺寸约束
+        for view in statsView.arrangedSubviews {
+            if let imageView = view as? NSImageView {
+                NSLayoutConstraint.activate([
+                    imageView.widthAnchor.constraint(equalToConstant: 14),
+                    imageView.heightAnchor.constraint(equalToConstant: 14)
+                ])
             }
-            
-            headerView.addSubview(imageView)
-            
-            // 设置图片视图约束
-            NSLayoutConstraint.activate([
-                imageView.topAnchor.constraint(equalTo: headerView.topAnchor),
-                imageView.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-                imageView.widthAnchor.constraint(equalToConstant: 120),
-                imageView.heightAnchor.constraint(equalToConstant: 120)
-            ])
-            
-            // 调整其他元素的约束以适应图片
-            NSLayoutConstraint.activate([
-                titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor),
-                titleLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 16),
-                titleLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -16),
-                
-                statsLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-                statsLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                statsLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-                
-                descLabel.topAnchor.constraint(equalTo: statsLabel.bottomAnchor, constant: 8),
-                descLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                descLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
-                
-                playAllButton.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 12),
-                playAllButton.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                
-                shuffleButton.topAnchor.constraint(equalTo: playAllButton.topAnchor),
-                shuffleButton.leadingAnchor.constraint(equalTo: playAllButton.trailingAnchor, constant: 8),
-                
-                headerView.bottomAnchor.constraint(equalTo: imageView.bottomAnchor)
-            ])
-        } else {
-            // 没有图片时的约束
-            NSLayoutConstraint.activate([
-                titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor),
-                titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-                titleLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
-                
-                statsLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-                statsLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-                statsLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
-                
-                descLabel.topAnchor.constraint(equalTo: statsLabel.bottomAnchor, constant: 8),
-                descLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-                descLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
-                
-                playAllButton.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 12),
-                playAllButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
-                
-                shuffleButton.topAnchor.constraint(equalTo: playAllButton.topAnchor),
-                shuffleButton.leadingAnchor.constraint(equalTo: playAllButton.trailingAnchor, constant: 8),
-                
-                headerView.bottomAnchor.constraint(equalTo: playAllButton.bottomAnchor)
-            ])
         }
         
         return headerView
@@ -302,72 +382,185 @@ class FluffelPlaylistWindow: NSWindow {
         return separator
     }
     
-    private func createTrackView(track: Track, isLast: Bool) -> NSView {
-        let trackView = NSView()
-        trackView.translatesAutoresizingMaskIntoConstraints = false
+    // 创建播放列表项视图（图片卡片）
+    private func createPlaylistItemView(track: Track, index: Int) -> NSView {
+        let itemView = NSView()
+        itemView.translatesAutoresizingMaskIntoConstraints = false
+        itemView.wantsLayer = true
+        itemView.layer?.cornerRadius = 8
+        itemView.layer?.masksToBounds = true
         
-        // 创建曲目标题标签
+        // 创建背景图片视图
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.wantsLayer = true
+        imageView.layer?.cornerRadius = 8
+        imageView.layer?.masksToBounds = true
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        
+        // 异步加载图片
+        if let bgImageUrl = getPlaylistItemImage(for: track, fallbackCategory: category) {
+            DispatchQueue.global().async {
+                if let imageData = try? Data(contentsOf: bgImageUrl),
+                   let image = NSImage(data: imageData) {
+                    DispatchQueue.main.async {
+                        imageView.image = image
+                    }
+                } else {
+                    // 如果加载失败，使用默认图片
+                    DispatchQueue.main.async {
+                        imageView.image = NSImage(named: "NSApplicationIcon")
+                    }
+                }
+            }
+        } else {
+            // 设置默认图片
+            imageView.image = NSImage(named: "NSApplicationIcon")
+        }
+        
+        // 创建半透明遮罩，使文字更清晰
+        let overlayView = NSView()
+        overlayView.translatesAutoresizingMaskIntoConstraints = false
+        overlayView.wantsLayer = true
+        overlayView.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.5).cgColor
+        
+        // 创建标题标签
         let titleLabel = NSTextField(labelWithString: track.title)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        trackView.addSubview(titleLabel)
-        
-        // 创建艺术家标签（在这里显示为"Pixabay播放列表"）
-        let artistLabel = NSTextField(labelWithString: "Pixabay Playlist")
-        artistLabel.translatesAutoresizingMaskIntoConstraints = false
-        artistLabel.font = .systemFont(ofSize: 12)
-        artistLabel.textColor = .secondaryLabelColor
-        trackView.addSubview(artistLabel)
+        titleLabel.font = NSFont.systemFont(ofSize: 14, weight: .bold)
+        titleLabel.textColor = .white
+        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.maximumNumberOfLines = 2
+        titleLabel.backgroundColor = .clear
         
         // 创建时长标签
         let durationLabel = NSTextField(labelWithString: track.formattedDuration)
         durationLabel.translatesAutoresizingMaskIntoConstraints = false
-        durationLabel.font = .systemFont(ofSize: 12)
-        durationLabel.textColor = .secondaryLabelColor
-        trackView.addSubview(durationLabel)
+        durationLabel.font = NSFont.systemFont(ofSize: 12)
+        durationLabel.textColor = .white
+        durationLabel.backgroundColor = .clear
         
-        // 创建播放按钮
-        let playButton = NSButton(image: NSImage(systemSymbolName: "play.circle", accessibilityDescription: "Play")!, target: self, action: #selector(playTrack(_:)))
+        // 创建播放按钮（初始透明度为0，鼠标悬停时显示）
+        let playButton = NSButton(image: NSImage(systemSymbolName: "play.circle.fill", accessibilityDescription: "Play")!, target: self, action: #selector(playPlaylist(_:)))
         playButton.translatesAutoresizingMaskIntoConstraints = false
         playButton.bezelStyle = .circular
         playButton.isBordered = false
+        playButton.contentTintColor = .white
         playButton.tag = Int(track.id) ?? 0
-        trackView.addSubview(playButton)
+        playButton.alphaValue = 0
+        
+        // 添加子视图
+        itemView.addSubview(imageView)
+        itemView.addSubview(overlayView)
+        itemView.addSubview(titleLabel)
+        itemView.addSubview(durationLabel)
+        itemView.addSubview(playButton)
         
         // 设置约束
         NSLayoutConstraint.activate([
-            playButton.leadingAnchor.constraint(equalTo: trackView.leadingAnchor, constant: 16),
-            playButton.centerYAnchor.constraint(equalTo: trackView.centerYAnchor),
-            playButton.widthAnchor.constraint(equalToConstant: 24),
-            playButton.heightAnchor.constraint(equalToConstant: 24),
+            imageView.leadingAnchor.constraint(equalTo: itemView.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: itemView.trailingAnchor),
+            imageView.topAnchor.constraint(equalTo: itemView.topAnchor),
+            imageView.bottomAnchor.constraint(equalTo: itemView.bottomAnchor),
             
-            titleLabel.leadingAnchor.constraint(equalTo: playButton.trailingAnchor, constant: 8),
-            titleLabel.topAnchor.constraint(equalTo: trackView.topAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: durationLabel.leadingAnchor, constant: -8),
+            overlayView.leadingAnchor.constraint(equalTo: itemView.leadingAnchor),
+            overlayView.trailingAnchor.constraint(equalTo: itemView.trailingAnchor),
+            overlayView.bottomAnchor.constraint(equalTo: itemView.bottomAnchor),
+            overlayView.heightAnchor.constraint(equalToConstant: 64),
             
-            artistLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
-            artistLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: 8),
+            titleLabel.trailingAnchor.constraint(equalTo: itemView.trailingAnchor, constant: -8),
+            titleLabel.bottomAnchor.constraint(equalTo: durationLabel.topAnchor, constant: -4),
             
-            durationLabel.trailingAnchor.constraint(equalTo: trackView.trailingAnchor, constant: -16),
-            durationLabel.centerYAnchor.constraint(equalTo: trackView.centerYAnchor),
+            durationLabel.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: 8),
+            durationLabel.trailingAnchor.constraint(equalTo: itemView.trailingAnchor, constant: -8),
+            durationLabel.bottomAnchor.constraint(equalTo: itemView.bottomAnchor, constant: -8),
             
-            trackView.heightAnchor.constraint(equalToConstant: 50)
+            playButton.centerXAnchor.constraint(equalTo: itemView.centerXAnchor),
+            playButton.centerYAnchor.constraint(equalTo: itemView.centerYAnchor),
+            playButton.widthAnchor.constraint(equalToConstant: 48),
+            playButton.heightAnchor.constraint(equalToConstant: 48)
         ])
         
-        // 如果不是最后一个曲目，添加分隔线
-        if !isLast {
-            let separator = createSeparator()
-            trackView.addSubview(separator)
+        // 添加悬停效果
+        setupHoverEffects(for: itemView, playButton: playButton)
+        
+        return itemView
+    }
+    
+    // 获取播放列表项图片 URL
+    private func getPlaylistItemImage(for track: Track, fallbackCategory: FluffelPixabayPlaylists.PlaylistCategory) -> URL? {
+        // 首先尝试从播放列表数据中获取图片
+        if let url = Bundle.main.url(forResource: "playlists", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let allPlaylists = try? JSONDecoder().decode([PlaylistData].self, from: data) {
             
-            NSLayoutConstraint.activate([
-                separator.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-                separator.trailingAnchor.constraint(equalTo: trackView.trailingAnchor),
-                separator.bottomAnchor.constraint(equalTo: trackView.bottomAnchor)
-            ])
+            // 尝试通过 ID 匹配
+            if let matchingPlaylist = allPlaylists.first(where: { String($0.id) == track.id }),
+               let bgImageSrc = matchingPlaylist.bgImageSrc {
+                return URL(string: bgImageSrc)
+            }
+            
+            // 如果没有精确匹配，随机选择一个相同类别的图片
+            let categoryPlaylists = allPlaylists.filter { $0.categories?.contains(fallbackCategory.rawValue.lowercased()) ?? false }
+            if let randomPlaylist = categoryPlaylists.randomElement(),
+               let bgImageSrc = randomPlaylist.bgImageSrc {
+                return URL(string: bgImageSrc)
+            }
         }
         
-        return trackView
+        // 如果没有找到任何图片，返回 nil
+        return nil
+    }
+    
+    // 设置悬停效果
+    private func setupHoverEffects(for view: NSView, playButton: NSButton) {
+        // 使用跟踪区域监听鼠标进入/离开事件
+        let trackingArea = NSTrackingArea(
+            rect: view.bounds,
+            options: [.mouseEnteredAndExited, .activeAlways],
+            owner: self,
+            userInfo: ["view": view, "playButton": playButton]
+        )
+        view.addTrackingArea(trackingArea)
+    }
+    
+    // 处理鼠标进入事件
+    override func mouseEntered(with event: NSEvent) {
+        guard let userInfo = event.trackingArea?.userInfo,
+              let view = userInfo["view"] as? NSView,
+              let playButton = userInfo["playButton"] as? NSButton else {
+            super.mouseEntered(with: event)
+            return
+        }
+        
+        // 显示播放按钮
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            playButton.animator().alphaValue = 1.0
+            
+            // 添加高亮效果
+            view.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.1).cgColor
+        }
+    }
+    
+    // 处理鼠标离开事件
+    override func mouseExited(with event: NSEvent) {
+        guard let userInfo = event.trackingArea?.userInfo,
+              let view = userInfo["view"] as? NSView,
+              let playButton = userInfo["playButton"] as? NSButton else {
+            super.mouseExited(with: event)
+            return
+        }
+        
+        // 隐藏播放按钮
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            playButton.animator().alphaValue = 0.0
+            
+            // 移除高亮效果
+            view.layer?.backgroundColor = NSColor.clear.cgColor
+        }
     }
     
     // MARK: - Actions
@@ -388,7 +581,7 @@ class FluffelPlaylistWindow: NSWindow {
         }
     }
     
-    @objc private func playTrack(_ sender: NSButton) {
+    @objc private func playPlaylist(_ sender: NSButton) {
         let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
         let playlistId = String(sender.tag)
         if let track = tracks.first(where: { $0.id == playlistId }) {
@@ -427,17 +620,27 @@ class FluffelPlaylistWindow: NSWindow {
                     
                     switch result {
                     case .success(let audios):
-                        if let firstAudio = audios.first {
-                            // 创建Track并播放
-                            let audioTrack = Track(
-                                id: String(firstAudio.id),
-                                title: firstAudio.title,
-                                artist: firstAudio.user,
-                                duration: firstAudio.duration,
-                                url: firstAudio.audioURL
-                            )
-                            self?.appDelegate?.playTrack(audioTrack)
-                            print("Playing audio: \(firstAudio.title)")
+                        if !audios.isEmpty {
+                            // 创建播放列表队列
+                            let allTracks = audios.map { audio in
+                                Track(
+                                    id: String(audio.id),
+                                    title: audio.title,
+                                    artist: audio.user,
+                                    duration: audio.duration,
+                                    url: audio.audioURL
+                                )
+                            }
+                            
+                            // 播放第一首歌曲并保存播放列表
+                            if let firstTrack = allTracks.first {
+                                self?.appDelegate?.playTrack(firstTrack)
+                                // 存储播放列表，以便之后播放下一首
+                                // 注意：这里假设 AppDelegate 有一个接收完整播放列表的方法
+                                self?.appDelegate?.storePlaylistQueue(allTracks)
+                                print("Playing entire playlist starting with: \(firstTrack.title)")
+                                self?.showToast(message: "Playing playlist: \(track.title)", in: parentView)
+                            }
                         } else {
                             print("Playlist is empty")
                             self?.showToast(message: "This playlist is empty", in: parentView)
@@ -554,3 +757,4 @@ class FluffelPlaylistWindow: NSWindow {
         }
     }
 } 
+

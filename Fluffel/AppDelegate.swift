@@ -25,6 +25,66 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // 存储播放列表窗口的引用
     private var playlistWindows: [FluffelPixabayPlaylists.PlaylistCategory: FluffelPlaylistWindow] = [:]
 
+    // MARK: - 音乐播放相关
+
+    /// 播放列表队列
+    private var playlistQueue: [Track] = []
+    private var currentTrackIndex: Int = 0
+    
+    /// 存储播放列表队列
+    func storePlaylistQueue(_ tracks: [Track]) {
+        // 保存播放列表
+        playlistQueue = tracks
+        currentTrackIndex = 0
+        
+        print("Playlist queue stored with \(tracks.count) tracks")
+        
+        // 添加音乐播放完成通知的观察者，用于播放下一首
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMusicFinished),
+            name: .fluffelDidFinishPlayingMusic,
+            object: nil
+        )
+    }
+    
+    /// 处理音乐播放完成通知
+    @objc private func handleMusicFinished() {
+        // 如果播放列表为空或者已经是最后一首，不继续播放
+        if playlistQueue.isEmpty || currentTrackIndex >= playlistQueue.count - 1 {
+            print("Reached end of playlist or playlist is empty")
+            return
+        }
+        
+        // 播放下一首
+        currentTrackIndex += 1
+        let nextTrack = playlistQueue[currentTrackIndex]
+        print("Playing next track (\(currentTrackIndex+1)/\(playlistQueue.count)): \(nextTrack.title)")
+        
+        // 延迟一秒后播放下一首，避免立即切换
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            self?.playTrack(nextTrack)
+        }
+    }
+    
+    /// 播放指定曲目
+    func playTrack(_ track: Track) {
+        print("Track requested to play: \(track.title)")
+        
+        guard let fluffel = fluffelWindowController?.fluffel else {
+            print("Unable to find Fluffel instance")
+            return
+        }
+        
+        // 检查URL格式
+        if let url = URL(string: track.url) {
+            playAudioWithURL(url, trackTitle: track.title, fluffel: fluffel)
+        } else {
+            print("Invalid track URL: \(track.url)")
+            fluffel.speak(text: "Sorry, this track has an invalid URL", duration: 3.0)
+        }
+    }
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 关闭任何可能由 storyboard 创建的窗口
         for window in NSApplication.shared.windows {
@@ -531,34 +591,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let window = FluffelPlaylistWindow(category: category, delegate: self)
         playlistWindows[category] = window
         window.makeKeyAndOrderFront(nil)
-    }
-    
-    /// 播放单个曲目
-    func playTrack(_ track: Track) {
-        print("AppDelegate.playTrack called with track: \(track.title), url: \(track.url)")
-        
-        executeAction { [weak self] in
-            guard let fluffel = self?.fluffelWindowController?.fluffel else {
-                print("⚠️ Error: Could not find Fluffel instance")
-                return
-            }
-            
-            guard let url = URL(string: track.url) else { 
-                print("⚠️ Error: Invalid URL for track: \(track.title) - \(track.url)")
-                
-                // 尝试URL编码处理
-                if let encodedString = track.url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-                   let encodedURL = URL(string: encodedString) {
-                    print("Successfully encoded URL: \(encodedURL)")
-                    self?.playAudioWithURL(encodedURL, trackTitle: track.title, fluffel: fluffel)
-                } else {
-                    fluffel.speak(text: "Sorry, I couldn't play the music. Invalid URL.", duration: 3.0)
-                }
-                return 
-            }
-            
-            self?.playAudioWithURL(url, trackTitle: track.title, fluffel: fluffel)
-        }
     }
     
     /// 辅助方法：使用 URL 播放音频
