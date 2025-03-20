@@ -26,4 +26,7 @@ extension NSNotification.Name {
     static let fluffelDidStopSpeaking = NSNotification.Name("fluffelDidStopSpeaking")
     static let fluffelWillPlayMusic = NSNotification.Name("fluffelWillPlayMusic")
     static let fluffelDidStopMusic = NSNotification.Name("fluffelDidStopMusic")
+    static let fluffelDidUpdateCategories = NSNotification.Name("fluffelDidUpdateCategories")
+    static let fluffelDebugInfo = NSNotification.Name("fluffelDebugInfo") // 添加调试信息通知
+    static let fluffelDidFinishPlayingMusic = NSNotification.Name("fluffelDidFinishPlayingMusic") // 添加音乐播放完成通知
 }

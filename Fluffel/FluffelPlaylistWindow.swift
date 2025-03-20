@@ -44,15 +44,19 @@ class ThemeBackgroundView: NSView {
         // 清除背景
         context.clear(dirtyRect)
         
-        switch category {
-        case .relax:
+        let categoryName = category.rawValue.lowercased()
+        
+        if categoryName == "relax" {
             drawRelaxBackground(in: dirtyRect, context: context)
-        case .focus:
+        } else if categoryName == "focus" {
             drawFocusBackground(in: dirtyRect, context: context)
-        case .workout:
+        } else if categoryName == "workout" {
             drawWorkoutBackground(in: dirtyRect, context: context)
-        case .party:
+        } else if categoryName == "party" {
             drawPartyBackground(in: dirtyRect, context: context)
+        } else {
+            // Default case - draw a simple background
+            drawRelaxBackground(in: dirtyRect, context: context)
         }
     }
     
@@ -700,6 +704,10 @@ class FluffelPlaylistWindow: NSWindow {
         shuffleButton.action = #selector(shufflePlaylist)
         buttonContainer.addArrangedSubview(shuffleButton)
         
+        let nextButton = createStyledButton(title: "Next", icon: "forward.fill", action: #selector(playNextTrack), isPrimary: false)
+        nextButton.action = #selector(playNextTrack)
+        buttonContainer.addArrangedSubview(nextButton)
+        
         // 设置约束 - 调整布局以增加空间
         NSLayoutConstraint.activate([
             iconContainer.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
@@ -1266,6 +1274,11 @@ class FluffelPlaylistWindow: NSWindow {
         }
     }
     
+    @objc private func playNextTrack() {
+        // 调用AppDelegate的播放下一首方法
+        appDelegate?.playNextTrack(self)
+    }
+    
     @objc private func playPlaylist(_ sender: NSButton) {
         let tracks = FluffelPixabayPlaylists.shared.getPlaylist(for: category)
         let playlistId = String(sender.tag)
@@ -1505,5 +1518,5 @@ class FluffelPlaylistWindow: NSWindow {
         
         return emptyView
     }
-} 
+}
 

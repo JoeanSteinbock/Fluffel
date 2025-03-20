@@ -6,14 +6,7 @@ import AVFoundation
 //     case left, right, up, down
 // }
 
-// 添加一个通知名称，用于通知窗口 Fluffel 已移动
-extension Notification.Name {
-    static let fluffelDebugInfo = Notification.Name("fluffelDebugInfo") // 添加调试信息通知
-    static let fluffelDidFinishPlayingMusic = Notification.Name("fluffelDidFinishPlayingMusic") // 添加音乐播放完成通知
-}
-
 class FluffelScene: SKScene {
-    
     var fluffel: Fluffel?
     private var lastMoveTime: TimeInterval = 0
     private var moveDelay: TimeInterval = 0.01 // 控制移动流畅度
@@ -36,6 +29,8 @@ class FluffelScene: SKScene {
     
     override func sceneDidLoad() {
         super.sceneDidLoad()
+        
+        _ = FluffelPixabayPlaylists.shared.getAllCategories()
         
         // 设置场景属性
         backgroundColor = .clear
@@ -486,39 +481,8 @@ class FluffelScene: SKScene {
         let musicMenuItem = NSMenuItem(title: "Listen to music", action: nil, keyEquivalent: "m")
         musicMenuItem.submenu = musicMenu
         
-        // 添加音乐类别
-        for category in FluffelPixabayPlaylists.PlaylistCategory.allCases {
-            let categoryItem = NSMenuItem(
-                title: category.rawValue,
-                action: #selector(AppDelegate.showPlaylistWindow(_:)),
-                keyEquivalent: ""
-            )
-            categoryItem.representedObject = category
-            categoryItem.target = NSApp.delegate
-            musicMenu.addItem(categoryItem)
-        }
-        
-        // 添加分隔线和其他音乐选项
-        musicMenu.addItem(NSMenuItem.separator())
-        
-        // 添加随机播放选项
-        let shuffleAllItem = NSMenuItem(
-            title: "Shuffle All Music",
-            action: #selector(AppDelegate.playRandomTrackFromAll(_:)),
-            keyEquivalent: ""
-        )
-        shuffleAllItem.target = NSApp.delegate
-        musicMenu.addItem(shuffleAllItem)
-        
-        // 添加停止音乐选项
-        let stopItem = NSMenuItem(
-            title: "Stop Music",
-            action: #selector(AppDelegate.stopMusic(_:)),
-            keyEquivalent: ""
-        )
-        stopItem.target = NSApp.delegate
-        musicMenu.addItem(stopItem)
-        
+        // 填充音乐菜单
+        populateMusicMenu(musicMenu)
         menu.addItem(musicMenuItem)
         
         menu.addItem(NSMenuItem.separator())
@@ -561,6 +525,91 @@ class FluffelScene: SKScene {
         
         // 显示菜单
         NSMenu.popUpContextMenu(menu, with: NSApp.currentEvent!, for: view)
+    }
+    
+    /// 重建音乐菜单 - 供Fluffel类调用
+    func rebuildMusicMenu() {
+        print("Rebuilding music menu in FluffelScene")
+        
+        // 获取主菜单
+        if let menu = NSApp.mainMenu?.item(withTitle: "Fluffel Menu")?.submenu {
+            // 查找音乐菜单项
+            if let musicMenuItem = menu.item(withTitle: "Listen to music") {
+                // 清空现有子菜单
+                if let musicMenu = musicMenuItem.submenu {
+                    musicMenu.removeAllItems()
+                    
+                    // 重新添加音乐类别
+                    for category in FluffelPixabayPlaylists.PlaylistCategory.allCases {
+                        let categoryItem = NSMenuItem(
+                            title: category.rawValue,
+                            action: #selector(AppDelegate.showPlaylistWindow(_:)),
+                            keyEquivalent: ""
+                        )
+                        categoryItem.representedObject = category
+                        categoryItem.target = NSApp.delegate
+                        musicMenu.addItem(categoryItem)
+                    }
+                    
+                    // 添加分隔线和其他音乐选项
+                    musicMenu.addItem(NSMenuItem.separator())
+                    
+                    // 添加随机播放选项
+                    let shuffleAllItem = NSMenuItem(
+                        title: "Shuffle All Music",
+                        action: #selector(AppDelegate.playRandomTrackFromAll(_:)),
+                        keyEquivalent: ""
+                    )
+                    shuffleAllItem.target = NSApp.delegate
+                    musicMenu.addItem(shuffleAllItem)
+                    
+                    // 添加停止音乐选项
+                    let stopItem = NSMenuItem(
+                        title: "Stop Music",
+                        action: #selector(AppDelegate.stopMusic(_:)),
+                        keyEquivalent: ""
+                    )
+                    stopItem.target = NSApp.delegate
+                    musicMenu.addItem(stopItem)
+                }
+            }
+        }
+    }
+    
+    /// 填充音乐菜单 - 供showContextMenu方法使用
+    private func populateMusicMenu(_ musicMenu: NSMenu) {
+        // 添加音乐类别
+        for category in FluffelPixabayPlaylists.PlaylistCategory.allCases {
+            let categoryItem = NSMenuItem(
+                title: category.rawValue,
+                action: #selector(AppDelegate.showPlaylistWindow(_:)),
+                keyEquivalent: ""
+            )
+            categoryItem.representedObject = category
+            categoryItem.target = NSApp.delegate
+            musicMenu.addItem(categoryItem)
+        }
+        
+        // 添加分隔线和其他音乐选项
+        musicMenu.addItem(NSMenuItem.separator())
+        
+        // 添加随机播放选项
+        let shuffleAllItem = NSMenuItem(
+            title: "Shuffle All Music",
+            action: #selector(AppDelegate.playRandomTrackFromAll(_:)),
+            keyEquivalent: ""
+        )
+        shuffleAllItem.target = NSApp.delegate
+        musicMenu.addItem(shuffleAllItem)
+        
+        // 添加停止音乐选项
+        let stopItem = NSMenuItem(
+            title: "Stop Music",
+            action: #selector(AppDelegate.stopMusic(_:)),
+            keyEquivalent: ""
+        )
+        stopItem.target = NSApp.delegate
+        musicMenu.addItem(stopItem)
     }
     
     /// 开始播放音乐
@@ -724,3 +773,4 @@ class FluffelScene: SKScene {
         print("Music playback stopped by FluffelScene")
     }
 }
+

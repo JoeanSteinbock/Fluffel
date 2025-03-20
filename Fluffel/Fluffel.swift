@@ -312,4 +312,11 @@ class Fluffel: SKNode {
             break
         }
     }
+    
+    func rebuildMusicMenu() {
+        // 通知场景重建音乐菜单
+        if let scene = self.parent as? FluffelScene {
+            scene.rebuildMusicMenu()
+        }
+    }
 }

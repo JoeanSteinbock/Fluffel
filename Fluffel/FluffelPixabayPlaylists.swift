@@ -46,40 +46,141 @@ class FluffelPixabayPlaylists {
     private var playlists: [PlaylistCategory: [Track]] = [:]
     private var isLoading = false
     
-    // 预设的播放列表类别
-    enum PlaylistCategory: String, CaseIterable {
-        case relax = "Relax"
-        case workout = "Workout"
-        case focus = "Focus"
-        case party = "Party"
+    // 动态播放列表类别
+    class PlaylistCategory: Hashable, Equatable, CaseIterable {
+        static var allCases: [PlaylistCategory] = []
         
-        var icon: String {
-            switch self {
-            case .relax: return "🌊"
-            case .workout: return "💪"
-            case .focus: return "🎯"
-            case .party: return "🎉"
-            }
-        }
+        // 静态预定义类别，用于替代枚举
+        static let relax = PlaylistCategory(name: "Relax")
+        static let workout = PlaylistCategory(name: "Workout")
+        static let focus = PlaylistCategory(name: "Focus")
+        static let party = PlaylistCategory(name: "Party")
         
-        var color: NSColor {
-            switch self {
-            case .relax: return .systemBlue
-            case .workout: return .systemRed
-            case .focus: return .systemOrange
-            case .party: return .systemPurple
-            }
-        }
+        let rawValue: String
+        let icon: String
+        let color: NSColor
         
         // 获取搜索路径
         var searchPath: String {
             return rawValue.lowercased()
+        }
+        
+        init(name: String) {
+            self.rawValue = name.capitalized
+            
+            // 根据类别名称分配图标和颜色
+            switch name.lowercased() {
+            case "relax", "sleep", "ambient":
+                self.icon = "🌊"
+                self.color = .systemBlue
+            case "workout", "gym", "running", "motivation":
+                self.icon = "💪"
+                self.color = .systemRed
+            case "focus", "productivity", "study":
+                self.icon = "🎯"
+                self.color = .systemOrange
+            case "party", "dance", "electronic":
+                self.icon = "🎉"
+                self.color = .systemPurple
+            case "kids", "fun", "children":
+                self.icon = "🧸"
+                self.color = .systemGreen
+            case "jazz", "lofi":
+                self.icon = "🎷"
+                self.color = .systemBrown
+            default:
+                self.icon = "🎵"
+                self.color = .systemGray
+            }
+        }
+        
+        // 实现Hashable协议
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(rawValue)
+        }
+        
+        // 实现Equatable协议
+        static func == (lhs: PlaylistCategory, rhs: PlaylistCategory) -> Bool {
+            return lhs.rawValue == rhs.rawValue
+        }
+        
+        // 从playlists.json加载所有类别
+        static func loadAllCategories() {
+            print("Starting to load all categories from playlists.json")
+            guard let url = Bundle.main.url(forResource: "playlists", withExtension: "json") else {
+                print("Error: Could not find playlists.json in bundle")
+                // 使用默认类别
+                allCases = [PlaylistCategory(name: "Relax"), PlaylistCategory(name: "Workout"), 
+                            PlaylistCategory(name: "Focus"), PlaylistCategory(name: "Party")]
+                print("Using default categories: \(allCases.map { $0.rawValue }.joined(separator: ", "))")
+                return
+            }
+            
+            do {
+                // 读取文件内容
+                let data = try Data(contentsOf: url)
+                let allPlaylists = try JSONDecoder().decode([PlaylistData].self, from: data)
+                
+                print("Successfully decoded \(allPlaylists.count) playlists from JSON")
+                
+                // 收集所有唯一类别和它们的播放列表数量
+                var uniqueCategories = Set<String>()
+                var categoryPlaylistCounts: [String: Int] = [:]
+                
+                for playlist in allPlaylists {
+                    if let categories = playlist.categories {
+                        for category in categories {
+                            let categoryKey = category.lowercased()
+                            uniqueCategories.insert(categoryKey)
+                            categoryPlaylistCounts[categoryKey] = (categoryPlaylistCounts[categoryKey] ?? 0) + 1
+                            print("Added category: \(category) (count: \(categoryPlaylistCounts[categoryKey] ?? 1))")
+                        }
+                    }
+                }
+                
+                print("Found \(uniqueCategories.count) unique categories: \(uniqueCategories.joined(separator: ", "))")
+                
+                // 确保至少有默认类别
+                if uniqueCategories.isEmpty {
+                    print("No categories found in playlists.json, using defaults")
+                    uniqueCategories = ["relax", "workout", "focus", "party"]
+                    // 为默认类别设置默认计数
+                    for category in uniqueCategories {
+                        categoryPlaylistCounts[category] = 1
+                    }
+                }
+                
+                // 创建类别对象并按播放列表数量排序（数量多的排在前面）
+                allCases = uniqueCategories.map { PlaylistCategory(name: $0) }.sorted { 
+                    let count1 = categoryPlaylistCounts[$0.rawValue.lowercased()] ?? 0
+                    let count2 = categoryPlaylistCounts[$1.rawValue.lowercased()] ?? 0
+                    return count1 > count2  // 降序排列，数量多的排在前面
+                }
+                
+                print("Loaded \(allCases.count) categories from playlists.json: \(allCases.map { $0.rawValue }.joined(separator: ", "))")
+                print("Categories sorted by playlist count:")
+                for category in allCases {
+                    let count = categoryPlaylistCounts[category.rawValue.lowercased()] ?? 0
+                    print("  \(category.rawValue): \(count) playlists")
+                }
+                
+                // Post notification that categories have been updated
+                NotificationCenter.default.post(name: .fluffelDidUpdateCategories, object: nil)
+            } catch {
+                print("Error loading categories from playlists.json: \(error)")
+                // 使用默认类别
+                allCases = [PlaylistCategory(name: "Relax"), PlaylistCategory(name: "Workout"), 
+                            PlaylistCategory(name: "Focus"), PlaylistCategory(name: "Party")]
+                print("Using default categories due to error: \(allCases.map { $0.rawValue }.joined(separator: ", "))")
+            }
         }
     }
     
     // Private initializer for singleton
     private init() {
         print("FluffelPixabayPlaylists initialized")
+        // 加载动态类别
+        PlaylistCategory.loadAllCategories()
         loadPlaylists { _ in }
     }
     
@@ -183,31 +284,35 @@ class FluffelPixabayPlaylists {
     // 创建预设曲目（作为后备）
     private func createPresetTracks(for category: PlaylistCategory) -> [Track] {
         // 根据类别创建预设曲目
-        switch category {
-        case .relax:
+        let categoryName = category.rawValue.lowercased()
+        
+        if categoryName == "relax" {
             return [
                 Track(id: "1", title: "Morning Coffee", artist: "Relaxing Beats", duration: 180, url: "preset/morning_coffee.mp3"),
                 Track(id: "2", title: "Sunset Vibes", artist: "Chill Music", duration: 240, url: "preset/sunset_vibes.mp3"),
                 Track(id: "3", title: "Urban Dreams", artist: "City Sounds", duration: 200, url: "preset/urban_dreams.mp3")
             ]
-        case .workout:
+        } else if categoryName == "workout" {
             return [
                 Track(id: "4", title: "Ocean Waves", artist: "Nature Sounds", duration: 300, url: "preset/ocean_waves.mp3"),
                 Track(id: "5", title: "Gentle Rain", artist: "Ambient Nature", duration: 360, url: "preset/gentle_rain.mp3"),
                 Track(id: "6", title: "Forest Morning", artist: "Natural World", duration: 240, url: "preset/forest_morning.mp3")
             ]
-        case .focus:
+        } else if categoryName == "focus" {
             return [
                 Track(id: "7", title: "Power Up", artist: "Energy Beats", duration: 180, url: "preset/power_up.mp3"),
                 Track(id: "8", title: "Morning Run", artist: "Workout Music", duration: 200, url: "preset/morning_run.mp3"),
                 Track(id: "9", title: "Dance Time", artist: "Party Mix", duration: 220, url: "preset/dance_time.mp3")
             ]
-        case .party:
+        } else if categoryName == "party" {
             return [
                 Track(id: "10", title: "Summer Joy", artist: "Happy Tunes", duration: 180, url: "preset/summer_joy.mp3"),
                 Track(id: "11", title: "Sunny Day", artist: "Positive Vibes", duration: 200, url: "preset/sunny_day.mp3"),
                 Track(id: "12", title: "Good Times", artist: "Feel Good", duration: 190, url: "preset/good_times.mp3")
             ]
+        } else {
+            // Default case - return empty array or some generic tracks
+            return []
         }
     }
 }
